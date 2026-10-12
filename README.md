@@ -155,6 +155,8 @@ scripts/       schema generator, setup checker, app icon source
 
 ## Credits and licence
 
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Report suspected vulnerabilities privately according to [SECURITY.md](SECURITY.md).
+
 VRift is licensed under the **GNU GPL v3.0**, see [LICENSE](LICENSE).
 
 - The tag schema is derived from the editor hint file of [HacknetExtensionEditor](https://github.com/fengxu-30338/HacknetExtensionEditor) by fengxu-30338 (GPL-3.0). It was translated to English and extended. See `scripts/` to regenerate it.

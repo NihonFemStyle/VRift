@@ -9,6 +9,8 @@ This directory contains the detailed documentation for VRift, a visual editor fo
 - [Development guide](development.md) — set up a development environment, run checks, add features, and understand project conventions.
 - [Troubleshooting](troubleshooting.md) — solve common build, launch, library, editing, and validation problems.
 - [Custom schemas](custom-schema.md) — add form support and validation for tags supplied by Pathfinder mods.
+- [Contributing](../CONTRIBUTING.md) — development workflow, project invariants, checks, and pull-request expectations.
+- [Security policy](../SECURITY.md) — supported versions and private vulnerability reporting.
 
 The repository [README](../README.md) remains the short project overview, build quick start, release process, and feature summary.
 
