@@ -148,9 +148,10 @@ scripts/       schema generator, setup checker, app icon source
 
 ### Bugs to fix
 
-- Node IDs being read more than once from the same node
-- Ocassional Parsing issues
-- Possible Underlying bug with Wayland compositors
+- Node IDs being read more than once from the same node | To be fixed in 1.1
+- Ocassional Parsing issues | To be fixed in 1.1
+- Possible Underlying bug with Wayland compositors | Could be fixed already
+- VRift.schema.json treated as generic files | To be fixed in 1.1
 
 ## Credits and licence
 
