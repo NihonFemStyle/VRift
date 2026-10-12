@@ -225,8 +225,23 @@ The same shape is used for attributes, node `content`, conditional attributes, a
 | `scope` | `"file"` | For the `name` hint: names only need to exist in the same file. |
 | `regex` | string | Regular expression the value must match; otherwise a `format` warning. Values containing `#` (wildcards) are skipped. |
 | `kinds` | string array | For `path`: only suggest files of these kinds, and warn when the target is another kind (e.g. `["stuxnetCutscene"]`). |
+| `min` | number | For `float` and `vector2`: smallest allowed value (each axis for `vector2`). Lower values warn; the stepper and slider stop here. |
+| `max` | number | For `float` and `vector2`: largest allowed value. With both `min` and `max`, a `float` field also gets a slider. |
+| `step` | number | For `float` and `vector2`: how much the −/+ buttons, ↑/↓ keys and slider change the value (default `0.1`; Shift moves ×10). Not related to the `step` *hint* below. |
 
 For clarity, provide `required`, `default`, `desc`, and `hint` on normal fields, even though VRift fills missing basics on custom attributes.
+
+### Numbers, vectors and RGB colours
+
+`float`, `vector2` and `color3` (and the `min`, `max` and `step` options) need VRift 1.1.1 or later.
+
+```json
+{ "name": "Opacity", "required": false, "default": "1", "desc": "Starting opacity.", "hint": "float", "min": 0, "max": 1, "step": 0.05 },
+{ "name": "Position", "required": true, "default": "0,0", "desc": "Top-left corner.", "hint": "vector2", "step": 0.01 },
+{ "name": "Tint", "required": false, "default": "255,255,255", "desc": "Text colour.", "hint": "color3" }
+```
+
+Values that are not numbers, out of range, written with a comma decimal (`0,5`), or colours with an alpha channel get a `format` warning, which can be ignored like any other. Values containing `#` (wildcards) are not checked. If your mod also accepts shorthand forms (Stuxnet's cutscenes take `0.5` or `0.5w` for a `Vector2`), use `text` with a `regex` instead, or leave the warning to be ignored per file.
 
 ### Required versus default
 
@@ -244,6 +259,9 @@ New fields initialize recognized boolean, valid enum, numeric, and color default
 | `bool` | True/false toggle. Add `enums` and `diag` for validation. | `true` |
 | `enum` | Choices from `enums`; with `diag`, other values warn. | `passive` |
 | `color` | Picker plus Hacknet `R,G,B,A` input. | `0,139,199,255` |
+| `color3` | Picker plus `R,G,B` input, no alpha channel. Values with a fourth component warn. | `0,139,199` |
+| `float` | Number with −/+ stepper, ↑/↓ keys, and a slider when `min` and `max` are set. Uses a dot as the decimal separator, like the game. | `0.75` |
+| `vector2` | Two numbers written `X,Y` (FNA's `Vector2`), each with its own stepper. `min`/`max`/`step` apply to both axes. | `0.5,-0.25` |
 | `ip` | IP input with random-address controls. | `192.168.1.4` |
 | `computerip` | Suggests IPs from indexed computers. | `192.168.1.4` |
 | `step` | Selector for `function:argument` values. | `setFaction:entropy` |

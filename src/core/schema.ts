@@ -31,6 +31,12 @@ export type Hint =
   | "faction"
   | "flags"
   | "step"
+  /** A number with a decimal point; field.min/max/step clamp and step it. */
+  | "float"
+  /** Two numbers "X,Y" (FNA's Vector2); min/max/step apply to both. */
+  | "vector2"
+  /** A colour without alpha: "R,G,B". */
+  | "color3"
   /** A named value from a namespace (field.ns), e.g. a vault key or a song ID. */
   | "name";
 
@@ -78,6 +84,12 @@ export interface FieldDef {
   regex?: string;
   /** For path hints: file kinds that are valid targets (e.g. ["stuxnetCutscene"]). */
   kinds?: string[];
+  /** For float/vector2: smallest allowed value. */
+  min?: number;
+  /** For float/vector2: largest allowed value. */
+  max?: number;
+  /** For float/vector2: increment of the stepper and slider. */
+  step?: number;
 }
 
 export interface ConditionDef {
@@ -306,6 +318,6 @@ export function initialValue(f: FieldDef): string {
   if (f.hint === "enum" && f.enums?.some((e) => e.value === f.default)) return f.default;
   if (f.hint === "step") return "";
   if (/^-?\d+(\.\d+)?$/.test(f.default ?? "")) return f.default;
-  if (f.hint === "color" && /^\d+\s*,\s*\d+\s*,\s*\d+/.test(f.default ?? "")) return f.default;
+  if ((f.hint === "color" || f.hint === "color3" || f.hint === "vector2") && /^-?[\d.]+\s*,\s*-?[\d.]+/.test(f.default ?? "")) return f.default;
   return "";
 }

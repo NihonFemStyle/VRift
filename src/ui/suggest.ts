@@ -2,6 +2,7 @@
  * Suggestions for reference fields: every computer ID, mission file, theme, flag... that exists
  * in the project, filtered to what makes sense for the field being edited.
  */
+import { typedValueProblem } from "../core/values";
 import { nameSpace } from "../core/modules";
 import { BUILTIN_COMPUTERS, BUILTIN_THEMES, Project } from "../core/project";
 import type { EnumOption, FieldDef } from "../core/schema";
@@ -167,6 +168,8 @@ export function checkValue(project: Project, field: FieldDef, value: string, fil
       /* bad pattern in a custom schema */
     }
   }
+  const typed = typedValueProblem(field, v);
+  if (typed) return { ok: false, message: typed };
   switch (field.hint) {
     case "name": {
       if (field.define || !field.ns) return { ok: true };

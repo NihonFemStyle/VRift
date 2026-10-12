@@ -1964,3 +1964,9 @@ button {
 .add-menu .menu .dhead {
   top: 40px;
 }
+
+/* ---- typed number fields (float / vector2) ---- */
+.num-field { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 150px; }
+.num-field .num { width: 90px; flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.num-field .num-label { color: var(--subtle); font-size: 0.85em; width: 14px; text-align: center; }
+.num-field .icon-btn { width: 22px; padding: 0; }

@@ -8,6 +8,7 @@ import { useApp } from "./context";
 import { ImageThumb } from "./ImagePreview";
 import { checkValue, Option, optionsFor, wildcardOptions } from "./suggest";
 import { parseColor } from "./themes";
+import { formatNumber, parseFloatValue, snap } from "../core/values";
 
 // ------------------------------------------------------------------ Combo box
 
@@ -179,8 +180,21 @@ export function FieldEditor(p: FieldProps) {
         {!present && <span className="msg info">default</span>}
       </div>
     );
-  } else if (hint === "color") {
-    control = <ColorField value={draft} onChange={live} />;
+  } else if (hint === "color" || hint === "color3") {
+    control = <ColorField value={draft} onChange={live} alpha={hint === "color"} />;
+  } else if (hint === "float") {
+    control = (
+      <div className="row">
+        <NumberField field={p.field} value={draft} onChange={live} invalid={!check.ok} placeholder={present ? "" : p.field.default ? `default: ${p.field.default}` : ""} slider />
+        {present && !p.field.required && p.field.default && (
+          <button className="icon-btn" title="Remove attribute (use the default)" onClick={() => p.onChange(undefined)}>
+            reset
+          </button>
+        )}
+      </div>
+    );
+  } else if (hint === "vector2") {
+    control = <Vector2Field field={p.field} value={draft} onChange={live} invalid={!check.ok} />;
   } else if (hint === "computerlist" || hint === "flags" || (hint === "name" && p.field.list)) {
     control = (
       <ChipsField
@@ -294,8 +308,9 @@ function WildcardBar({ onInsert }: { onInsert: (w: string) => void }) {
 
 // ------------------------------------------------------------------ colour
 
-export function ColorField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function ColorField({ value, onChange, alpha: hasAlpha = true }: { value: string; onChange: (v: string) => void; alpha?: boolean }) {
   const c = parseColor(value);
+  if (!hasAlpha) return <Color3Field value={value} onChange={onChange} />;
   const hex = c ? "#" + c.slice(0, 3).map((n) => n.toString(16).padStart(2, "0")).join("") : "#000000";
   const alpha = c ? c[3] : 255;
   const set = (rgb: string, a: number) => {
@@ -318,6 +333,98 @@ export function ColorField({ value, onChange }: { value: string; onChange: (v: s
       <span className="msg info" style={{ width: 54 }}>
         {alpha === 0 ? "additive" : alpha}
       </span>
+    </div>
+  );
+}
+
+/** "R,G,B" colour (no alpha channel). */
+function Color3Field({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parts = value.split(",");
+  const c = parts.length === 3 ? parseColor(value) : null;
+  const hex = c ? "#" + c.slice(0, 3).map((n) => n.toString(16).padStart(2, "0")).join("") : "#000000";
+  return (
+    <div className="row">
+      <label className="swatch" title="Pick colour">
+        <span style={{ background: c ? `rgb(${c[0]},${c[1]},${c[2]})` : "transparent" }} />
+        <input
+          type="color"
+          value={hex}
+          onChange={(e) => {
+            const h = e.target.value;
+            onChange(`${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)}`);
+          }}
+        />
+      </label>
+      <input className={"hn-input" + (value && !c ? " invalid" : "")} style={{ width: 150, flex: "none" }} value={value} spellCheck={false} onChange={(e) => onChange(e.target.value)} placeholder="R,G,B" />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ numbers
+
+/** A float input with a stepper (buttons, arrow keys) and, when min and max are set, a slider. */
+export function NumberField(p: { field: FieldDef; value: string; onChange: (v: string) => void; invalid?: boolean; placeholder?: string; slider?: boolean; label?: string }) {
+  const f = p.field;
+  const step = f.step && f.step > 0 ? f.step : 0.1;
+  const n = parseFloatValue(p.value);
+  const bump = (dir: number, mult = 1) => {
+    const base = n ?? parseFloatValue(f.default ?? "") ?? f.min ?? 0;
+    p.onChange(formatNumber(snap(f, base + dir * step * mult), step));
+  };
+  const hasRange = f.min !== undefined && f.max !== undefined && f.max > f.min;
+  return (
+    <div className="num-field">
+      {p.label && <span className="num-label">{p.label}</span>}
+      <button className="icon-btn" tabIndex={-1} title={`−${step}`} onClick={(e) => bump(-1, e.shiftKey ? 10 : 1)}>
+        −
+      </button>
+      <input
+        className={"hn-input num" + (p.invalid ? " invalid" : "")}
+        value={p.value}
+        inputMode="decimal"
+        spellCheck={false}
+        placeholder={p.placeholder}
+        onChange={(e) => p.onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            bump(e.key === "ArrowUp" ? 1 : -1, e.shiftKey ? 10 : 1);
+          }
+        }}
+        title={[f.min !== undefined ? `min ${f.min}` : "", f.max !== undefined ? `max ${f.max}` : "", `step ${step} (↑/↓, Shift for ×10)`].filter(Boolean).join(" · ")}
+      />
+      <button className="icon-btn" tabIndex={-1} title={`+${step}`} onClick={(e) => bump(1, e.shiftKey ? 10 : 1)}>
+        +
+      </button>
+      {p.slider && hasRange && (
+        <input
+          type="range"
+          min={f.min}
+          max={f.max}
+          step={f.step && f.step > 0 ? f.step : "any"}
+          value={n ?? parseFloatValue(f.default ?? "") ?? f.min}
+          onChange={(e) => p.onChange(formatNumber(snap(f, Number(e.target.value)), step))}
+          style={{ flex: 1, minWidth: 60, accentColor: "var(--hl)" }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** FNA Vector2 written as "X,Y". */
+function Vector2Field({ field, value, onChange, invalid }: { field: FieldDef; value: string; onChange: (v: string) => void; invalid?: boolean }) {
+  const parts = value.split(",");
+  if (value.trim() && parts.length !== 2) {
+    // not "X,Y": edit it as text so nothing is lost
+    return <input className={"hn-input" + (invalid ? " invalid" : "")} value={value} spellCheck={false} onChange={(e) => onChange(e.target.value)} placeholder="X,Y" />;
+  }
+  const [x, y] = value.trim() ? parts.map((s) => s.trim()) : ["", ""];
+  const def = (field.default ?? "").split(",");
+  const set = (nx: string, ny: string) => onChange(nx === "" && ny === "" ? "" : `${nx},${ny}`);
+  return (
+    <div className="row" style={{ flexWrap: "wrap" }}>
+      <NumberField field={field} label="X" value={x} onChange={(v) => set(v, y || "0")} invalid={invalid && parseFloatValue(x) === null} placeholder={def.length === 2 ? def[0] : ""} />
+      <NumberField field={field} label="Y" value={y} onChange={(v) => set(x || "0", v)} invalid={invalid && parseFloatValue(y) === null} placeholder={def.length === 2 ? def[1] : ""} />
     </div>
   );
 }

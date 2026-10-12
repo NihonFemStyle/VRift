@@ -12,6 +12,7 @@ import {
   resolveComputer,
 } from "./project";
 import { BUILTIN_MODULES, CONFIG_FILE, CUSTOM_SCHEMA_FILE, nameSpace, SuppressRule } from "./modules";
+import { typedValueProblem } from "./values";
 import { allPossibleAttributes, attributesFor, childOptions, lookupNode, lookupNodeIn } from "./schema";
 import { elementChildren, getAttr, getAttrCI, trimmedText, walkElements, XElement } from "./xml";
 
@@ -289,6 +290,15 @@ function validateFileStructure(f: ProjectFile, add: (d: Diagnostic) => void, ina
         if (re && !re.test(v))
           add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "format", key: `format:${el.name}@${a.name}=${v}`, message: `<${el.name} ${a.name}="${v}">: unexpected format (${a.desc}).` });
       }
+      const typed = typedValueProblem(a, v);
+      if (typed)
+        add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "format", key: `format:${el.name}@${a.name}=${v}`, message: `<${el.name} ${a.name}="${v}">: ${typed}.` });
+    }
+    if (def.content) {
+      const text = trimmedText(el);
+      const typed = typedValueProblem(def.content, text);
+      if (typed)
+        add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "format", key: `format:${el.name}=${text}`, message: `<${el.name}>${text}</${el.name}>: ${typed}.` });
     }
     const known = allPossibleAttributes(def);
     if (known.size) {

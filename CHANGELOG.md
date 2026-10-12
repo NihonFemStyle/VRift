@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1
+
+- **Typed value hints for custom schemas** (requested by the Stuxnet developer):
+  - `float`: a number with a −/+ stepper and ↑/↓ keys, plus a slider when both `min` and `max` are set. New field options `min`, `max` and `step`.
+  - `vector2`: FNA's `Vector2` written `X,Y`, with a field per axis; `min`/`max`/`step` apply to both.
+  - `color3`: an `R,G,B` colour without the alpha channel.
+  - Non-numbers, out-of-range values, comma decimals (`0,5`) and colours with alpha are reported as `format` warnings, in attributes and in tag text.
+
 ## 1.1.0
 
 ### Mods
