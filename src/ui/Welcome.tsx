@@ -60,7 +60,7 @@ export function Welcome(props: {
     <div className="welcome">
       <div className="welcome-inner">
         <h1 className="logo-title">VRift</h1>
-        <div className="logo-sub">HACKNET EXTENSION EDITOR</div>
+        <div className="logo-sub">HACKNET EXTENSION EDITOR · v{__APP_VERSION__}</div>
         <div className="welcome-grid">
           <div className="menu-stack">
             {tauri ? (

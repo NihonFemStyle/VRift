@@ -1,9 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
+
+// The app version comes from the VERSION file at the repo root.
+const version = readFileSync(new URL("./VERSION", import.meta.url), "utf8").trim();
 
 // Tauri expects a fixed port and does not want Vite to clear its output.
 export default defineConfig({
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(version) },
   clearScreen: false,
   server: { port: 1420, strictPort: true },
   envPrefix: ["VITE_", "TAURI_ENV_"],

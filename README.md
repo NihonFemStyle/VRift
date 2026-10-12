@@ -74,6 +74,27 @@ The same commands work. On Linux, install the [Tauri system dependencies](https:
 
 Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which works poorly under Wine. On Linux (including the Steam Deck in desktop mode), build the native Linux version instead: it reads and writes the same extension folders. The code doesn't depend on Windows paths, so a project made on one OS opens on the other.
 
+## Releasing
+
+The version lives in the [`VERSION`](VERSION) file (currently `1.0.0`). GitHub Actions does the rest:
+
+1. Change `VERSION` (for example `1.0.0` → `1.1.0`, plain `X.Y.Z` only).
+2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+3. Commit and push to `main`.
+
+When `VERSION` changes on `main`, [`release.yml`](.github/workflows/release.yml) runs these steps:
+
+- Checks that the version files agree with `VERSION`.
+- Creates a draft release `v1.1.0` with notes generated from the merged commits and PRs.
+- Builds on Windows (NSIS `.exe` + `.msi`), Linux (`.AppImage`, `.deb`, `.rpm`) and macOS (universal `.dmg`), and attaches the installers to the release.
+- Publishes the release once every build has succeeded. If a build fails, the draft and tag are deleted so you can fix the problem and push again.
+
+If the version already has a release, the workflow does nothing, so remember to bump `VERSION`. You can also start a release by hand from **Actions → release → Run workflow**.
+
+[`ci.yml`](.github/workflows/ci.yml) runs the tests on every push and pull request.
+
+> The installers are not code-signed, so Windows SmartScreen will warn on first launch ("More info → Run anyway").
+
 ## Tests
 
 ```powershell

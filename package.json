@@ -1,7 +1,7 @@
 {
   "name": "vrift",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "VRift - a visual editor for Hacknet extensions",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -12,7 +12,9 @@
     "test": "vitest run",
     "tauri": "tauri",
     "app:dev": "tauri dev",
-    "app:build": "tauri build"
+    "app:build": "tauri build",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:check": "node scripts/sync-version.mjs --check"
   },
   "dependencies": {
     "@codemirror/lang-xml": "^6.1.0",

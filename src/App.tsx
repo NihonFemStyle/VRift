@@ -388,7 +388,7 @@ export default function App() {
     ],
     help: [
       { label: "Official extensions guide", run: () => openUrl("https://steamcommunity.com/sharedfiles/filedetails/?id=914587661") },
-      { label: "About VRift", run: () => confirm("About VRift", "VRift - a visual editor for Hacknet extensions.\nLicensed under GPL-3.0.\n\nTag schema derived from fengxu-30338/HacknetExtensionEditor (GPL-3.0).", "Close") },
+      { label: "About VRift", run: () => confirm("About VRift", `VRift ${__APP_VERSION__} - a visual editor for Hacknet extensions.\nLicensed under GPL-3.0.\n\nTag schema derived from fengxu-30338/HacknetExtensionEditor (GPL-3.0).`, "Close") },
     ],
   };
 
