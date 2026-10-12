@@ -141,6 +141,7 @@ scripts/       schema generator, setup checker, app icon source
 - Visual action builder and a global flag timeline
 - One-click hot reload into a running game through [HacknetHotReplace](https://github.com/fengxu-30338/HacknetHotReplace) + Pathfinder
 - Image and web page previews; people/faction-specific views
+- Stuxnet schema (Modular Schema support to go with this one)
 
 ## Credits and licence
 
