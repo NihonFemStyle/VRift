@@ -1,0 +1,42 @@
+{
+  "name": "vrift",
+  "private": true,
+  "version": "0.1.0",
+  "description": "VRift - a visual editor for Hacknet extensions",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build"
+  },
+  "dependencies": {
+    "@codemirror/lang-xml": "^6.1.0",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.14",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/share-tech-mono": "^5.3.0",
+    "@lezer/highlight": "^1.2.5",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-dialog": "^2.4.0",
+    "@tauri-apps/plugin-opener": "^2.7.1",
+    "@uiw/react-codemirror": "^4.25.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}

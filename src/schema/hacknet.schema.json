@@ -1,0 +1,7692 @@
+{
+ "version": 1,
+ "source": "Derived from fengxu-30338/HacknetExtensionEditor (GPL-3.0), translated to English",
+ "nodes": [
+  {
+   "paths": [
+    "HacknetExtension"
+   ],
+   "multi": false,
+   "desc": "Extension metadata (ExtensionInfo.xml)",
+   "filePattern": "ExtensionInfo.xml",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.Language"
+   ],
+   "multi": false,
+   "desc": "Preferred language of the extension",
+   "content": {
+    "required": false,
+    "default": "zh-cn",
+    "desc": "Language",
+    "hint": "enum",
+    "diag": "E",
+    "enums": [
+     {
+      "value": "en-us",
+      "desc": "English"
+     },
+     {
+      "value": "de-de",
+      "desc": "German"
+     },
+     {
+      "value": "fr-be",
+      "desc": "French"
+     },
+     {
+      "value": "ru-ru",
+      "desc": "Russian"
+     },
+     {
+      "value": "es-ar",
+      "desc": "Spanish"
+     },
+     {
+      "value": "ko-kr",
+      "desc": "Korean"
+     },
+     {
+      "value": "ja-jp",
+      "desc": "Japanese"
+     },
+     {
+      "value": "zh-cn",
+      "desc": "Chinese (Simplified)"
+     }
+    ]
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.Name"
+   ],
+   "multi": false,
+   "desc": "Extension name",
+   "content": {
+    "required": false,
+    "default": "Intro Extension",
+    "desc": "Extension name",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.AllowSaves"
+   ],
+   "multi": false,
+   "desc": "Allow manual saving",
+   "content": {
+    "required": false,
+    "default": "true",
+    "desc": "Allow the player to save manually",
+    "hint": "bool",
+    "enums": [
+     {
+      "value": "true",
+      "desc": ""
+     },
+     {
+      "value": "false",
+      "desc": ""
+     }
+    ],
+    "diag": "E",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.StartingVisibleNodes"
+   ],
+   "multi": false,
+   "desc": "Computers visible when the game starts",
+   "content": {
+    "required": false,
+    "default": "computer",
+    "desc": "Computer IDs visible when the game starts",
+    "hint": "computerlist",
+    "linkByCollection": [
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": ".*",
+      "split": ",| |\\t|\\r|\\n|\\/"
+     }
+    ],
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.StartingMission"
+   ],
+   "multi": false,
+   "desc": "First mission",
+   "content": {
+    "required": false,
+    "default": "missionPath",
+    "desc": "Mission file path",
+    "hint": "missionfile",
+    "linkBy": "path",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.StartingActions"
+   ],
+   "multi": false,
+   "desc": "Actions run when a new session starts",
+   "content": {
+    "required": false,
+    "default": "actionPath",
+    "desc": "Action file path",
+    "hint": "actionfile",
+    "linkBy": "path",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.Description"
+   ],
+   "multi": false,
+   "desc": "Description of this extension",
+   "content": {
+    "required": false,
+    "default": "Describe the extension",
+    "desc": "Extension description",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.Faction"
+   ],
+   "multi": true,
+   "desc": "Defines a custom faction",
+   "content": {
+    "required": false,
+    "default": "factionPath",
+    "desc": "Custom faction file path",
+    "hint": "factionfile",
+    "linkBy": "path",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.StartsWithTutorial"
+   ],
+   "multi": false,
+   "desc": "Start with the tutorial",
+   "content": {
+    "required": false,
+    "default": "False",
+    "desc": "Start with the tutorial",
+    "hint": "bool",
+    "enums": [
+     {
+      "value": "False",
+      "desc": ""
+     },
+     {
+      "value": "True",
+      "desc": ""
+     }
+    ],
+    "diag": "E",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.HasIntroStartup"
+   ],
+   "multi": false,
+   "desc": "Show the intro text (Intro.txt in the root) on first launch",
+   "content": {
+    "required": false,
+    "default": "false",
+    "desc": "Show the intro text",
+    "hint": "bool",
+    "enums": [
+     {
+      "value": "true",
+      "desc": ""
+     },
+     {
+      "value": "false",
+      "desc": ""
+     }
+    ],
+    "diag": "E",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.StartingTheme"
+   ],
+   "multi": false,
+   "desc": "Theme on first launch",
+   "content": {
+    "required": false,
+    "default": "themePath",
+    "desc": "Built-in theme name or theme file path",
+    "hint": "themefile",
+    "linkBy": "path",
+    "enums": [
+     {
+      "value": "TerminalOnlyBlack",
+      "desc": ""
+     },
+     {
+      "value": "HacknetBlue",
+      "desc": ""
+     },
+     {
+      "value": "HacknetTeal",
+      "desc": ""
+     },
+     {
+      "value": "HacknetYellow",
+      "desc": ""
+     },
+     {
+      "value": "HackerGreen",
+      "desc": ""
+     },
+     {
+      "value": "HacknetWhite",
+      "desc": ""
+     },
+     {
+      "value": "HacknetPurple",
+      "desc": ""
+     },
+     {
+      "value": "HacknetMint",
+      "desc": ""
+     },
+     {
+      "value": "Custom",
+      "desc": ""
+     },
+     {
+      "value": "Colamaeleon",
+      "desc": ""
+     },
+     {
+      "value": "GreenCompact",
+      "desc": ""
+     },
+     {
+      "value": "Riptide",
+      "desc": ""
+     },
+     {
+      "value": "Riptide2",
+      "desc": ""
+     }
+    ],
+    "diag": "I",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.IntroStartupSong"
+   ],
+   "multi": false,
+   "desc": "Song played on first launch",
+   "content": {
+    "required": false,
+    "default": "musicPath",
+    "desc": "Built-in song name or .ogg file path",
+    "hint": "path",
+    "linkBy": "path",
+    "enums": [
+     {
+      "value": "Bit(Ending)",
+      "desc": ""
+     },
+     {
+      "value": "Broken_Boy",
+      "desc": ""
+     },
+     {
+      "value": "Irritations",
+      "desc": ""
+     },
+     {
+      "value": "out_run_the_wolves",
+      "desc": ""
+     },
+     {
+      "value": "Revolve",
+      "desc": ""
+     },
+     {
+      "value": "Rico_Puestel-Roja_Drifts_By",
+      "desc": ""
+     },
+     {
+      "value": "Rico_Puestel-Roller_Mobster_Clipped",
+      "desc": ""
+     },
+     {
+      "value": "Ryan3",
+      "desc": ""
+     },
+     {
+      "value": "Ryan10",
+      "desc": ""
+     },
+     {
+      "value": "tetrameth",
+      "desc": ""
+     },
+     {
+      "value": "The_Quickening",
+      "desc": ""
+     },
+     {
+      "value": "TheAlgorithm",
+      "desc": ""
+     },
+     {
+      "value": "Traced",
+      "desc": ""
+     }
+    ],
+    "pattern": "**/*.ogg",
+    "diag": "I",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.SequencerTargetID"
+   ],
+   "multi": false,
+   "desc": "Computer ID targeted by ESequencer.exe",
+   "content": {
+    "required": false,
+    "default": "computer",
+    "desc": "Computer ID",
+    "hint": "computer",
+    "linkBy": "Computer.id|Computer.eosDevice.id",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.SequencerSpinUpTime"
+   ],
+   "multi": false,
+   "desc": "ESequencer.exe spin-up time",
+   "content": {
+    "required": false,
+    "default": "10.5",
+    "desc": "Spin-up time",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.SequencerFlagRequiredForStart"
+   ],
+   "multi": false,
+   "desc": "Flag required to start ESequencer.exe",
+   "content": {
+    "required": false,
+    "default": "testFlag",
+    "desc": "Flag",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.ActionsToRunOnSequencerStart"
+   ],
+   "multi": false,
+   "desc": "Action file run when ESequencer.exe starts",
+   "content": {
+    "required": false,
+    "default": "actionPath",
+    "desc": "Action file path",
+    "hint": "actionfile",
+    "linkBy": "path",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopDescription"
+   ],
+   "multi": false,
+   "desc": "Workshop description",
+   "content": {
+    "required": false,
+    "default": "Description",
+    "desc": "Description shown on the Steam Workshop",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopLanguage"
+   ],
+   "multi": false,
+   "desc": "Workshop language",
+   "content": {
+    "required": false,
+    "default": "Chinese",
+    "desc": "Has no real effect in the game code",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopVisibility"
+   ],
+   "multi": false,
+   "desc": "Workshop visibility",
+   "content": {
+    "required": false,
+    "default": "2",
+    "desc": "Visibility",
+    "hint": "enum",
+    "diag": "E",
+    "enums": [
+     {
+      "value": "0",
+      "desc": "Public"
+     },
+     {
+      "value": "1",
+      "desc": "Friends only"
+     },
+     {
+      "value": "2",
+      "desc": "Private (only you)"
+     }
+    ]
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopTags"
+   ],
+   "multi": false,
+   "desc": "Workshop tags",
+   "content": {
+    "required": false,
+    "default": "Extension",
+    "desc": "Workshop tags for this extension",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopPreviewImagePath"
+   ],
+   "multi": false,
+   "desc": "Workshop preview image",
+   "content": {
+    "required": false,
+    "default": "imgPath",
+    "desc": "Preview image path (in the root; .jpg, .png or .gif)",
+    "hint": "path",
+    "linkBy": "path",
+    "diag": "E",
+    "pattern": "*.{jpg,png,gif}"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "HacknetExtension.WorkshopPublishID"
+   ],
+   "multi": false,
+   "desc": "Workshop publish ID (generated by the game, do not edit)",
+   "content": {
+    "required": false,
+    "default": "NONE",
+    "desc": "Workshop publish ID (generated by the game, do not edit)",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer"
+   ],
+   "multi": false,
+   "desc": "Defines a computer",
+   "filePattern": "Nodes/**/*.xml",
+   "container": true,
+   "attributes": [
+    {
+     "name": "id",
+     "required": true,
+     "default": "",
+     "desc": "Computer ID",
+     "hint": "text",
+     "suggest": [
+      {
+       "value": "playerComp",
+       "desc": "Replaces the player's own computer"
+      },
+      {
+       "value": "ispComp",
+       "desc": "ISP server (needs an ispSystem daemon)"
+      },
+      {
+       "value": "jmail",
+       "desc": "Replaces the JMail server (needs a mailServer + player mail account)"
+      },
+      {
+       "value": "academic",
+       "desc": "Academic server (used by AddDegree / wipedegrees goals)"
+      },
+      {
+       "value": "deathRow",
+       "desc": "Death row database (used by death row goals)"
+      }
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "",
+     "desc": "Computer name",
+     "hint": "text"
+    },
+    {
+     "name": "ip",
+     "required": false,
+     "default": "",
+     "desc": "Computer IP (generated by the game if empty)",
+     "hint": "ip"
+    },
+    {
+     "name": "security",
+     "required": true,
+     "default": "",
+     "desc": "Security level",
+     "hint": "enum",
+     "diag": "W",
+     "enums": [
+      {
+       "value": "0",
+       "desc": "Old desktop PC icon"
+      },
+      {
+       "value": "1",
+       "desc": "All-in-one PC icon"
+      },
+      {
+       "value": "2",
+       "desc": "Office PC icon"
+      },
+      {
+       "value": "3",
+       "desc": "Server icon"
+      },
+      {
+       "value": "4",
+       "desc": "Advanced server icon"
+      },
+      {
+       "value": "5",
+       "desc": "+100s trace, random firewall and proxy"
+      }
+     ]
+    },
+    {
+     "name": "allowsDefaultBootModule",
+     "required": false,
+     "default": "true",
+     "desc": "Show the last defined daemon when navigating to this computer",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "icon",
+     "required": false,
+     "default": "",
+     "desc": "Computer icon",
+     "hint": "enum",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "laptop",
+       "desc": "Laptop icon"
+      },
+      {
+       "value": "chip",
+       "desc": "Chip icon"
+      },
+      {
+       "value": "kellis",
+       "desc": "Gear icon"
+      },
+      {
+       "value": "tablet",
+       "desc": "Tablet"
+      },
+      {
+       "value": "ePhone",
+       "desc": "Phone"
+      },
+      {
+       "value": "ePhone2",
+       "desc": "Phone"
+      },
+      {
+       "value": "Psylance",
+       "desc": "Psylance (DLC)"
+      },
+      {
+       "value": "PacificAir",
+       "desc": "PacificAir (DLC)"
+      },
+      {
+       "value": "Alchemist",
+       "desc": "A tree (DLC)"
+      },
+      {
+       "value": "DLCLaptop",
+       "desc": "DLCLaptop (DLC)"
+      },
+      {
+       "value": "DLCPC1",
+       "desc": "Mainframe style (DLC)"
+      },
+      {
+       "value": "DLCPC2",
+       "desc": "Mainframe style (DLC)"
+      },
+      {
+       "value": "DLCServer",
+       "desc": "Server style (DLC)"
+      },
+      {
+       "value": "0",
+       "desc": "Old desktop PC icon"
+      },
+      {
+       "value": "1",
+       "desc": "All-in-one PC icon"
+      },
+      {
+       "value": "2",
+       "desc": "Office PC icon"
+      },
+      {
+       "value": "3",
+       "desc": "Server icon"
+      },
+      {
+       "value": "4",
+       "desc": "Advanced server icon"
+      },
+      {
+       "value": "5",
+       "desc": "Advanced server icon"
+      }
+     ]
+    },
+    {
+     "name": "type",
+     "required": true,
+     "default": "empty",
+     "desc": "Computer type",
+     "hint": "enum",
+     "diag": "W",
+     "enums": [
+      {
+       "value": "1",
+       "desc": "Corporate"
+      },
+      {
+       "value": "2",
+       "desc": "Home"
+      },
+      {
+       "value": "3",
+       "desc": "Server"
+      },
+      {
+       "value": "4",
+       "desc": "Empty (generates no junk files)"
+      },
+      {
+       "value": "5",
+       "desc": "Create files on the eOS device"
+      },
+      {
+       "value": "empty",
+       "desc": "Empty (generates no junk files)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.adminPass"
+   ],
+   "multi": false,
+   "desc": "Admin password",
+   "attributes": [
+    {
+     "name": "pass",
+     "required": true,
+     "default": "",
+     "desc": "Computer admin password",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.account"
+   ],
+   "multi": true,
+   "desc": "Add an account to the computer",
+   "attributes": [
+    {
+     "name": "username",
+     "required": true,
+     "default": "",
+     "desc": "Username",
+     "hint": "text"
+    },
+    {
+     "name": "password",
+     "required": true,
+     "default": "",
+     "desc": "Password",
+     "hint": "text"
+    },
+    {
+     "name": "type",
+     "required": true,
+     "default": "ALL",
+     "desc": "Account type",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "ADMIN",
+       "desc": "Admin"
+      },
+      {
+       "value": "ALL",
+       "desc": "Deletable files"
+      },
+      {
+       "value": "MAIL",
+       "desc": "Email account"
+      },
+      {
+       "value": "MISSIONLIST",
+       "desc": "Mission listing server account"
+      },
+      {
+       "value": "0",
+       "desc": "Admin"
+      },
+      {
+       "value": "1",
+       "desc": "Deletable files"
+      },
+      {
+       "value": "2",
+       "desc": "Email account"
+      },
+      {
+       "value": "3",
+       "desc": "Mission listing server account"
+      }
+     ],
+     "diag": "H",
+     "ignoreCase": true
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.ports"
+   ],
+   "multi": false,
+   "desc": "Comma separated list of ports. Valid: 21, 22, 25, 80, 1433, 104, 6881, 443, 192, 554",
+   "content": {
+    "required": false,
+    "default": "21, 22, 25",
+    "desc": "Comma separated list of ports",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.proxy"
+   ],
+   "multi": false,
+   "desc": "Proxy",
+   "attributes": [
+    {
+     "name": "time",
+     "required": true,
+     "default": "-1",
+     "desc": "Proxy crack time multiplier (actual time = value x 30 seconds)",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "-1",
+       "desc": "No proxy"
+      },
+      {
+       "value": "1",
+       "desc": "30s"
+      },
+      {
+       "value": "2",
+       "desc": "60s"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.portsForCrack"
+   ],
+   "multi": false,
+   "desc": "Ports needed for PortHack; over 100 shows INVIOLABILITY ERROR",
+   "attributes": [
+    {
+     "name": "val",
+     "required": true,
+     "default": "0",
+     "desc": "Number of open ports needed for PortHack",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.firewall"
+   ],
+   "multi": false,
+   "desc": "Firewall",
+   "attributes": [
+    {
+     "name": "level",
+     "required": true,
+     "default": "-1",
+     "desc": "Firewall level; higher takes longer to crack, -1 removes it",
+     "hint": "text"
+    },
+    {
+     "name": "solution",
+     "required": true,
+     "default": "pass",
+     "desc": "Firewall solution",
+     "hint": "text"
+    },
+    {
+     "name": "additionalTime",
+     "required": true,
+     "default": "1.0",
+     "desc": "Extra time per solver step",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.trace"
+   ],
+   "multi": false,
+   "desc": "Trace timer",
+   "attributes": [
+    {
+     "name": "time",
+     "required": true,
+     "default": "-1",
+     "desc": "Trace time in seconds; -1 removes the trace",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.admin"
+   ],
+   "multi": false,
+   "desc": "Auto-administrator: resets ports and progress when the player disconnects",
+   "attributes": [
+    {
+     "name": "type",
+     "required": true,
+     "default": "fast",
+     "desc": "Type",
+     "hint": "enum",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "basic",
+       "desc": "Resets password, ports, firewall etc. after about 15 seconds"
+      },
+      {
+       "value": "progress",
+       "desc": "Resets only while the player is not admin"
+      },
+      {
+       "value": "fast",
+       "desc": "With isSuper, resets the password instantly on disconnect"
+      },
+      {
+       "value": "none",
+       "desc": "No special handling"
+      }
+     ]
+    },
+    {
+     "name": "resetPassword",
+     "required": true,
+     "default": "false",
+     "desc": "Reset the admin password",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "isSuper",
+     "required": true,
+     "default": "false",
+     "desc": "Super admin: with type=fast, resets the password instantly on disconnect",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.portRemap"
+   ],
+   "multi": false,
+   "desc": "Remap a port. Supported names: ssh, ftp, web, torrent, medical, smtp, sql",
+   "content": {
+    "required": false,
+    "default": "web=1234,22=2",
+    "desc": "Remapped port",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.tracker"
+   ],
+   "multi": false,
+   "desc": "After the player disconnects, if they left download/delete logs, an AI hacker attacks and tries to reset them",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.dlink"
+   ],
+   "multi": true,
+   "desc": "Link to another computer (revealed by scan)",
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "id",
+     "desc": "Computer ID",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.positionNear"
+   ],
+   "multi": true,
+   "desc": "Position this computer near another",
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "id",
+     "desc": "Computer ID",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "position",
+     "required": true,
+     "default": "1",
+     "desc": "Radial position around the target computer",
+     "hint": "text"
+    },
+    {
+     "name": "total",
+     "required": true,
+     "default": "3",
+     "desc": "Total number of nodes arranged radially around the target",
+     "hint": "text"
+    },
+    {
+     "name": "extraDistance",
+     "required": true,
+     "default": "0.1",
+     "desc": "Extra distance",
+     "hint": "text"
+    },
+    {
+     "name": "force",
+     "required": true,
+     "default": "false",
+     "desc": "Force this placement",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.file"
+   ],
+   "multi": true,
+   "desc": "Create a file on the computer",
+   "content": {
+    "required": false,
+    "default": "File contents",
+    "desc": "File contents",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": [
+    {
+     "name": "path",
+     "required": true,
+     "default": "filepath",
+     "desc": "Folder",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "filename",
+     "desc": "File name",
+     "hint": "text",
+     "enums": [
+      {
+       "value": "CreditsData.txt",
+       "desc": "Credits list file shown by the CreditsDaemon"
+      }
+     ],
+     "wildcards": true
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.customthemefile"
+   ],
+   "multi": true,
+   "desc": "Create a theme .sys file on the computer",
+   "attributes": [
+    {
+     "name": "path",
+     "required": true,
+     "default": "sys",
+     "desc": "Folder",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "sys",
+       "desc": "System folder"
+      },
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      }
+     ]
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "Custom_x-server.sys",
+     "desc": "File name",
+     "hint": "text"
+    },
+    {
+     "name": "themePath",
+     "required": true,
+     "default": "",
+     "desc": "Path of the theme file",
+     "hint": "themefile",
+     "linkBy": "path",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.encryptedFile"
+   ],
+   "multi": true,
+   "desc": "Create an encrypted file on the computer",
+   "content": {
+    "required": false,
+    "default": "File contents",
+    "desc": "File contents",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": [
+    {
+     "name": "path",
+     "required": true,
+     "default": "home",
+     "desc": "Folder",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "xxx.dec",
+     "desc": "File name",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "extension",
+     "required": true,
+     "default": ".txt",
+     "desc": "File extension after decryption",
+     "hint": "text"
+    },
+    {
+     "name": "ip",
+     "required": true,
+     "default": "ip",
+     "desc": "IP of the computer the file was encrypted on",
+     "hint": "computerip",
+     "linkBy": "Computer.ip",
+     "diag": "W"
+    },
+    {
+     "name": "header",
+     "required": true,
+     "default": "",
+     "desc": "Header shown after running DECHead",
+     "hint": "text"
+    },
+    {
+     "name": "pass",
+     "required": false,
+     "default": "",
+     "desc": "Decryption password",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.eosDevice"
+   ],
+   "multi": true,
+   "desc": "Create an eOS device attached to this computer",
+   "container": true,
+   "attributes": [
+    {
+     "name": "id",
+     "required": true,
+     "default": "",
+     "desc": "Set ID",
+     "hint": "text"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "",
+     "desc": "Name",
+     "hint": "text"
+    },
+    {
+     "name": "icon",
+     "required": true,
+     "default": "ePhone2",
+     "desc": "Icon",
+     "hint": "enum",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "ePhone",
+       "desc": "Phone"
+      },
+      {
+       "value": "ePhone2",
+       "desc": "Phone"
+      },
+      {
+       "value": "tablet",
+       "desc": "Tablet"
+      },
+      {
+       "value": "laptop",
+       "desc": "Laptop icon"
+      },
+      {
+       "value": "chip",
+       "desc": "Chip icon"
+      },
+      {
+       "value": "kellis",
+       "desc": "Gear icon"
+      },
+      {
+       "value": "Psylance",
+       "desc": "Psylance (DLC)"
+      },
+      {
+       "value": "PacificAir",
+       "desc": "PacificAir (DLC)"
+      },
+      {
+       "value": "Alchemist",
+       "desc": "A tree (DLC)"
+      },
+      {
+       "value": "DLCLaptop",
+       "desc": "DLCLaptop (DLC)"
+      },
+      {
+       "value": "DLCPC1",
+       "desc": "Mainframe style (DLC)"
+      },
+      {
+       "value": "DLCPC2",
+       "desc": "Mainframe style (DLC)"
+      },
+      {
+       "value": "DLCServer",
+       "desc": "Server style (DLC)"
+      }
+     ]
+    },
+    {
+     "name": "empty",
+     "required": true,
+     "default": "true",
+     "desc": "Keep the device clean (no junk files)",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "passOverride",
+     "required": true,
+     "default": "alpine",
+     "desc": "Password",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.eosDevice.note"
+   ],
+   "multi": true,
+   "desc": "Create a note",
+   "content": {
+    "required": false,
+    "default": "Note content",
+    "desc": "Note content",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.eosDevice.mail"
+   ],
+   "multi": true,
+   "desc": "Create an email account",
+   "attributes": [
+    {
+     "name": "username",
+     "required": true,
+     "default": "test@jmail.com",
+     "desc": "Email account",
+     "hint": "text"
+    },
+    {
+     "name": "pass",
+     "required": true,
+     "default": "pass",
+     "desc": "Email password",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.eosDevice.file"
+   ],
+   "multi": true,
+   "desc": "Create a file on the eOS device",
+   "content": {
+    "required": false,
+    "default": "File contents",
+    "desc": "File contents",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": [
+    {
+     "name": "path",
+     "required": true,
+     "default": "filepath",
+     "desc": "Folder",
+     "hint": "text"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "filename",
+     "desc": "File name",
+     "hint": "text",
+     "wildcards": true
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.mailServer"
+   ],
+   "multi": true,
+   "desc": "Mail server (daemon)",
+   "container": true,
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "jmail",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "color",
+     "required": true,
+     "default": "50,237,212",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "generateJunk",
+     "required": true,
+     "default": "true",
+     "desc": "Generate junk email",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.mailServer.email"
+   ],
+   "multi": true,
+   "desc": "Create an email",
+   "content": {
+    "required": false,
+    "default": "Email body",
+    "desc": "Email body",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": [
+    {
+     "name": "recipient",
+     "required": true,
+     "default": "Recipient account",
+     "desc": "Recipient (needs a mail-type account)",
+     "hint": "text"
+    },
+    {
+     "name": "sender",
+     "required": true,
+     "default": "",
+     "desc": "Sender",
+     "hint": "text"
+    },
+    {
+     "name": "subject",
+     "required": true,
+     "default": "",
+     "desc": "Email subject",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.uploadServerDaemon"
+   ],
+   "multi": true,
+   "desc": "File upload dropbox (daemon)",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "Upload Dropbox",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "folder",
+     "required": true,
+     "default": "",
+     "desc": "Default upload folder",
+     "hint": "text"
+    },
+    {
+     "name": "needsAuth",
+     "required": true,
+     "default": "false",
+     "desc": "Requires authentication",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "color",
+     "required": true,
+     "default": "204,116,212",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.addWebServer"
+   ],
+   "multi": true,
+   "desc": "Web server (daemon)",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "Website Server",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "url",
+     "required": true,
+     "default": "",
+     "desc": "Path to the html file",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.{htm,html}"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.deathRowDatabase"
+   ],
+   "multi": true,
+   "desc": "Death row database (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.academicDatabase"
+   ],
+   "multi": true,
+   "desc": "Academic database (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.ispSystem"
+   ],
+   "multi": true,
+   "desc": "ISP system, as used by the ETAS (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.messageBoard"
+   ],
+   "multi": true,
+   "desc": "Message board (daemon)",
+   "container": true,
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "Custom Board Name",
+     "desc": "Service name",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.messageBoard.thread"
+   ],
+   "multi": true,
+   "desc": "A message board message",
+   "content": {
+    "required": true,
+    "default": "Docs/msg.txt",
+    "desc": "Thread file path",
+    "hint": "path",
+    "linkBy": "path",
+    "diag": "E",
+    "pattern": "**/*.txt"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.MedicalDatabase"
+   ],
+   "multi": true,
+   "desc": "Medical database (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.HeartMonitor"
+   ],
+   "multi": true,
+   "desc": "Heart monitor (daemon)",
+   "attributes": [
+    {
+     "name": "patient",
+     "required": true,
+     "default": "patient",
+     "desc": "Patient name",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.PointClicker"
+   ],
+   "multi": true,
+   "desc": "Point Clicker game (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.SongChangerDaemon"
+   ],
+   "multi": true,
+   "desc": "Song changer (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.variableMissionListingServer"
+   ],
+   "multi": true,
+   "desc": "News / mission listing server (daemon)",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "example listing server",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "title",
+     "required": true,
+     "default": "Title",
+     "desc": "Article title",
+     "hint": "text"
+    },
+    {
+     "name": "iconPath",
+     "required": true,
+     "default": "",
+     "desc": "Icon path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+    },
+    {
+     "name": "articleFolderPath",
+     "required": true,
+     "default": "",
+     "desc": "Destination folder",
+     "hint": "folder",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.xml"
+    },
+    {
+     "name": "color",
+     "required": true,
+     "default": "120,200,2",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "assigner",
+     "required": true,
+     "default": "false",
+     "desc": "Who the mission is assigned to",
+     "hint": "bool",
+     "diag": "H",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "public",
+     "required": true,
+     "default": "true",
+     "desc": "Accessible without admin access",
+     "hint": "bool",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.missionHubServer"
+   ],
+   "multi": true,
+   "desc": "CSEC-style mission hub (daemon)",
+   "attributes": [
+    {
+     "name": "groupName",
+     "required": true,
+     "default": "CSEC",
+     "desc": "Faction name",
+     "hint": "text"
+    },
+    {
+     "name": "serviceName",
+     "required": true,
+     "default": "Example Tech Contract Hub",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "missionFolderPath",
+     "required": true,
+     "default": "",
+     "desc": "Folder containing the missions",
+     "hint": "folder",
+     "linkBy": "path",
+     "diag": "W",
+     "pattern": "Missions/**/*.xml"
+    },
+    {
+     "name": "themeColor",
+     "required": true,
+     "default": "200,10,10",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "lineColor",
+     "required": true,
+     "default": "255,80,80",
+     "desc": "Line color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "backgroundColor",
+     "required": true,
+     "default": "20,20,20",
+     "desc": "Background color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "allowAbandon",
+     "required": true,
+     "default": "false",
+     "desc": "Allow the player to abandon missions",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.CreditsDaemon"
+   ],
+   "multi": true,
+   "desc": "Credits screen (daemon); needs a CreditsData.txt in the home folder",
+   "attributes": [
+    {
+     "name": "Title",
+     "required": true,
+     "default": "title",
+     "desc": "Title",
+     "hint": "text"
+    },
+    {
+     "name": "ButtonText",
+     "required": true,
+     "default": "Complete",
+     "desc": "Text on the middle button",
+     "hint": "text"
+    },
+    {
+     "name": "ConditionalActionSetToRunOnButtonPressPath",
+     "required": false,
+     "default": "",
+     "desc": "Action file run when the button is pressed",
+     "hint": "actionfile",
+     "linkBy": "path",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.FastActionHost"
+   ],
+   "multi": true,
+   "desc": "Creates a lightweight daemon that hosts delayed actions (for an action's DelayHost)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile"
+   ],
+   "multi": true,
+   "desc": "Creates a memory dump file readable by MemForensics.exe",
+   "container": true,
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "xxx.md",
+     "desc": "File name",
+     "hint": "text"
+    },
+    {
+     "name": "path",
+     "required": true,
+     "default": "home",
+     "desc": "File path",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory"
+   ],
+   "multi": false,
+   "desc": "Contains data blocks, commands, images, etc.",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Data"
+   ],
+   "multi": true,
+   "desc": "Contains data blocks",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Data.Block"
+   ],
+   "multi": true,
+   "desc": "A data block",
+   "content": {
+    "required": false,
+    "default": "Data block contents",
+    "desc": "Data",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Commands"
+   ],
+   "multi": true,
+   "desc": "Contains commands",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Commands.Command"
+   ],
+   "multi": true,
+   "desc": "A command",
+   "content": {
+    "required": false,
+    "default": "cd home",
+    "desc": "Command",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Images"
+   ],
+   "multi": true,
+   "desc": "Contains images",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.memoryDumpFile.Memory.Images.Image"
+   ],
+   "multi": true,
+   "desc": "Image path",
+   "content": {
+    "required": false,
+    "default": "path",
+    "desc": "Image path",
+    "hint": "path",
+    "linkBy": "path",
+    "diag": "E",
+    "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory"
+   ],
+   "multi": false,
+   "desc": "A memory block that MemDumpGenerator.exe can scan",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Data"
+   ],
+   "multi": true,
+   "desc": "Contains data blocks",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Data.Block"
+   ],
+   "multi": true,
+   "desc": "A data block",
+   "content": {
+    "required": false,
+    "default": "Data block contents",
+    "desc": "Data",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Commands"
+   ],
+   "multi": true,
+   "desc": "Contains commands",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Commands.Command"
+   ],
+   "multi": true,
+   "desc": "A command",
+   "content": {
+    "required": false,
+    "default": "cd home",
+    "desc": "Command",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Images"
+   ],
+   "multi": true,
+   "desc": "Contains images",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.Memory.Images.Image"
+   ],
+   "multi": true,
+   "desc": "Image path",
+   "content": {
+    "required": false,
+    "default": "path",
+    "desc": "Image path",
+    "hint": "path",
+    "linkBy": "path",
+    "diag": "E",
+    "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.CustomConnectDisplayDaemon"
+   ],
+   "multi": true,
+   "desc": "Change the connect display to the River style (daemon)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.LogoDaemon"
+   ],
+   "multi": true,
+   "desc": "Creates a logo-style display (daemon)",
+   "content": {
+    "required": false,
+    "default": "Display content",
+    "desc": "",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "Logo Display",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "ShowsTitle",
+     "required": true,
+     "default": "true",
+     "desc": "Show the title",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "TextColor",
+     "required": true,
+     "default": "47,212,163,200",
+     "desc": "Text color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "LogoImagePath",
+     "required": true,
+     "default": "imgPath",
+     "desc": "Icon path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.LogoCustomConnectDisplayDaemon"
+   ],
+   "multi": true,
+   "desc": "Custom connect display with logo (daemon)",
+   "attributes": [
+    {
+     "name": "logo",
+     "required": true,
+     "default": "path",
+     "desc": "Logo image path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+    },
+    {
+     "name": "title",
+     "required": true,
+     "default": "path",
+     "desc": "Title image path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.{png,jpg,jpeg,bmp,ico}"
+    },
+    {
+     "name": "overdrawLogo",
+     "required": true,
+     "default": "true",
+     "desc": "Overdraw the logo",
+     "hint": "bool",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "buttonAlignment",
+     "required": true,
+     "default": "left",
+     "desc": "Button position",
+     "hint": "enum",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "left",
+       "desc": "Left"
+      },
+      {
+       "value": "middle",
+       "desc": "Middle"
+      },
+      {
+       "value": "right",
+       "desc": "Right"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.WhitelistAuthenticatorDaemon"
+   ],
+   "multi": true,
+   "desc": "Whitelist authenticator (daemon)",
+   "attributes": [
+    {
+     "name": "Remote",
+     "required": true,
+     "default": "computer",
+     "desc": "Remote computer ID whose whitelist is checked",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "SelfAuthenticating",
+     "required": true,
+     "default": "false",
+     "desc": "Authenticate connections to itself",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.IRCDaemon"
+   ],
+   "multi": true,
+   "desc": "IRC chat (daemon)",
+   "container": true,
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "Misc IRC Channel",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "themeColor",
+     "required": true,
+     "default": "67,204,148",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "needsLogin",
+     "required": true,
+     "default": "false",
+     "desc": "Login required to view",
+     "hint": "bool",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.IRCDaemon.user",
+    "Computer.IRCDaemon.agent"
+   ],
+   "multi": true,
+   "desc": "A user on the message board",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "fengxu",
+     "desc": "User name",
+     "hint": "text"
+    },
+    {
+     "name": "color",
+     "required": true,
+     "default": "0,209,232",
+     "desc": "Username text color",
+     "hint": "color",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.IRCDaemon.post"
+   ],
+   "multi": true,
+   "desc": "A message board post",
+   "content": {
+    "required": false,
+    "default": "Message content",
+    "desc": "Message content",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "user",
+     "required": true,
+     "default": "fengxu",
+     "desc": "Message author",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.DHSDaemon"
+   ],
+   "multi": true,
+   "desc": "DLC-style mission hub (daemon)",
+   "container": true,
+   "attributes": [
+    {
+     "name": "groupName",
+     "required": true,
+     "default": "NewFaction Hub",
+     "desc": "Faction name",
+     "hint": "text"
+    },
+    {
+     "name": "addsFactionPointOnMissionComplete",
+     "required": true,
+     "default": "true",
+     "desc": "Automatically add a faction point when the mission is completed",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "autoClearMissionsOnPlayerComplete",
+     "required": true,
+     "default": "true",
+     "desc": "Clear the mission board after the player completes the mission",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "themeColor",
+     "required": true,
+     "default": "255,255,161",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "allowContractAbbandon",
+     "required": true,
+     "default": "false",
+     "desc": "Allow the player to abandon missions",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.DHSDaemon.user",
+    "Computer.DHSDaemon.agent"
+   ],
+   "multi": true,
+   "desc": "A user on the mission hub",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "fengxu",
+     "desc": "Username",
+     "hint": "text"
+    },
+    {
+     "name": "pass",
+     "required": true,
+     "default": "pass",
+     "desc": "Password",
+     "hint": "text"
+    },
+    {
+     "name": "color",
+     "required": true,
+     "default": "209,74,48",
+     "desc": "This user's message color",
+     "hint": "color",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.MarkovTextDaemon"
+   ],
+   "multi": true,
+   "desc": "Markov-chain text generator (daemon)",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "Service name",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "SourceFilesContentFolder",
+     "required": true,
+     "default": "folder",
+     "desc": "Folder containing the text files",
+     "hint": "folder",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.txt"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon"
+   ],
+   "multi": true,
+   "desc": "Database (daemon)",
+   "container": true,
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "Service name",
+     "desc": "Service name",
+     "hint": "text"
+    },
+    {
+     "name": "Permissions",
+     "required": true,
+     "default": "private",
+     "desc": "Permission type",
+     "hint": "enum",
+     "diag": "H",
+     "enums": [
+      {
+       "value": "private",
+       "desc": "Requires admin access"
+      },
+      {
+       "value": "public",
+       "desc": "Usable without admin access"
+      }
+     ]
+    },
+    {
+     "name": "DataType",
+     "required": true,
+     "default": "GitCommitEntry",
+     "desc": "Data type",
+     "hint": "enum",
+     "diag": "I",
+     "enums": [
+      {
+       "value": "GitCommitEntry",
+       "desc": "Git commit record"
+      },
+      {
+       "value": "TextRecord",
+       "desc": "Text record"
+      },
+      {
+       "value": "OnlineAccount",
+       "desc": "Online user"
+      },
+      {
+       "value": "CAROData",
+       "desc": "Unknown"
+      },
+      {
+       "value": "Account",
+       "desc": "Account"
+      },
+      {
+       "value": "SurveillanceProfile",
+       "desc": "Profile"
+      },
+      {
+       "value": "AgentDetails",
+       "desc": "Agent user"
+      }
+     ]
+    },
+    {
+     "name": "Foldername",
+     "required": true,
+     "default": "database",
+     "desc": "Folder on the computer where the data is stored",
+     "hint": "text"
+    },
+    {
+     "name": "Color",
+     "required": true,
+     "default": "85,0,150",
+     "desc": "Theme color",
+     "hint": "color",
+     "diag": "E"
+    },
+    {
+     "name": "AdminEmailAccount",
+     "required": false,
+     "default": "Matt@TestExtensionMail.com",
+     "desc": "Admin user's email account",
+     "hint": "text"
+    },
+    {
+     "name": "AdminEmailHostID",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of the mail server holding the admin email account",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "mailServer"
+     ],
+     "extra": [
+      "jmail"
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry"
+   ],
+   "multi": true,
+   "desc": "Git commit record type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.EntryNumber"
+   ],
+   "multi": false,
+   "desc": "Entry number",
+   "content": {
+    "required": false,
+    "default": "9527",
+    "desc": "Entry number",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.ChangedFiles"
+   ],
+   "multi": false,
+   "desc": "File changes",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.ChangedFiles.String"
+   ],
+   "multi": true,
+   "desc": "Name of the changed file",
+   "content": {
+    "required": false,
+    "default": "Neopals.php",
+    "desc": "Name of the changed file",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.Message"
+   ],
+   "multi": false,
+   "desc": "Commit message",
+   "content": {
+    "required": false,
+    "default": "Changes in this commit",
+    "desc": "Commit message",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.UserName"
+   ],
+   "multi": false,
+   "desc": "Username",
+   "content": {
+    "required": false,
+    "default": "fengxu",
+    "desc": "Username",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.GitCommitEntry.SourceIP"
+   ],
+   "multi": false,
+   "desc": "Original IP",
+   "content": {
+    "required": false,
+    "default": "fengxu",
+    "desc": "Original IP",
+    "hint": "computerip",
+    "linkBy": "Computer.ip",
+    "diag": "W"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.TextRecord"
+   ],
+   "multi": true,
+   "desc": "Text record type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.TextRecord.Title"
+   ],
+   "multi": false,
+   "desc": "Title",
+   "content": {
+    "required": false,
+    "default": "Title",
+    "desc": "Title",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.TextRecord.Data"
+   ],
+   "multi": false,
+   "desc": "Title",
+   "content": {
+    "required": false,
+    "default": "Data",
+    "desc": "Data",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.OnlineAccount"
+   ],
+   "multi": true,
+   "desc": "Online account type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.OnlineAccount.ID"
+   ],
+   "multi": false,
+   "desc": "ID",
+   "content": {
+    "required": false,
+    "default": "ID",
+    "desc": "ID",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.OnlineAccount.Username"
+   ],
+   "multi": false,
+   "desc": "Username",
+   "content": {
+    "required": false,
+    "default": "Username",
+    "desc": "Username",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.OnlineAccount.BanStatus"
+   ],
+   "multi": false,
+   "desc": "Locked",
+   "content": {
+    "required": false,
+    "default": "no/yes",
+    "desc": "Locked",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.OnlineAccount.Notes"
+   ],
+   "multi": false,
+   "desc": "Note",
+   "content": {
+    "required": false,
+    "default": "notes here",
+    "desc": "Note",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData"
+   ],
+   "multi": true,
+   "desc": "CAROData record type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.UserID"
+   ],
+   "multi": false,
+   "desc": "User ID",
+   "content": {
+    "required": false,
+    "default": "User ID",
+    "desc": "User ID",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.Headshots"
+   ],
+   "multi": false,
+   "desc": "Headshots",
+   "content": {
+    "required": false,
+    "default": "Headshots",
+    "desc": "Headshots",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.Kills"
+   ],
+   "multi": false,
+   "desc": "Kills",
+   "content": {
+    "required": false,
+    "default": "Kills",
+    "desc": "Kills",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.Rank"
+   ],
+   "multi": false,
+   "desc": "Rank",
+   "content": {
+    "required": false,
+    "default": "Rank",
+    "desc": "Rank",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.Crowbars"
+   ],
+   "multi": false,
+   "desc": "Crowbars",
+   "content": {
+    "required": false,
+    "default": "Crowbars",
+    "desc": "Crowbars",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.InventoryID"
+   ],
+   "multi": false,
+   "desc": "InventoryID",
+   "content": {
+    "required": false,
+    "default": "InventoryID",
+    "desc": "InventoryID",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.CAROData.BanStatus"
+   ],
+   "multi": false,
+   "desc": "BanStatus",
+   "content": {
+    "required": false,
+    "default": "BanStatus",
+    "desc": "BanStatus",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account"
+   ],
+   "multi": true,
+   "desc": "Account type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.ID"
+   ],
+   "multi": false,
+   "desc": "ID",
+   "content": {
+    "required": false,
+    "default": "ID",
+    "desc": "ID",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Cash"
+   ],
+   "multi": false,
+   "desc": "Cash",
+   "content": {
+    "required": false,
+    "default": "Cash",
+    "desc": "Cash",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Bank"
+   ],
+   "multi": false,
+   "desc": "Bank",
+   "content": {
+    "required": false,
+    "default": "Bank",
+    "desc": "Bank",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Apartments"
+   ],
+   "multi": false,
+   "desc": "Apartments",
+   "content": {
+    "required": false,
+    "default": "Apartments",
+    "desc": "Apartments",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Vehicles"
+   ],
+   "multi": false,
+   "desc": "Vehicles",
+   "content": {
+    "required": false,
+    "default": "Vehicles",
+    "desc": "Vehicles",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.PegasusVehicles"
+   ],
+   "multi": false,
+   "desc": "PegasusVehicles",
+   "content": {
+    "required": false,
+    "default": "PegasusVehicles",
+    "desc": "PegasusVehicles",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Rank"
+   ],
+   "multi": false,
+   "desc": "Rank",
+   "content": {
+    "required": false,
+    "default": "Rank",
+    "desc": "Rank",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.RP"
+   ],
+   "multi": false,
+   "desc": "RP",
+   "content": {
+    "required": false,
+    "default": "RP",
+    "desc": "RP",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.Account.Kills"
+   ],
+   "multi": false,
+   "desc": "Kills",
+   "content": {
+    "required": false,
+    "default": "Kills",
+    "desc": "Kills",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile"
+   ],
+   "multi": true,
+   "desc": "Surveillance profile type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile.Name"
+   ],
+   "multi": false,
+   "desc": "Name",
+   "content": {
+    "required": false,
+    "default": "Name",
+    "desc": "Name",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile.Age"
+   ],
+   "multi": false,
+   "desc": "Age",
+   "content": {
+    "required": false,
+    "default": "Age",
+    "desc": "Age",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile.HomeCity"
+   ],
+   "multi": false,
+   "desc": "HomeCity",
+   "content": {
+    "required": false,
+    "default": "HomeCity",
+    "desc": "HomeCity",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile.Notes"
+   ],
+   "multi": false,
+   "desc": "Notes",
+   "content": {
+    "required": false,
+    "default": "Notes",
+    "desc": "Notes",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.SurveillanceProfile.CriminalRecord"
+   ],
+   "multi": false,
+   "desc": "CriminalRecord",
+   "content": {
+    "required": false,
+    "default": "CriminalRecord",
+    "desc": "CriminalRecord",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.AgentDetails"
+   ],
+   "multi": true,
+   "desc": "Agent user type",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.AgentDetails.Codename"
+   ],
+   "multi": false,
+   "desc": "Codename",
+   "content": {
+    "required": false,
+    "default": "Name",
+    "desc": "Codename",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.AgentDetails.RealName"
+   ],
+   "multi": false,
+   "desc": "Real name",
+   "content": {
+    "required": false,
+    "default": "Name",
+    "desc": "Real name",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.AgentDetails.IP"
+   ],
+   "multi": false,
+   "desc": "IP address",
+   "content": {
+    "required": false,
+    "default": "ip",
+    "desc": "IP address",
+    "hint": "computerip",
+    "linkBy": "Computer.ip",
+    "diag": "W"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.DatabaseDaemon.AgentDetails.SpecialNotes"
+   ],
+   "multi": false,
+   "desc": "Personal signature",
+   "content": {
+    "required": false,
+    "default": "Personal signature",
+    "desc": "Personal signature",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "ConditionalActions"
+   ],
+   "multi": false,
+   "desc": "Defines a set of conditional actions",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "ConditionalActions.Instantly"
+   ],
+   "multi": true,
+   "desc": "Triggers immediately",
+   "container": true,
+   "attributes": [
+    {
+     "name": "needsMissionComplete",
+     "required": false,
+     "default": "true",
+     "desc": "Only trigger once the current mission is complete",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnConnect"
+   ],
+   "multi": true,
+   "desc": "Triggers when the player connects to a computer",
+   "container": true,
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "computer",
+     "desc": "Computer ID",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "needsMissionComplete",
+     "required": false,
+     "default": "true",
+     "desc": "Only trigger once the current mission is complete",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "flag1,flag2",
+     "desc": "Triggers when all flags are present",
+     "hint": "flags"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnDisconnect"
+   ],
+   "multi": true,
+   "desc": "Triggers when the player disconnects from a computer",
+   "container": true,
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "computer",
+     "desc": "Computer ID",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "enums": [
+      {
+       "value": "NONE",
+       "desc": ""
+      }
+     ],
+     "diag": "E",
+     "ignoreCase": true
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnAdminGained"
+   ],
+   "multi": true,
+   "desc": "Triggers when the player gains admin on a computer",
+   "container": true,
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "computer",
+     "desc": "Computer ID; NONE or empty triggers on any disconnect",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.HasFlags"
+   ],
+   "multi": true,
+   "desc": "Triggers when all flags are present",
+   "container": true,
+   "attributes": [
+    {
+     "name": "requiredFlags",
+     "required": true,
+     "default": "flag1,flag2",
+     "desc": "Triggers when all flags are present",
+     "hint": "flags"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.DoesNotHaveFlags"
+   ],
+   "multi": true,
+   "desc": "Triggers when the flags are NOT present",
+   "container": true,
+   "attributes": [
+    {
+     "name": "Flags",
+     "required": true,
+     "default": "flag1,flag2",
+     "desc": "Triggers when the flags are NOT present",
+     "hint": "flags"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "CustomFaction"
+   ],
+   "multi": false,
+   "desc": "Defines a custom faction",
+   "container": true,
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "IntroFac",
+     "desc": "Custom faction name, e.g. CSEC",
+     "hint": "text"
+    },
+    {
+     "name": "id",
+     "required": true,
+     "default": "introfac",
+     "desc": "Custom faction ID",
+     "hint": "text"
+    },
+    {
+     "name": "playerVal",
+     "required": true,
+     "default": "0",
+     "desc": "Player's starting value in this faction",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "CustomFaction.Action"
+   ],
+   "multi": false,
+   "desc": "A set of actions that runs once a condition is met",
+   "container": true,
+   "attributes": [
+    {
+     "name": "ValueRequired",
+     "required": true,
+     "default": "0",
+     "desc": "Triggers when the player's faction value reaches the threshold",
+     "hint": "text"
+    },
+    {
+     "name": "Flags",
+     "required": false,
+     "default": "decypher",
+     "desc": "Triggers when the flags are present (comma separated)",
+     "hint": "flags"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.LoadMission",
+    "CustomFaction.Action.LoadMission"
+   ],
+   "multi": true,
+   "desc": "Immediately load a mission, replacing the current one",
+   "attributes": [
+    {
+     "name": "MissionName",
+     "required": true,
+     "default": "",
+     "desc": "Mission file path",
+     "hint": "missionfile",
+     "linkBy": "path",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddAsset",
+    "CustomFaction.Action.AddAsset"
+   ],
+   "multi": true,
+   "desc": "Add a file to a target computer",
+   "attributes": [
+    {
+     "name": "FileName",
+     "required": true,
+     "default": "",
+     "desc": "File name",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "FileContents",
+     "required": true,
+     "default": "",
+     "desc": "File contents",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "Target computer",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "TargetFolderpath",
+     "required": true,
+     "default": "",
+     "desc": "Folder (must exist)",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.CopyAsset",
+    "CustomFaction.Action.CopyAsset"
+   ],
+   "multi": true,
+   "desc": "Copy a file to a target computer",
+   "attributes": [
+    {
+     "name": "SourceComp",
+     "required": true,
+     "default": "computer",
+     "desc": "Source computer ID",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "SourceFileName",
+     "required": true,
+     "default": "",
+     "desc": "Source file name",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "SourceFilePath",
+     "required": true,
+     "default": "",
+     "desc": "Source folder",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    },
+    {
+     "name": "DestComp",
+     "required": true,
+     "default": "computer",
+     "desc": "Target computer ID",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "DestFilePath",
+     "required": true,
+     "default": "",
+     "desc": "Destination folder for the copy",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddMissionToHubServer",
+    "CustomFaction.Action.AddMissionToHubServer"
+   ],
+   "multi": true,
+   "desc": "Add a mission to a mission hub",
+   "attributes": [
+    {
+     "name": "MissionFilepath",
+     "required": true,
+     "default": "",
+     "desc": "Mission file path",
+     "hint": "missionfile",
+     "linkBy": "path",
+     "diag": "E"
+    },
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of a computer with a mission hub",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "variableMissionListingServer",
+      "missionHubServer",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "AssignmentTag",
+     "required": true,
+     "default": "",
+     "desc": "Where to load the mission, or who it is assigned to",
+     "hint": "compchild",
+     "diag": "W",
+     "from": "TargetComp",
+     "child": [
+      "agent",
+      "user"
+     ],
+     "childAttr": "name",
+     "extra": [
+      "top"
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RemoveMissionFromHubServer",
+    "CustomFaction.Action.RemoveMissionFromHubServer"
+   ],
+   "multi": true,
+   "desc": "Remove a mission from a mission hub",
+   "attributes": [
+    {
+     "name": "MissionFilepath",
+     "required": true,
+     "default": "",
+     "desc": "Mission file path",
+     "hint": "missionfile",
+     "linkBy": "path",
+     "diag": "E"
+    },
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of a computer with a mission hub",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "variableMissionListingServer",
+      "missionHubServer",
+      "DHSDaemon"
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddThreadToMissionBoard",
+    "CustomFaction.Action.AddThreadToMissionBoard"
+   ],
+   "multi": true,
+   "desc": "Add a thread to a message board",
+   "attributes": [
+    {
+     "name": "ThreadFilepath",
+     "required": true,
+     "default": "",
+     "desc": "Thread file path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "E",
+     "pattern": "**/*.txt"
+    },
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of a computer with a message board",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "messageBoard"
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddIRCMessage",
+    "CustomFaction.Action.AddIRCMessage"
+   ],
+   "multi": true,
+   "desc": "Post a message to an IRC/DHS daemon",
+   "content": {
+    "required": false,
+    "default": "Message content",
+    "desc": "",
+    "hint": "text",
+    "linkByCollection": [
+     {
+      "linkBy": "Computer.ip",
+      "linkByValuePattern": "link#%#.*#%#(\\d+(?:\\.\\d+){3})"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "link#%#.*#%#(.*)"
+     },
+     {
+      "linkBy": "Computer.ip",
+      "linkByValuePattern": "account#%#.*?#%#(\\d+(?:\\.\\d+){3})#%#"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "account#%#.*?#%#(.*?)#%#"
+     }
+    ]
+   },
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of a computer with an IRC daemon",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "W",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "Author",
+     "required": true,
+     "default": "",
+     "desc": "Message author",
+     "hint": "compchild",
+     "diag": "H",
+     "from": "TargetComp",
+     "child": [
+      "user",
+      "agent"
+     ],
+     "childAttr": "name"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.CrashComputer",
+    "CustomFaction.Action.CrashComputer"
+   ],
+   "multi": true,
+   "desc": "Crash a computer (removed from the netmap for ~15 seconds)",
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "Computer to crash",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "CrashSource",
+     "required": true,
+     "default": "computer",
+     "desc": "Computer the crash originates from (leaves a log on the target)",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.DeleteFile",
+    "CustomFaction.Action.DeleteFile"
+   ],
+   "multi": true,
+   "desc": "Delete a file on a computer",
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer holding the file to delete",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "FilePath",
+     "required": true,
+     "default": "",
+     "desc": "Folder of the file to delete",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    },
+    {
+     "name": "FileName",
+     "required": true,
+     "default": "",
+     "desc": "Name of the file to delete",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddConditionalActions",
+    "CustomFaction.Action.AddConditionalActions"
+   ],
+   "multi": true,
+   "desc": "Load a new conditional action set from a file",
+   "attributes": [
+    {
+     "name": "Filepath",
+     "required": true,
+     "default": "",
+     "desc": "Action file path",
+     "hint": "actionfile",
+     "linkBy": "path",
+     "diag": "E"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SaveGame",
+    "CustomFaction.Action.SaveGame"
+   ],
+   "multi": true,
+   "desc": "Save the game",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.LaunchHackScript",
+    "CustomFaction.Action.LaunchHackScript"
+   ],
+   "multi": true,
+   "desc": "Run a hacker script",
+   "attributes": [
+    {
+     "name": "Filepath",
+     "required": true,
+     "default": "",
+     "desc": "Hacker script file path",
+     "hint": "path",
+     "linkBy": "path",
+     "diag": "H",
+     "pattern": "HackerScripts/**/*.txt"
+    },
+    {
+     "name": "SourceComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the attacking computer",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer being attacked",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "RequireLogsOnSource",
+     "required": true,
+     "default": "false",
+     "desc": "Only runs if the source computer has logs of the player deleting, moving or copying files",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": true,
+     "default": "true",
+     "desc": "Does not run if the source computer is missing sys/netcfgx.dll",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SwitchToTheme",
+    "CustomFaction.Action.SwitchToTheme"
+   ],
+   "multi": true,
+   "desc": "Switch theme",
+   "attributes": [
+    {
+     "name": "ThemePathOrName",
+     "required": true,
+     "default": "",
+     "desc": "Built-in theme name or theme file path",
+     "hint": "themefile",
+     "linkBy": "path",
+     "diag": "W",
+     "enums": [
+      {
+       "value": "TerminalOnlyBlack",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetBlue",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetTeal",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetYellow",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetWhite",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetPurple",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HacknetMint",
+       "desc": "Built-in theme"
+      },
+      {
+       "value": "HackerGreen",
+       "desc": "Built-in theme"
+      }
+     ]
+    },
+    {
+     "name": "FlickerInDuration",
+     "required": false,
+     "default": "0.0",
+     "desc": "Flicker duration (seconds)",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.StartScreenBleedEffect",
+    "CustomFaction.Action.StartScreenBleedEffect"
+   ],
+   "multi": true,
+   "desc": "Start the screen bleed effect",
+   "content": {
+    "required": false,
+    "default": "Line one",
+    "desc": "Shows up to three lines of description",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "AlertTitle",
+     "required": true,
+     "default": "",
+     "desc": "Alert title (bottom left)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "TotalDurationSeconds",
+     "required": true,
+     "default": "12.5",
+     "desc": "Effect duration (seconds)",
+     "hint": "text"
+    },
+    {
+     "name": "CompleteAction",
+     "required": false,
+     "default": "",
+     "desc": "Action file run when the effect completes",
+     "hint": "actionfile",
+     "linkBy": "path",
+     "diag": "E"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.CancelScreenBleedEffect",
+    "CustomFaction.Action.CancelScreenBleedEffect"
+   ],
+   "multi": true,
+   "desc": "Cancel the screen bleed effect",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AppendToFile",
+    "CustomFaction.Action.AppendToFile"
+   ],
+   "multi": true,
+   "desc": "Append content to a file",
+   "content": {
+    "required": false,
+    "default": "Content to append",
+    "desc": "Text to append",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer with the file",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "TargetFolderpath",
+     "required": true,
+     "default": "",
+     "desc": "Folder of the file to append to",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "home",
+       "desc": "Home folder"
+      },
+      {
+       "value": "bin",
+       "desc": "Folder where exe files live"
+      },
+      {
+       "value": "log",
+       "desc": "Log folder"
+      },
+      {
+       "value": "sys",
+       "desc": "System folder"
+      }
+     ]
+    },
+    {
+     "name": "TargetFilename",
+     "required": true,
+     "default": "list.txt",
+     "desc": "Name of the file to append to",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.KillExe",
+    "CustomFaction.Action.KillExe"
+   ],
+   "multi": true,
+   "desc": "Kill an exe process",
+   "attributes": [
+    {
+     "name": "ExeName",
+     "required": true,
+     "default": "ssh",
+     "desc": "Substring of the exe name",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.HideNode",
+    "CustomFaction.Action.HideNode"
+   ],
+   "multi": true,
+   "desc": "Hide a node on the netmap",
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer to hide",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.HideAllNodes",
+    "CustomFaction.Action.HideAllNodes"
+   ],
+   "multi": true,
+   "desc": "Hide all visible nodes on the netmap",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ShowNode",
+    "CustomFaction.Action.ShowNode"
+   ],
+   "multi": true,
+   "desc": "Reveal a node on the netmap",
+   "attributes": [
+    {
+     "name": "Target",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer to reveal",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.GivePlayerUserAccount",
+    "CustomFaction.Action.GivePlayerUserAccount"
+   ],
+   "multi": true,
+   "desc": "Reveals an account on a computer so the player can pick it at the login screen",
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer to reveal the account on",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "Username",
+     "required": true,
+     "default": "",
+     "desc": "Username",
+     "hint": "compchild",
+     "diag": "W",
+     "from": "TargetComp",
+     "child": [
+      "account"
+     ],
+     "childAttr": "username"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ChangeIP",
+    "CustomFaction.Action.ChangeIP"
+   ],
+   "multi": true,
+   "desc": "Change a computer's IP",
+   "attributes": [
+    {
+     "name": "TargetComp",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer whose IP changes",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    },
+    {
+     "name": "NewIP",
+     "required": true,
+     "default": "ip",
+     "desc": "New IP address",
+     "hint": "ip"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ChangeAlertIcon",
+    "CustomFaction.Action.ChangeAlertIcon"
+   ],
+   "multi": true,
+   "desc": "Change the alert (mail) icon",
+   "attributes": [
+    {
+     "name": "Target",
+     "required": true,
+     "default": "computer",
+     "desc": "ID of the computer the alert icon opens",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "extra": [
+      "jmail"
+     ]
+    },
+    {
+     "name": "Type",
+     "required": true,
+     "default": "",
+     "desc": "Alert icon type",
+     "hint": "enum",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "mail",
+       "desc": "Mail icon"
+      },
+      {
+       "value": "irc",
+       "desc": "IRC server style"
+      },
+      {
+       "value": "irchub",
+       "desc": "DLC hub style icon"
+      },
+      {
+       "value": "board",
+       "desc": "Message board"
+      }
+     ]
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SetLock",
+    "CustomFaction.Action.SetLock"
+   ],
+   "multi": true,
+   "desc": "Lock or hide a system UI module",
+   "attributes": [
+    {
+     "name": "Module",
+     "required": true,
+     "default": "ram",
+     "desc": "Module name",
+     "hint": "enum",
+     "diag": "W",
+     "enums": [
+      {
+       "value": "terminal",
+       "desc": "Terminal module"
+      },
+      {
+       "value": "netmap",
+       "desc": "Netmap module"
+      },
+      {
+       "value": "ram",
+       "desc": "Memory module"
+      },
+      {
+       "value": "display",
+       "desc": "Display module"
+      }
+     ]
+    },
+    {
+     "name": "IsLocked",
+     "required": true,
+     "default": "true",
+     "desc": "When locked, the module ignores mouse/keyboard input",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "IsHidden",
+     "required": true,
+     "default": "false",
+     "desc": "Hide this module",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ChangeNetmapSortMethod",
+    "CustomFaction.Action.ChangeNetmapSortMethod"
+   ],
+   "multi": true,
+   "desc": "Change the netmap node sort method",
+   "attributes": [
+    {
+     "name": "Method",
+     "required": true,
+     "default": "scatter",
+     "desc": "Sort method",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "scatter",
+       "desc": "Scatter"
+      },
+      {
+       "value": "grid",
+       "desc": "Grid"
+      },
+      {
+       "value": "chaos",
+       "desc": "Glitch effect"
+      },
+      {
+       "value": "scangrid",
+       "desc": "Sequencer"
+      },
+      {
+       "value": "seqgrid",
+       "desc": "Sequencer"
+      },
+      {
+       "value": "sequencegrid",
+       "desc": "Sequencer"
+      },
+      {
+       "value": "sequence grid",
+       "desc": "Sequencer"
+      }
+     ],
+     "diag": "E",
+     "ignoreCase": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RunFunction",
+    "CustomFaction.Action.RunFunction"
+   ],
+   "multi": true,
+   "desc": "Run a built-in function",
+   "attributes": [
+    {
+     "name": "FunctionName",
+     "required": true,
+     "default": "",
+     "desc": "Function name",
+     "hint": "step",
+     "diag": "E",
+     "steps": [
+      {
+       "value": "addRank",
+       "desc": "Add faction rank to the current faction and send an email"
+      },
+      {
+       "value": "addRankSilent",
+       "desc": "Add faction rank to the current faction without an email"
+      },
+      {
+       "value": "addRankFaction:",
+       "desc": "Add rank to a specific faction",
+       "next": {
+        "hint": "faction"
+       }
+      },
+      {
+       "value": "addFlags:",
+       "desc": "Add flags (comma separated)"
+      },
+      {
+       "value": "removeFlags:",
+       "desc": "Remove flags (comma separated)"
+      },
+      {
+       "value": "setFaction:",
+       "desc": "Set the player's current faction",
+       "next": {
+        "hint": "faction"
+       }
+      },
+      {
+       "value": "loadConditionalActions:",
+       "desc": "Load an action file",
+       "next": {
+        "required": false,
+        "default": "",
+        "desc": "",
+        "hint": "actionfile"
+       }
+      },
+      {
+       "value": "changeSong",
+       "desc": "Change song"
+      },
+      {
+       "value": "changeSongDLC",
+       "desc": "Switch to a DLC song"
+      },
+      {
+       "value": "setHubServer:",
+       "desc": "Mark a computer as the hub server (special netmap icon)",
+       "next": {
+        "required": false,
+        "default": "",
+        "desc": "",
+        "hint": "computer"
+       }
+      },
+      {
+       "value": "setAssetServer:",
+       "desc": "Mark a computer as the asset server (special netmap icon)",
+       "next": {
+        "required": false,
+        "default": "",
+        "desc": "",
+        "hint": "computer"
+       }
+      },
+      {
+       "value": "playCustomSong:",
+       "desc": "Play a custom song with a fade (.ogg only)",
+       "next": {
+        "required": false,
+        "default": "",
+        "desc": "",
+        "hint": "path",
+        "pattern": "**/*.ogg"
+       }
+      },
+      {
+       "value": "playCustomSongImmediatley:",
+       "desc": "Play a custom song immediately, no fade (.ogg only)",
+       "next": {
+        "required": false,
+        "default": "",
+        "desc": "",
+        "hint": "path",
+        "pattern": "**/*.ogg"
+       }
+      },
+      {
+       "value": "flashUI",
+       "desc": "Flash the UI border red"
+      }
+     ],
+     "linkByCollection": [
+      {
+       "linkBy": "Faction.id",
+       "linkByValuePattern": "setFaction:(.*)"
+      },
+      {
+       "linkBy": "path",
+       "linkByValuePattern": "loadConditionalActions:(.*)"
+      },
+      {
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "linkByValuePattern": "setHubServer:(.*)"
+      },
+      {
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "linkByValuePattern": "setAssetServer:(.*)"
+      },
+      {
+       "linkBy": "path",
+       "linkByValuePattern": "playCustomSong:(.*)"
+      },
+      {
+       "linkBy": "path",
+       "linkByValuePattern": "playCustomSongImmediatley:(.*)"
+      }
+     ]
+    },
+    {
+     "name": "FunctionValue",
+     "required": true,
+     "default": "",
+     "desc": "Function argument",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "computer",
+     "desc": "ID of a computer with a daemon that can host delayed actions",
+     "hint": "computer",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "0.0",
+     "desc": "Delay (seconds)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission"
+   ],
+   "multi": false,
+   "desc": "Defines a mission",
+   "container": true,
+   "attributes": [
+    {
+     "name": "id",
+     "required": true,
+     "default": "mission1",
+     "desc": "Mission ID",
+     "hint": "text"
+    },
+    {
+     "name": "activeCheck",
+     "required": true,
+     "default": "false",
+     "desc": "Check mission completion every frame",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": "Check for mission completion every frame"
+      },
+      {
+       "value": "false",
+       "desc": "Only checked when replying to an email"
+      }
+     ]
+    },
+    {
+     "name": "shouldIgnoreSenderVerification",
+     "required": true,
+     "default": "false",
+     "desc": "Skip the email sender check",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.goals"
+   ],
+   "multi": false,
+   "desc": "Goals the mission requires",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.goals.goal"
+   ],
+   "multi": true,
+   "desc": "A goal the mission requires",
+   "attributes": [
+    {
+     "name": "type",
+     "required": true,
+     "default": "",
+     "desc": "Goal type",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "filedeletion",
+       "desc": "Delete file"
+      },
+      {
+       "value": "clearfolder",
+       "desc": "Clear a folder"
+      },
+      {
+       "value": "filedownload",
+       "desc": "Download a file"
+      },
+      {
+       "value": "filechange",
+       "desc": "Change file contents"
+      },
+      {
+       "value": "getadmin",
+       "desc": "Get admin on a computer"
+      },
+      {
+       "value": "getstring",
+       "desc": "Reply with a string"
+      },
+      {
+       "value": "delay",
+       "desc": "Mission delay"
+      },
+      {
+       "value": "hasflag",
+       "desc": "Has flag"
+      },
+      {
+       "value": "fileupload",
+       "desc": "File upload"
+      },
+      {
+       "value": "AddDegree",
+       "desc": "Add a degree to the academic database (requires a computer with id 'academic' running academicDatabase)"
+      },
+      {
+       "value": "wipedegrees",
+       "desc": "Remove all degrees from the academic database (requires a computer with id 'academic' running academicDatabase)"
+      },
+      {
+       "value": "sendemail",
+       "desc": "Send an email (e.g. medical record)"
+      },
+      {
+       "value": "getadminpasswordstring",
+       "desc": "Reply with a computer's admin password (DLC)"
+      },
+      {
+       "value": "databaseentrychange",
+       "desc": "Database field modification"
+      },
+      {
+       "value": "removeDeathRowRecord",
+       "desc": "Delete a death row database record (requires a computer with id 'deathRow' running deathRowDatabase)"
+      },
+      {
+       "value": "modifyDeathRowRecord",
+       "desc": "Modify a death row database record (requires a computer with id 'deathRow' running deathRowDatabase); new values go in the tag content, not attributes"
+      }
+     ],
+     "linkByCollection": [
+      {
+       "linkBy": "Computer.id|Computer.name",
+       "linkByValuePattern": "^adddegree|wipedegrees$",
+       "ignoreCaseForMatch": "true",
+       "overrideValue": "academic"
+      },
+      {
+       "linkBy": "Computer.id|Computer.name",
+       "linkByValuePattern": "^removeDeathRowRecord|modifyDeathRowRecord$",
+       "ignoreCaseForMatch": "true",
+       "overrideValue": "deathRow"
+      }
+     ],
+     "diag": "I",
+     "ignoreCase": true
+    }
+   ],
+   "conditions": [
+    {
+     "attr": "type",
+     "match": "^filedeletion$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "ID of the computer holding the file to delete",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "file",
+       "required": true,
+       "default": "file.txt",
+       "desc": "File name",
+       "hint": "text"
+      },
+      {
+       "name": "path",
+       "required": true,
+       "default": "home",
+       "desc": "Folder of the file",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^clearfolder$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "Target computer ID",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "path",
+       "required": true,
+       "default": "home",
+       "desc": "Folder to clear",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^filedownload$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "ID of the computer holding the file to download",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "file",
+       "required": true,
+       "default": "file.txt",
+       "desc": "File name",
+       "hint": "text"
+      },
+      {
+       "name": "path",
+       "required": true,
+       "default": "home",
+       "desc": "Folder of the file",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^filechange$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "ID of the computer holding the file to change",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "file",
+       "required": true,
+       "default": "file.txt",
+       "desc": "File name",
+       "hint": "text"
+      },
+      {
+       "name": "path",
+       "required": true,
+       "default": "home",
+       "desc": "Folder of the file",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      },
+      {
+       "name": "keyword",
+       "required": true,
+       "default": "keyword",
+       "desc": "Keyword (check passes if present)",
+       "hint": "text"
+      },
+      {
+       "name": "removal",
+       "required": true,
+       "default": "false",
+       "desc": "If true, the check passes when the keyword is absent",
+       "hint": "bool",
+       "diag": "E",
+       "enums": [
+        {
+         "value": "true",
+         "desc": ""
+        },
+        {
+         "value": "false",
+         "desc": ""
+        }
+       ]
+      },
+      {
+       "name": "caseSensitive",
+       "required": true,
+       "default": "true",
+       "desc": "Keyword is case sensitive",
+       "hint": "bool",
+       "diag": "E",
+       "enums": [
+        {
+         "value": "true",
+         "desc": ""
+        },
+        {
+         "value": "false",
+         "desc": ""
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^getadmin$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "Target computer ID",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^getstring$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "mail response",
+       "desc": "String the player must reply with",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^delay$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "time",
+       "required": true,
+       "default": "10.0",
+       "desc": "Delay time",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^hasflag$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "flag1",
+       "desc": "Flag name (only one)",
+       "hint": "flags"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^fileupload$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "ID of the computer holding the file to upload",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "file",
+       "required": true,
+       "default": "file.txt",
+       "desc": "Name of the file to upload",
+       "hint": "text"
+      },
+      {
+       "name": "path",
+       "required": true,
+       "default": "home",
+       "desc": "Folder of the file to upload",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      },
+      {
+       "name": "destTarget",
+       "required": true,
+       "default": "",
+       "desc": "ID of the computer receiving the upload",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      },
+      {
+       "name": "destPath",
+       "required": true,
+       "default": "home",
+       "desc": "Destination folder for the upload",
+       "hint": "enum",
+       "enums": [
+        {
+         "value": "home",
+         "desc": "Home folder"
+        },
+        {
+         "value": "bin",
+         "desc": "Folder where exe files live"
+        },
+        {
+         "value": "log",
+         "desc": "Log folder"
+        },
+        {
+         "value": "sys",
+         "desc": "System folder"
+        }
+       ]
+      },
+      {
+       "name": "decrypt",
+       "required": false,
+       "default": "false",
+       "desc": "Whether the uploaded file is encrypted",
+       "hint": "bool",
+       "diag": "E",
+       "enums": [
+        {
+         "value": "true",
+         "desc": ""
+        },
+        {
+         "value": "false",
+         "desc": ""
+        }
+       ]
+      },
+      {
+       "name": "decryptPass",
+       "required": false,
+       "default": "pass",
+       "desc": "Password for the encrypted file",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^AddDegree$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "owner",
+       "required": true,
+       "default": "John Stalvern",
+       "desc": "Student name",
+       "hint": "text"
+      },
+      {
+       "name": "degree",
+       "required": true,
+       "default": "Masters in Digital Security",
+       "desc": "Degree",
+       "hint": "text"
+      },
+      {
+       "name": "uni",
+       "required": true,
+       "default": "Manchester University",
+       "desc": "University",
+       "hint": "text"
+      },
+      {
+       "name": "gpa",
+       "required": true,
+       "default": "3.0",
+       "desc": "GPA",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^wipedegrees$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "owner",
+       "required": true,
+       "default": "John Stalvern",
+       "desc": "Name of the student whose degrees are removed",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^sendemail$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "mailServer",
+       "required": true,
+       "default": "",
+       "desc": "ID of a computer with a mail server",
+       "hint": "computer",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E",
+       "compFilter": [
+        "mailServer"
+       ],
+       "extra": [
+        "jmail"
+       ]
+      },
+      {
+       "name": "recipient",
+       "required": true,
+       "default": "",
+       "desc": "Recipient",
+       "hint": "compchild",
+       "diag": "W",
+       "from": "mailServer",
+       "child": [
+        "account"
+       ],
+       "childAttr": "username"
+      },
+      {
+       "name": "subject",
+       "required": true,
+       "default": "Email Subject",
+       "desc": "Email subject",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^getadminpasswordstring$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "target",
+       "required": true,
+       "default": "",
+       "desc": "Target computer ID",
+       "hint": "computeroreos",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^databaseentrychange$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "comp",
+       "required": true,
+       "default": "",
+       "desc": "ID of a computer with a DatabaseDaemon",
+       "hint": "computer",
+       "linkBy": "Computer.id|Computer.eosDevice.id",
+       "diag": "E",
+       "compFilter": [
+        "DatabaseDaemon"
+       ]
+      },
+      {
+       "name": "operation",
+       "required": true,
+       "default": "",
+       "desc": "Comparison",
+       "hint": "enum",
+       "diag": "E",
+       "enums": [
+        {
+         "value": "greater",
+         "desc": "Field value > targetValue"
+        },
+        {
+         "value": "less",
+         "desc": "Field value < targetValue"
+        },
+        {
+         "value": "=",
+         "desc": "Field value = targetValue"
+        },
+        {
+         "value": "equals",
+         "desc": "Field value = targetValue"
+        }
+       ]
+      },
+      {
+       "name": "recordName",
+       "required": true,
+       "default": "",
+       "desc": "Record name",
+       "hint": "text"
+      },
+      {
+       "name": "fieldName",
+       "required": true,
+       "default": "",
+       "desc": "Name of the field to compare",
+       "hint": "text"
+      },
+      {
+       "name": "targetValue",
+       "required": true,
+       "default": "",
+       "desc": "Target value",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^removeDeathRowRecord$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "name",
+       "required": true,
+       "default": "firstName lastname",
+       "desc": "Name of the person to delete: firstName lastName",
+       "hint": "text"
+      },
+      {
+       "name": "fname",
+       "required": false,
+       "default": "firstName",
+       "desc": "First name of the person to delete",
+       "hint": "text"
+      },
+      {
+       "name": "lname",
+       "required": false,
+       "default": "lastname",
+       "desc": "Last name of the person to delete",
+       "hint": "text"
+      }
+     ]
+    },
+    {
+     "attr": "type",
+     "match": "^modifyDeathRowRecord$",
+     "ignoreCase": true,
+     "attributes": [
+      {
+       "name": "name",
+       "required": true,
+       "default": "firstName lastname",
+       "desc": "Name of the person to modify: firstName lastName",
+       "hint": "text"
+      },
+      {
+       "name": "fname",
+       "required": false,
+       "default": "firstName",
+       "desc": "First name of the person to modify",
+       "hint": "text"
+      },
+      {
+       "name": "lname",
+       "required": false,
+       "default": "lastname",
+       "desc": "Last name of the person to modify",
+       "hint": "text"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.missionStart"
+   ],
+   "multi": false,
+   "desc": "Function run when the mission starts (same as RunFunction)",
+   "content": {
+    "required": false,
+    "default": "loadConditionalActions:",
+    "desc": "Function name (same as RunFunction's FunctionName)",
+    "hint": "step",
+    "diag": "E",
+    "steps": [
+     {
+      "value": "NONE",
+      "desc": "Does nothing"
+     },
+     {
+      "value": "addRank",
+      "desc": "Add faction rank to the current faction and send an email"
+     },
+     {
+      "value": "addRankSilent",
+      "desc": "Add faction rank to the current faction without an email"
+     },
+     {
+      "value": "addRankFaction:",
+      "desc": "Add rank to a specific faction",
+      "next": {
+       "hint": "faction"
+      }
+     },
+     {
+      "value": "addFlags:",
+      "desc": "Add flags (comma separated)"
+     },
+     {
+      "value": "removeFlags:",
+      "desc": "Remove flags (comma separated)"
+     },
+     {
+      "value": "setFaction:",
+      "desc": "Set the player's current faction",
+      "next": {
+       "hint": "faction"
+      }
+     },
+     {
+      "value": "loadConditionalActions:",
+      "desc": "Load an action file",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "actionfile"
+      }
+     },
+     {
+      "value": "changeSong",
+      "desc": "Change song"
+     },
+     {
+      "value": "changeSongDLC",
+      "desc": "Switch to a DLC song"
+     },
+     {
+      "value": "setHubServer:",
+      "desc": "Mark a computer as the hub server (special netmap icon)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "computer"
+      }
+     },
+     {
+      "value": "setAssetServer:",
+      "desc": "Mark a computer as the asset server (special netmap icon)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "computer"
+      }
+     },
+     {
+      "value": "playCustomSong:",
+      "desc": "Play a custom song with a fade (.ogg only)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "path",
+       "pattern": "**/*.ogg"
+      }
+     },
+     {
+      "value": "playCustomSongImmediatley:",
+      "desc": "Play a custom song immediately, no fade (.ogg only)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "path",
+       "pattern": "**/*.ogg"
+      }
+     }
+    ],
+    "linkByCollection": [
+     {
+      "linkBy": "Faction.id",
+      "linkByValuePattern": "setFaction:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "loadConditionalActions:(.*)"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "setHubServer:(.*)"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "setAssetServer:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "playCustomSong:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "playCustomSongImmediatley:(.*)"
+     }
+    ]
+   },
+   "attributes": [
+    {
+     "name": "suppress",
+     "required": false,
+     "default": "true",
+     "desc": "If true, missionStart only runs for missions loaded via nextMission (not loadMission); if false it may run multiple times across save/load",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "val",
+     "required": true,
+     "default": "0",
+     "desc": "Function argument (same as RunFunction's FunctionValue)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.missionEnd"
+   ],
+   "multi": false,
+   "desc": "Function run when the mission ends (same as RunFunction)",
+   "content": {
+    "required": false,
+    "default": "loadConditionalActions:",
+    "desc": "Function name (same as RunFunction's FunctionName)",
+    "hint": "step",
+    "diag": "E",
+    "steps": [
+     {
+      "value": "NONE",
+      "desc": "Does nothing"
+     },
+     {
+      "value": "addRank",
+      "desc": "Add faction rank to the current faction and send an email"
+     },
+     {
+      "value": "addRankSilent",
+      "desc": "Add faction rank to the current faction without an email"
+     },
+     {
+      "value": "addRankFaction:",
+      "desc": "Add rank to a specific faction",
+      "next": {
+       "hint": "faction"
+      }
+     },
+     {
+      "value": "addFlags:",
+      "desc": "Add flags (comma separated)"
+     },
+     {
+      "value": "removeFlags:",
+      "desc": "Remove flags (comma separated)"
+     },
+     {
+      "value": "setFaction:",
+      "desc": "Set the player's current faction",
+      "next": {
+       "hint": "faction"
+      }
+     },
+     {
+      "value": "loadConditionalActions:",
+      "desc": "Load an action file",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "actionfile"
+      }
+     },
+     {
+      "value": "changeSong",
+      "desc": "Change song"
+     },
+     {
+      "value": "changeSongDLC",
+      "desc": "Switch to a DLC song"
+     },
+     {
+      "value": "setHubServer:",
+      "desc": "Mark a computer as the hub server (special netmap icon)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "computer"
+      }
+     },
+     {
+      "value": "setAssetServer:",
+      "desc": "Mark a computer as the asset server (special netmap icon)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "computer"
+      }
+     },
+     {
+      "value": "playCustomSong:",
+      "desc": "Play a custom song with a fade (.ogg only)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "path",
+       "pattern": "**/*.ogg"
+      }
+     },
+     {
+      "value": "playCustomSongImmediatley:",
+      "desc": "Play a custom song immediately, no fade (.ogg only)",
+      "next": {
+       "required": false,
+       "default": "",
+       "desc": "",
+       "hint": "path",
+       "pattern": "**/*.ogg"
+      }
+     }
+    ],
+    "linkByCollection": [
+     {
+      "linkBy": "Faction.id",
+      "linkByValuePattern": "setFaction:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "loadConditionalActions:(.*)"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "setHubServer:(.*)"
+     },
+     {
+      "linkBy": "Computer.id|Computer.eosDevice.id",
+      "linkByValuePattern": "setAssetServer:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "playCustomSong:(.*)"
+     },
+     {
+      "linkBy": "path",
+      "linkByValuePattern": "playCustomSongImmediatley:(.*)"
+     }
+    ]
+   },
+   "attributes": [
+    {
+     "name": "val",
+     "required": true,
+     "default": "0",
+     "desc": "Function argument (same as RunFunction's FunctionValue)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.nextMission"
+   ],
+   "multi": false,
+   "desc": "The mission loaded after this one is completed",
+   "content": {
+    "required": false,
+    "default": "NONE",
+    "desc": "Mission file path",
+    "hint": "missionfile",
+    "linkBy": "path",
+    "diag": "E",
+    "enums": [
+     {
+      "value": "NONE",
+      "desc": "No next mission"
+     }
+    ]
+   },
+   "attributes": [
+    {
+     "name": "IsSilent",
+     "required": true,
+     "default": "false",
+     "desc": "Load this mission silently (no email)",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "true",
+       "desc": "Load mission silently"
+      },
+      {
+       "value": "false",
+       "desc": "Load a mission and send its email"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.branchMissions"
+   ],
+   "multi": false,
+   "desc": "Branch missions; their goals are checked along with this mission",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.branchMissions.branch"
+   ],
+   "multi": true,
+   "desc": "Load a branch mission",
+   "content": {
+    "required": false,
+    "default": "branchMission",
+    "desc": "Mission file path",
+    "hint": "missionfile",
+    "linkBy": "path",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.posting"
+   ],
+   "multi": false,
+   "desc": "How the mission appears on a mission board",
+   "content": {
+    "required": false,
+    "default": "Mission description",
+    "desc": "Mission description",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": [
+    {
+     "name": "title",
+     "required": true,
+     "default": "Mission title",
+     "desc": "Mission title",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "#IMPORTANT# - 任务名称",
+       "desc": "Mission title with a warning-stripe background"
+      }
+     ]
+    },
+    {
+     "name": "reqs",
+     "required": false,
+     "default": "someCustomFlag",
+     "desc": "Flags required before the mission can be accepted (comma separated)",
+     "hint": "flags"
+    },
+    {
+     "name": "requiredRank",
+     "required": false,
+     "default": "1",
+     "desc": "Faction rank required before the mission can be accepted",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.email"
+   ],
+   "multi": false,
+   "desc": "Email sent when the mission loads",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.email.sender"
+   ],
+   "multi": false,
+   "desc": "Email sender",
+   "content": {
+    "required": false,
+    "default": "fengxu",
+    "desc": "Email sender",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.email.subject"
+   ],
+   "multi": false,
+   "desc": "Email subject",
+   "content": {
+    "required": false,
+    "default": "Email subject",
+    "desc": "Email subject",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.email.body"
+   ],
+   "multi": false,
+   "desc": "Email body",
+   "content": {
+    "required": false,
+    "default": "Email body",
+    "desc": "Email body",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.email.attachments"
+   ],
+   "multi": false,
+   "desc": "Email attachments",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "mission.email.attachments.note"
+   ],
+   "multi": true,
+   "desc": "Note attachment",
+   "content": {
+    "required": false,
+    "default": "Note content",
+    "desc": "Note content",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "title",
+     "required": true,
+     "default": "Mission details",
+     "desc": "Note title",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.email.attachments.link"
+   ],
+   "multi": true,
+   "desc": "Attachment that links to a computer on the netmap",
+   "attributes": [
+    {
+     "name": "comp",
+     "required": true,
+     "default": "",
+     "desc": "Computer ID",
+     "hint": "computeroreos",
+     "linkBy": "Computer.id|Computer.eosDevice.id",
+     "diag": "E"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "mission.email.attachments.account"
+   ],
+   "multi": true,
+   "desc": "Attachment that gives the player an account on a computer",
+   "attributes": [
+    {
+     "name": "comp",
+     "required": true,
+     "default": "",
+     "desc": "Computer ID",
+     "hint": "computer",
+     "linkBy": "Computer.id",
+     "diag": "E"
+    },
+    {
+     "name": "user",
+     "required": true,
+     "default": "",
+     "desc": "Username",
+     "hint": "compchild",
+     "diag": "W",
+     "from": "comp",
+     "child": [
+      "account"
+     ],
+     "childAttr": "username"
+    },
+    {
+     "name": "pass",
+     "required": true,
+     "default": "",
+     "desc": "Password for the account",
+     "hint": "compchild",
+     "diag": "W",
+     "from": "comp",
+     "child": [
+      "account"
+     ],
+     "childAttr": "password",
+     "matchAttr": "user",
+     "matchChildAttr": "username"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "CustomTheme"
+   ],
+   "multi": false,
+   "desc": "Defines a custom theme",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.themeLayoutName"
+   ],
+   "multi": false,
+   "desc": "Theme layout type",
+   "content": {
+    "required": false,
+    "default": "mint",
+    "desc": "Layout type",
+    "hint": "enum",
+    "enums": [
+     {
+      "value": "blue",
+      "desc": "Layout: ram | display,netmap | terminal"
+     },
+     {
+      "value": "green",
+      "desc": "Layout: display,netmap | terminal | ram"
+     },
+     {
+      "value": "white",
+      "desc": "Layout: ram | display | terminal,netmap"
+     },
+     {
+      "value": "mint",
+      "desc": "Layout: ram | terminal,netmap | display"
+     },
+     {
+      "value": "GreenCompact",
+      "desc": "Layout: display,netmap | terminal | ram"
+     },
+     {
+      "value": "riptide",
+      "desc": "Layout: netmap,display | terminal | ram"
+     },
+     {
+      "value": "riptide2",
+      "desc": "Layout: display,netmap | terminal | ram"
+     },
+     {
+      "value": "colamaeleon",
+      "desc": "Layout: netmap,display | terminal | ram"
+     },
+     {
+      "value": "purple",
+      "desc": "Layout: ram | display,netmap | terminal"
+     },
+     {
+      "value": "yellow",
+      "desc": "Layout: ram | display,netmap | terminal"
+     },
+     {
+      "value": "space",
+      "desc": "Layout: ram | display,netmap | terminal"
+     },
+     {
+      "value": "miamiLight",
+      "desc": "Layout: ram | display,netmap | terminal"
+     }
+    ],
+    "diag": "W",
+    "ignoreCase": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.backgroundImagePath"
+   ],
+   "multi": false,
+   "desc": "Background image path",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Background image path (ideally at least 1920x1080)",
+    "hint": "path",
+    "linkBy": "path",
+    "diag": "E",
+    "pattern": "**/*.{jpg,png}"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.UseAspectPreserveBackgroundScaling"
+   ],
+   "multi": false,
+   "desc": "Stretch the background image to fit the screen",
+   "content": {
+    "required": false,
+    "default": "false",
+    "desc": "Stretch the background image to fit the screen",
+    "hint": "bool",
+    "diag": "E",
+    "enums": [
+     {
+      "value": "false",
+      "desc": "No"
+     },
+     {
+      "value": "true",
+      "desc": "Yes"
+     }
+    ]
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.BackgroundImageFillColor"
+   ],
+   "multi": false,
+   "desc": "Fill color around a non-stretched background",
+   "content": {
+    "required": false,
+    "default": "0,0,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.defaultHighlightColor"
+   ],
+   "multi": false,
+   "desc": "Highlight color; also used for the 'you are admin' marker on netmap nodes and button edges",
+   "content": {
+    "required": false,
+    "default": "255,41,63",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.defaultTopBarColor"
+   ],
+   "multi": false,
+   "desc": "Top bar background color",
+   "content": {
+    "required": false,
+    "default": "74,7,14,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.moduleColorSolidDefault"
+   ],
+   "multi": false,
+   "desc": "Window border color",
+   "content": {
+    "required": false,
+    "default": "0,204,132",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.moduleColorStrong"
+   ],
+   "multi": false,
+   "desc": "Window top bar color",
+   "content": {
+    "required": false,
+    "default": "14,40,25,80",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.moduleColorBacking"
+   ],
+   "multi": false,
+   "desc": "moduleColorBacking",
+   "content": {
+    "required": false,
+    "default": "5,7,6,10",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.exeModuleTopBar"
+   ],
+   "multi": false,
+   "desc": "Exe title bar background color",
+   "content": {
+    "required": false,
+    "default": "130,65,27,80",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.exeModuleTitleText"
+   ],
+   "multi": false,
+   "desc": "Exe title bar text color",
+   "content": {
+    "required": false,
+    "default": "155,85,37,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.warningColor"
+   ],
+   "multi": false,
+   "desc": "Color flashed by some elements during traces and 'red line' events (e.g. ETAS)",
+   "content": {
+    "required": false,
+    "default": "255,0,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.subtleTextColor"
+   ],
+   "multi": false,
+   "desc": "Login button color (or the three buttons below a daemon)",
+   "content": {
+    "required": false,
+    "default": "90,90,90",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.darkBackgroundColor"
+   ],
+   "multi": false,
+   "desc": "Search box background / mail button color",
+   "content": {
+    "required": false,
+    "default": "8,8,8",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.indentBackgroundColor"
+   ],
+   "multi": false,
+   "desc": "RAM usage / login module background color",
+   "content": {
+    "required": false,
+    "default": "12,12,12",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.outlineColor"
+   ],
+   "multi": false,
+   "desc": "Color of links between nodes",
+   "content": {
+    "required": false,
+    "default": "68,68,68",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.lockedColor"
+   ],
+   "multi": false,
+   "desc": "Disconnect/cancel button color, locked port color",
+   "content": {
+    "required": false,
+    "default": "65,16,16,200",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.brightLockedColor"
+   ],
+   "multi": false,
+   "desc": "Background color for uncrackable ports",
+   "content": {
+    "required": false,
+    "default": "160,0,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.brightUnlockedColor"
+   ],
+   "multi": false,
+   "desc": "SSHCrack grid transition color, 'success' text after login, etc.",
+   "content": {
+    "required": false,
+    "default": "0,160,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.unlockedColor"
+   ],
+   "multi": false,
+   "desc": "Unlocked port color",
+   "content": {
+    "required": false,
+    "default": "39,65,36",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.lightGray"
+   ],
+   "multi": false,
+   "desc": "Used by MessageBoard",
+   "content": {
+    "required": false,
+    "default": "180,180,180",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.shellColor"
+   ],
+   "multi": false,
+   "desc": "Overloaded node color (RAM), color of shells running, and proxy/firewall detected text in probe/nmap",
+   "content": {
+    "required": false,
+    "default": "222,201,24",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.shellButtonColor"
+   ],
+   "multi": false,
+   "desc": "Shell overload button edge color (may not be visible if the button is narrow)",
+   "content": {
+    "required": false,
+    "default": "105,167,188",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.semiTransText"
+   ],
+   "multi": false,
+   "desc": "Module title bar text color",
+   "content": {
+    "required": false,
+    "default": "120,120,120,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.terminalTextColor"
+   ],
+   "multi": false,
+   "desc": "Terminal text color",
+   "content": {
+    "required": false,
+    "default": "213,245,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.topBarTextColor"
+   ],
+   "multi": false,
+   "desc": "Top bar text color",
+   "content": {
+    "required": false,
+    "default": "126,126,126,100",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.superLightWhite"
+   ],
+   "multi": false,
+   "desc": "Diagonal stripe color on the port cracking screen",
+   "content": {
+    "required": false,
+    "default": "2,2,2,30",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.connectedNodeHighlight"
+   ],
+   "multi": false,
+   "desc": "Connected node color",
+   "content": {
+    "required": false,
+    "default": "222,0,0,195",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.netmapToolTipColor"
+   ],
+   "multi": false,
+   "desc": "Netmap tooltip text color",
+   "content": {
+    "required": false,
+    "default": "213,245,255,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.netmapToolTipBackground"
+   ],
+   "multi": false,
+   "desc": "Netmap tooltip background",
+   "content": {
+    "required": false,
+    "default": "0,0,0,70",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.topBarIconsColor"
+   ],
+   "multi": false,
+   "desc": "Top bar icon color",
+   "content": {
+    "required": false,
+    "default": "255,255,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.thisComputerNode"
+   ],
+   "multi": false,
+   "desc": "Color of the player's own computer node",
+   "content": {
+    "required": false,
+    "default": "95,220,83",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.scanlinesColor"
+   ],
+   "multi": false,
+   "desc": "Scan line color",
+   "content": {
+    "required": false,
+    "default": "255,255,255,15",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.AFX_KeyboardMiddle"
+   ],
+   "multi": false,
+   "desc": "Alienware keyboard RGB (key lighting)",
+   "content": {
+    "required": false,
+    "default": "0,120,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.AFX_KeyboardOuter"
+   ],
+   "multi": false,
+   "desc": "Alienware keyboard RGB (outer lighting)",
+   "content": {
+    "required": false,
+    "default": "255,150,0",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.AFX_WordLogo"
+   ],
+   "multi": false,
+   "desc": "Alienware text/logo RGB lighting",
+   "content": {
+    "required": false,
+    "default": "0,120,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "CustomTheme.AFX_Other"
+   ],
+   "multi": false,
+   "desc": "RGB lighting for other elements",
+   "content": {
+    "required": false,
+    "default": "0,100,255",
+    "desc": "",
+    "hint": "color",
+    "diag": "E"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person"
+   ],
+   "multi": false,
+   "desc": "Defines a person, used by the academic/medical databases etc.",
+   "filePattern": "People/**/*.xml",
+   "container": true,
+   "attributes": [
+    {
+     "name": "id",
+     "required": true,
+     "default": "personID",
+     "desc": "id",
+     "hint": "text"
+    },
+    {
+     "name": "handle",
+     "required": true,
+     "default": "tester",
+     "desc": "This person's username on PointClicker, Neopals etc.",
+     "hint": "text"
+    },
+    {
+     "name": "firstName",
+     "required": true,
+     "default": "Joe",
+     "desc": "Person's first name",
+     "hint": "text"
+    },
+    {
+     "name": "lastName",
+     "required": true,
+     "default": "Citizen",
+     "desc": "Person's last name",
+     "hint": "text"
+    },
+    {
+     "name": "isMale",
+     "required": true,
+     "default": "true",
+     "desc": "Is male",
+     "hint": "bool",
+     "diag": "E",
+     "enums": [
+      {
+       "value": "false",
+       "desc": "Male"
+      },
+      {
+       "value": "true",
+       "desc": "Female"
+      }
+     ]
+    },
+    {
+     "name": "forceHasNeopals",
+     "required": true,
+     "default": "true",
+     "desc": "Generate a new account (otherwise random)",
+     "hint": "bool",
+     "diag": "W",
+     "enums": [
+      {
+       "value": "false",
+       "desc": "Generate new account"
+      },
+      {
+       "value": "true",
+       "desc": "Random"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Person.Birthplace"
+   ],
+   "multi": false,
+   "desc": "Birthplace",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "Califonia",
+     "desc": "Birthplace",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Person.Degrees"
+   ],
+   "multi": false,
+   "desc": "Degrees",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Degrees.Degree"
+   ],
+   "multi": true,
+   "desc": "A degree",
+   "content": {
+    "required": false,
+    "default": "Bachelor of Software Engineering",
+    "desc": "Degree",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "uni",
+     "required": true,
+     "default": "University of California",
+     "desc": "University name",
+     "hint": "text"
+    },
+    {
+     "name": "gpa",
+     "required": true,
+     "default": "3.2",
+     "desc": "GPA",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Person.Medical"
+   ],
+   "multi": false,
+   "desc": "Medical record data for this person",
+   "container": true,
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Medical.Blood"
+   ],
+   "multi": false,
+   "desc": "Blood type",
+   "content": {
+    "required": false,
+    "default": "AA",
+    "desc": "Blood type",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Medical.Height"
+   ],
+   "multi": false,
+   "desc": "Height",
+   "content": {
+    "required": false,
+    "default": "178",
+    "desc": "Height",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Medical.Allergies"
+   ],
+   "multi": false,
+   "desc": "Allergies",
+   "content": {
+    "required": false,
+    "default": "Allergies",
+    "desc": "Allergies",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Medical.Perscription"
+   ],
+   "multi": true,
+   "desc": "Prescription",
+   "content": {
+    "required": false,
+    "default": "Prescription: amoxicillin once an hour",
+    "desc": "Prescription",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Medical.Notes"
+   ],
+   "multi": false,
+   "desc": "Medical notes",
+   "content": {
+    "required": false,
+    "default": "Note",
+    "desc": "Note",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.DOB"
+   ],
+   "multi": false,
+   "desc": "Date of birth",
+   "content": {
+    "required": false,
+    "default": "17/02/1990 09:00:00",
+    "desc": "Date of birth",
+    "hint": "text"
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Person.Notes"
+   ],
+   "multi": false,
+   "desc": "For your own reference; not used in game",
+   "content": {
+    "required": false,
+    "default": "For your own reference; not used in game",
+    "desc": "For your own reference; not used in game",
+    "hint": "text"
+   },
+   "attributes": []
+  }
+ ],
+ "wildcards": [
+  {
+   "value": "#BINARY#",
+   "desc": "Random long binary text"
+  },
+  {
+   "value": "#BINARYSMALL#",
+   "desc": "Random short binary text"
+  },
+  {
+   "value": "#PLAYERNAME#",
+   "desc": "Player name"
+  },
+  {
+   "value": "#PLAYER_IP#",
+   "desc": "Player computer IP"
+  },
+  {
+   "value": "#PLAYER_ACCOUNT_PASSWORD#",
+   "desc": "Player account password"
+  },
+  {
+   "value": "#RANDOM_IP#",
+   "desc": "A random IP"
+  },
+  {
+   "value": "#SSH_CRACK#",
+   "desc": "SSHCrack.exe contents"
+  },
+  {
+   "value": "#FTP_CRACK#",
+   "desc": "FTPBounce.exe contents"
+  },
+  {
+   "value": "#WEB_CRACK#",
+   "desc": "WebServerWorm.exe contents"
+  },
+  {
+   "value": "#DECYPHER_PROGRAM#",
+   "desc": "Decypher.exe contents"
+  },
+  {
+   "value": "#DECHEAD_PROGRAM#",
+   "desc": "DECHead.exe contents"
+  },
+  {
+   "value": "#CLOCK_PROGRAM#",
+   "desc": "Clock.exe contents"
+  },
+  {
+   "value": "#MEDICAL_PROGRAM#",
+   "desc": "KBTPortTest.exe contents"
+  },
+  {
+   "value": "#SMTP_CRACK#",
+   "desc": "SMTPOverflow.exe contents"
+  },
+  {
+   "value": "#SQL_CRACK#",
+   "desc": "SQLBufferOverflow.exe contents"
+  },
+  {
+   "value": "#SECURITYTRACER_PROGRAM#",
+   "desc": "SecurityTracer.exe contents"
+  },
+  {
+   "value": "#HACKNET_EXE#",
+   "desc": ""
+  },
+  {
+   "value": "#HEXCLOCK_EXE#",
+   "desc": "HexClock.exe contents"
+  },
+  {
+   "value": "#SEQUENCER_EXE#",
+   "desc": "Sequence.exe contents"
+  },
+  {
+   "value": "#THEMECHANGER_EXE#",
+   "desc": "ThemeChanger.exe contents"
+  },
+  {
+   "value": "#EOS_SCANNER_EXE#",
+   "desc": "eosDeviceScan.exe contents"
+  },
+  {
+   "value": "#TRACEKILL_EXE#",
+   "desc": "Tracekill.exe contents"
+  },
+  {
+   "value": "#GREEN_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#WHITE_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#YELLOW_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#TEAL_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#BASE_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#PURPLE_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#MINT_THEME#",
+   "desc": "A theme"
+  },
+  {
+   "value": "#PACEMAKER_FW_WORKING#",
+   "desc": "KBT_Firmware_v1.2.dll and LiveFirmware.dll contents"
+  },
+  {
+   "value": "#PACEMAKER_FW_DANGER#",
+   "desc": "PacemakerFirmware_Cycle_Test.dll contents"
+  },
+  {
+   "value": "#RTSP_EXE#",
+   "desc": "RTSPCrack.exe contents"
+  },
+  {
+   "value": "#EXT_SEQUENCER_EXE#",
+   "desc": "ESequencer.exe contents"
+  },
+  {
+   "value": "#SHELL_OPENER_EXE#",
+   "desc": "OpShell.exe contents"
+  },
+  {
+   "value": "#FTP_FAST_EXE#",
+   "desc": "FTPSprint.exe contents"
+  },
+  {
+   "value": "#EXTENSION_FOLDER_PATH#",
+   "desc": "Currently active extension folder"
+  },
+  {
+   "value": "#TORRENT_EXE#",
+   "desc": "TorrentStreamInjector.exe contents (DLC)"
+  },
+  {
+   "value": "#SSL_EXE#",
+   "desc": "SSLTrojan.exe contents (DLC)"
+  },
+  {
+   "value": "#KAGUYA_EXE#",
+   "desc": "DLC exe for extensions"
+  },
+  {
+   "value": "#SIGNAL_SCRAMBLER_EXE#",
+   "desc": "SignalScramble.exe contents (DLC)"
+  },
+  {
+   "value": "#MEM_FORENSICS_EXE#",
+   "desc": "MemForensics.exe contents (DLC)"
+  },
+  {
+   "value": "#MEM_DUMP_GENERATOR#",
+   "desc": "MemDumpGenerator.exe contents (DLC)"
+  },
+  {
+   "value": "#PACIFIC_EXE#",
+   "desc": "PacificPortcrusher.exe contents (DLC)"
+  },
+  {
+   "value": "#NETMAP_ORGANIZER_EXE#",
+   "desc": "NetmapOrganizer.exe contents (DLC)"
+  },
+  {
+   "value": "#SHELL_CONTROLLER_EXE#",
+   "desc": "ComShell.exe contents (DLC)"
+  },
+  {
+   "value": "#NOTES_DUMPER_EXE#",
+   "desc": "DNotes.exe contents (DLC)"
+  },
+  {
+   "value": "#CLOCK_V2_EXE#",
+   "desc": "Clockv2.exe contents (DLC)"
+  },
+  {
+   "value": "#DLC_MUSIC_EXE#",
+   "desc": "Tuneswap.exe contents (DLC)"
+  }
+ ],
+ "commonText": [
+  {
+   "value": "SSHCrack.exe",
+   "desc": ""
+  },
+  {
+   "value": "FTPBounce.exe",
+   "desc": ""
+  },
+  {
+   "value": "WebServerWorm.exe",
+   "desc": ""
+  },
+  {
+   "value": "Decypher.exe",
+   "desc": ""
+  },
+  {
+   "value": "Clock.exe",
+   "desc": ""
+  },
+  {
+   "value": "KBTPortTest.exe",
+   "desc": ""
+  },
+  {
+   "value": "SMTPOverflow.exe",
+   "desc": ""
+  },
+  {
+   "value": "SQLBufferOverflow.exe",
+   "desc": ""
+  },
+  {
+   "value": "SecurityTracer.exe",
+   "desc": ""
+  },
+  {
+   "value": "HexClock.exe",
+   "desc": ""
+  },
+  {
+   "value": "Sequence.exe",
+   "desc": ""
+  },
+  {
+   "value": "ThemeChanger.exe",
+   "desc": ""
+  },
+  {
+   "value": "eosDeviceScan.exe",
+   "desc": ""
+  },
+  {
+   "value": "Tracekill.exe",
+   "desc": ""
+  },
+  {
+   "value": "RTSPCrack.exe",
+   "desc": ""
+  },
+  {
+   "value": "ESequencer.exe",
+   "desc": ""
+  },
+  {
+   "value": "OpShell.exe",
+   "desc": ""
+  },
+  {
+   "value": "FTPSprint.exe",
+   "desc": ""
+  },
+  {
+   "value": "TorrentStreamInjector.exe",
+   "desc": ""
+  },
+  {
+   "value": "SSLTrojan.exe",
+   "desc": ""
+  },
+  {
+   "value": "SignalScramble.exe",
+   "desc": ""
+  },
+  {
+   "value": "MemForensics.exe",
+   "desc": ""
+  },
+  {
+   "value": "MemDumpGenerator.exe",
+   "desc": ""
+  },
+  {
+   "value": "PacificPortcrusher.exe",
+   "desc": ""
+  },
+  {
+   "value": "NetmapOrganizer.exe",
+   "desc": ""
+  },
+  {
+   "value": "ComShell.exe",
+   "desc": ""
+  },
+  {
+   "value": "DNotes.exe",
+   "desc": ""
+  },
+  {
+   "value": "Clockv2.exe",
+   "desc": ""
+  },
+  {
+   "value": "Tuneswap.exe",
+   "desc": ""
+  }
+ ],
+ "hackerScript": [
+  {
+   "label": "config",
+   "value": "config ${1:TARGET_COMP} ${2:SOURCE_COMP} 0.2 $#%#$",
+   "desc": "Script config",
+   "doc": "config [TARGET_COMP] [SOURCE_COMP] <delay between lines, e.g. 0.2> $#%#$ (do not change)"
+  },
+  {
+   "label": "connect",
+   "value": "connect $#%#$",
+   "desc": "Connect from the source to the target computer",
+   "doc": ""
+  },
+  {
+   "label": "delay",
+   "value": "delay ${1:2} $#%#$",
+   "desc": "Wait",
+   "doc": ""
+  },
+  {
+   "label": "openPort",
+   "value": "openPort ${1:21} $#%#$",
+   "desc": "Open a port on the target",
+   "doc": ""
+  },
+  {
+   "label": "stopMusic",
+   "value": "stopMusic $#%#$",
+   "desc": "Stop music if the player is the target",
+   "doc": ""
+  },
+  {
+   "label": "startMusic",
+   "value": "startMusic $#%#$",
+   "desc": "Start music if the player is the target",
+   "doc": ""
+  },
+  {
+   "label": "clearTerminal",
+   "value": "clearTerminal $#%#$",
+   "desc": "Clear the player's terminal if they are the target",
+   "doc": ""
+  },
+  {
+   "label": "write",
+   "value": "write ${1:文本内容(不换行)} $#%#$",
+   "desc": "Write to the terminal on the same line",
+   "doc": ""
+  },
+  {
+   "label": "write_silent",
+   "value": "write_silent ${1:写的东西不会有声音与闪烁} $#%#$",
+   "desc": "Write text without sounds or flashes",
+   "doc": ""
+  },
+  {
+   "label": "writel",
+   "value": "writel ${1:文本内容} $#%#$",
+   "desc": "Write a line to the terminal",
+   "doc": ""
+  },
+  {
+   "label": "writel_silent",
+   "value": "writel ${1:写的东西不会有声音与闪烁} $#%#$",
+   "desc": "Write a line without sounds or flashes",
+   "doc": ""
+  },
+  {
+   "label": "hideNetMap",
+   "value": "hideNetMap $#%#$",
+   "desc": "Hide the netmap module",
+   "doc": ""
+  },
+  {
+   "label": "hideRam",
+   "value": "hideRam $#%#$",
+   "desc": "Hide the RAM module",
+   "doc": ""
+  },
+  {
+   "label": "hideDisplay",
+   "value": "hideDisplay $#%#$",
+   "desc": "Hide the display module",
+   "doc": ""
+  },
+  {
+   "label": "hideTerminal",
+   "value": "hideTerminal $#%#$",
+   "desc": "Hide the terminal module",
+   "doc": ""
+  },
+  {
+   "label": "showNetMap",
+   "value": "showNetMap $#%#$",
+   "desc": "Show the netmap module",
+   "doc": ""
+  },
+  {
+   "label": "showRam",
+   "value": "showRam $#%#$",
+   "desc": "Show the RAM module",
+   "doc": ""
+  },
+  {
+   "label": "showDisplay",
+   "value": "showDisplay $#%#$",
+   "desc": "Show the display module",
+   "doc": ""
+  },
+  {
+   "label": "showTerminal",
+   "value": "showTerminal $#%#$",
+   "desc": "Show the terminal module",
+   "doc": ""
+  },
+  {
+   "label": "trackseq",
+   "value": "trackseq $#%#$",
+   "desc": "If the player is in CSEC, they must do the ETAS if they fail the next forkbomb",
+   "doc": ""
+  },
+  {
+   "label": "instanttrace",
+   "value": "instanttrace $#%#$",
+   "desc": "Immediately start the ETAS for the player",
+   "doc": ""
+  },
+  {
+   "label": "forkbomb",
+   "value": "forkbomb $#%#$",
+   "desc": "Forkbomb the target; non-player computers crash instantly",
+   "doc": ""
+  },
+  {
+   "label": "flash",
+   "value": "flash $#%#$",
+   "desc": "If targeting the player, flashes the UI dramatically",
+   "doc": ""
+  },
+  {
+   "label": "delete",
+   "value": "delete ${1:/sys} ${2:x-server.sys} $#%#$",
+   "desc": "Delete a file. You can name a file, or use * for every file in the folder",
+   "doc": ""
+  },
+  {
+   "label": "setAdminPass",
+   "value": "setAdminPass ${1:newpass} $#%#$",
+   "desc": "Set this computer's admin password to the given value",
+   "doc": ""
+  },
+  {
+   "label": "makeFile",
+   "value": "makeFile ${1:home} ${2:Filename.txt} ${3:文件内容可以包含#xxx#} $#%#$",
+   "desc": "Create a file named Filename.txt with the given contents in the folder given as the first argument",
+   "doc": ""
+  },
+  {
+   "label": "openCDTray",
+   "value": "openCDTray $#%#$",
+   "desc": "Open the CD tray",
+   "doc": ""
+  },
+  {
+   "label": "closeCDTray",
+   "value": "closeCDTray $#%#$",
+   "desc": "Close the CD tray",
+   "doc": ""
+  },
+  {
+   "label": "disconnect",
+   "value": "closeCDTray $#%#$",
+   "desc": "Disconnect",
+   "doc": ""
+  },
+  {
+   "label": "reboot",
+   "value": "reboot $#%#$",
+   "desc": "Reboot the computer",
+   "doc": ""
+  },
+  {
+   "label": "systakeover",
+   "value": "systakeover $#%#$",
+   "desc": "VM-level attack: shake, bluescreen, reboot, black screen (use carefully)",
+   "doc": ""
+  }
+ ]
+}
