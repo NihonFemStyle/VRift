@@ -1,8 +1,8 @@
 # Builds VRift for Windows, Linux and macOS and publishes a GitHub release whenever the
-# VERSION file changes on main. The release is tagged v<VERSION> (for example v1.0.0) and
+# VERSION file changes on main. The release is tagged v<VERSION> (for example v1.0.1) and
 # contains one zip per platform with the ready-to-run program (no installers).
 #
-# To release: edit VERSION (e.g. 1.0.0 -> 1.1.0), run `npm run version:sync`, commit, push.
+# To release: edit VERSION (e.g. 1.0.1 -> 1.1.0), run `npm run version:sync`, commit, push.
 # You can also start it by hand from the Actions tab ("Run workflow").
 name: release
 

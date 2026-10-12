@@ -71,15 +71,17 @@ npm run app:portable # build just VRift.exe (no installer)
 
 The same commands work. On Linux, install the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/#linux) first (`libwebkit2gtk-4.1-dev` and friends).
 
+On Wayland, WebKitGTK can crash at startup with `Error 71 (Protocol error) dispatching to Wayland display` or show a blank window, mostly on NVIDIA. VRift sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` and `__NV_DISABLE_EXPLICIT_SYNC=1` itself, unless you have already set them. If the problem persists, launch with `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./vrift`, or force XWayland with `GDK_BACKEND=x11 ./vrift`.
+
 ### Wine / Proton
 
 Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which works poorly under Wine. On Linux (including the Steam Deck in desktop mode), build the native Linux version instead: it reads and writes the same extension folders. The code doesn't depend on Windows paths, so a project made on one OS opens on the other.
 
 ## Releasing
 
-The version lives in the [`VERSION`](VERSION) file (currently `1.0.0`). GitHub Actions does the rest:
+The version lives in the [`VERSION`](VERSION) file (currently `1.0.1`). GitHub Actions does the rest:
 
-1. Change `VERSION` (for example `1.0.0` → `1.1.0`, plain `X.Y.Z` only).
+1. Change `VERSION` (for example `1.0.1` → `1.1.0`, plain `X.Y.Z` only).
 2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Commit and push to `main`.
 
