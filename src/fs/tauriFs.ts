@@ -47,8 +47,8 @@ export class TauriFs implements ProjectFs {
   }
 }
 
-export async function pickFolder(title: string): Promise<string | null> {
+export async function pickFolder(title: string, defaultPath?: string): Promise<string | null> {
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const res = await open({ directory: true, multiple: false, title });
+  const res = await open({ directory: true, multiple: false, title, defaultPath });
   return typeof res === "string" ? res : null;
 }

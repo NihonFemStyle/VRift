@@ -1034,7 +1034,10 @@ button {
   place-items: center;
 }
 .welcome-inner {
-  width: min(760px, 92vw);
+  width: min(1180px, 94vw);
+  height: min(860px, 92vh);
+  display: flex;
+  flex-direction: column;
 }
 .logo-title {
   font-family: var(--font-ui);
@@ -1056,8 +1059,10 @@ button {
 }
 .welcome-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 18px;
+  flex: 1;
+  min-height: 0;
 }
 .menu-stack {
   display: flex;
@@ -1071,6 +1076,121 @@ button {
 .recent {
   border: 1px solid var(--module);
   background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* extension library */
+.library {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.lib-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  border-bottom: 1px solid rgba(var(--module-rgb), 0.6);
+}
+.lib-toolbar .hn-input {
+  flex: 1;
+}
+.lib-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-ui);
+  color: var(--subtle);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lib-check input {
+  accent-color: var(--hl);
+}
+.lib-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.lib-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--subtle);
+  font-size: 11.5px;
+}
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 4px;
+  padding: 4px;
+}
+.lib-card {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px;
+  background: rgba(var(--module-rgb), 0.18);
+  border-left: 2px solid rgba(var(--module-rgb), 0.9);
+  cursor: default;
+}
+.lib-card:hover {
+  background: rgba(var(--hl-rgb), 0.14);
+  border-left-color: var(--hl);
+}
+.lib-logo {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(var(--module-rgb), 0.8);
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-size: 22px;
+  color: var(--hl);
+}
+.lib-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.lib-info {
+  min-width: 0;
+}
+.lib-name {
+  color: white;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-desc {
+  color: var(--term);
+  opacity: 0.75;
+  font-size: 11.5px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lib-meta {
+  color: var(--subtle);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.lib-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .recent .module-head {
   height: 20px;
@@ -1094,7 +1214,8 @@ button {
   white-space: nowrap;
 }
 .boot-log {
-  margin-top: 22px;
+  margin-top: 14px;
+  flex: none;
   color: var(--subtle);
   font-size: 12px;
   line-height: 1.6;

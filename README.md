@@ -30,6 +30,7 @@ Writing a Hacknet extension by hand means juggling hundreds of XML files that al
 - **Hacker script editor** with syntax highlighting and a clickable command reference.
 - **Theme editor** with colour pickers, Hacknet's premultiplied-alpha handling and a mini desktop preview.
 - **Terminal.** Commands: `open <id>`, `refs <id>`, `find <text>`, `flags`, `nodes`, `theme <name>`, `validate`.
+- **Extension library** on the start screen. VRift finds Steam (including extra Steam library drives), then lists every extension in Hacknet's `Extensions` folder and in your Workshop downloads. You can also add your own folders, which are remembered. It has search and logos. **Make copy** turns a Workshop download into an editable copy in your Extensions folder, so Steam updates can't overwrite your work.
 - **Quick open** (Ctrl+P), per-file undo/redo, unsaved-change protection, and a recent-folders list.
 - **Pathfinder-friendly.** Unknown tags and attributes can still be edited. Add a `VRift.schema.json` to your extension to teach VRift about tags from your mods (see [docs/custom-schema.md](docs/custom-schema.md)).
 
@@ -76,7 +77,8 @@ Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which w
 ## Tests
 
 ```powershell
-npm test
+npm test                                  # editor core (XML round-trip, index, validator)
+cd src-tauri; cargo test --lib library    # Steam detection + extension scanning
 ```
 
 To run the round-trip and validation tests against a real extension:

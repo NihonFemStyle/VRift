@@ -5,6 +5,7 @@ import { Diagnostic, summarize, validateProject } from "./core/validate";
 import { basename, isTauri, joinPath, normalizeRel } from "./fs/fs";
 import { MemoryFs } from "./fs/memoryFs";
 import { pickFolder, TauriFs } from "./fs/tauriFs";
+import { detectSteamSources } from "./fs/library";
 import { demoExtensionFiles } from "./templates/demo";
 import { FileKind, NEW_FILE_TEMPLATES, newExtensionFiles } from "./templates/templates";
 import { AppApi, AppContext, NavTarget, PromptOptions, useProjectVersion } from "./ui/context";
@@ -240,7 +241,13 @@ export default function App() {
     if (!name) return;
     const files = newExtensionFiles(name.trim());
     if (isTauri()) {
-      const parent = await pickFolder("Choose where to create the extension (usually Hacknet/Extensions)");
+      let gameDir: string | undefined;
+      try {
+        gameDir = (await detectSteamSources()).find((x) => x.kind === "game")?.path;
+      } catch {
+        /* Steam not found */
+      }
+      const parent = await pickFolder("Choose where to create the extension (usually Hacknet/Extensions)", gameDir);
       if (!parent) return;
       const dir = joinPath(parent, name.trim().replace(/\s+/g, "_"));
       const fs = new TauriFs(dir);
@@ -361,6 +368,7 @@ export default function App() {
     file: [
       { label: "New extension…", run: newExtension },
       { label: isTauri() ? "Open extension folder…" : "Open example extension", run: isTauri() ? openFolder : openDemo },
+      { label: "Extension library…", run: closeProject },
       { label: "", sep: true },
       { label: "Save", key: "Ctrl+S", run: () => active && project?.save(active), disabled: !active },
       { label: "Save all", key: "Ctrl+Shift+S", run: saveAll, disabled: !project },
@@ -443,7 +451,17 @@ export default function App() {
         </div>
 
         {!project || !api ? (
-          <Welcome onOpenFolder={openFolder} onNewExtension={newExtension} onOpenRecent={openRecent} onOpenDemo={openDemo} onBrowserFolder={openBrowserFolder} />
+          <Welcome
+            onOpenFolder={openFolder}
+            onNewExtension={newExtension}
+            onOpenRecent={openRecent}
+            onOpenDemo={openDemo}
+            onBrowserFolder={openBrowserFolder}
+            onOpenPath={openRecent}
+            confirm={confirm}
+            prompt={prompt}
+            toast={toast}
+          />
         ) : (
           <AppContext.Provider value={api}>
             <div className="workspace">

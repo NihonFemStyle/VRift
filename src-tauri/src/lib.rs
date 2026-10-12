@@ -1,6 +1,8 @@
 //! VRift backend: a small set of filesystem commands the editor UI uses.
 //! Everything is plain std::fs so it behaves the same on Windows, Linux and macOS.
 
+mod library;
+
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -143,6 +145,50 @@ fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+// ------------------------------------------------------------------ extension library
+
+/// Hacknet's Extensions folder(s) and Steam Workshop folder(s), found automatically.
+#[tauri::command]
+fn detect_steam_sources() -> Vec<library::Source> {
+    library::detect_sources()
+}
+
+#[derive(Serialize)]
+struct FolderScan {
+    folder: String,
+    exists: bool,
+    extensions: Vec<library::ExtensionSummary>,
+}
+
+/// List the extensions inside each of the given folders. Runs off the UI thread.
+#[tauri::command]
+async fn scan_extension_folders(folders: Vec<String>) -> Vec<FolderScan> {
+    tauri::async_runtime::spawn_blocking(move || {
+        folders
+            .into_iter()
+            .map(|f| {
+                let p = PathBuf::from(&f);
+                FolderScan { exists: p.is_dir(), extensions: library::scan_folder(&p), folder: f }
+            })
+            .collect()
+    })
+    .await
+    .unwrap_or_default()
+}
+
+/// Copy an extension (e.g. a Workshop download) into another folder so it can be edited
+/// without Steam overwriting the changes. Returns the new extension path.
+#[tauri::command]
+async fn copy_extension(src: String, dest_parent: String, name: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dst = PathBuf::from(&dest_parent).join(&name);
+        library::copy_dir(Path::new(&src), &dst)?;
+        Ok(dst.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(err)?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -157,7 +203,10 @@ pub fn run() {
             create_dir,
             rename_path,
             trash_path,
-            path_exists
+            path_exists,
+            detect_steam_sources,
+            scan_extension_folders,
+            copy_extension
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRift");
