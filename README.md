@@ -114,6 +114,14 @@ To run the round-trip and validation tests against a real extension:
 $env:VRIFT_CORPUS="C:\path\to\an\extension"; npm test
 ```
 
+## Documentation
+
+- [User guide](docs/user-guide.md) — editing, forms/XML, validation, netMap, terminal commands and project safety.
+- [Architecture](docs/architecture.md) — project model, round-trip XML, schema/index design, filesystem backends and build flow.
+- [Development guide](docs/development.md) — setup, commands, tests, contribution patterns and releases.
+- [Troubleshooting](docs/troubleshooting.md) — common runtime, editing, validation and build problems.
+- [Custom schemas](docs/custom-schema.md) — teach VRift about Pathfinder mod tags.
+
 ## Project layout
 
 ```
