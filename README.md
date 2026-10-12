@@ -142,6 +142,15 @@ scripts/       schema generator, setup checker, app icon source
 - One-click hot reload into a running game through [HacknetHotReplace](https://github.com/fengxu-30338/HacknetHotReplace) + Pathfinder
 - Image and web page previews; people/faction-specific views
 - Stuxnet schema (Modular Schema support to go with this one)
+- Keyboard shortcuts for tabs
+- Extended GUI scaling options
+- Dev Together, Because this is *clearly possible and ambitious*
+
+### Bugs to fix
+
+- Node IDs being read more than once from the same node
+- Ocassional Parsing issues
+- Possible Underlying bug with Wayland compositors
 
 ## Credits and licence
 
