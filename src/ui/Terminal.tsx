@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveComputer } from "../core/project";
 import { summarize } from "../core/validate";
 import { useApp } from "./context";
+import { DiagActions } from "./DiagActions";
 
 interface Line {
   text: string;
@@ -9,10 +10,10 @@ interface Line {
   onClick?: () => void;
 }
 
-export function Terminal(props: { setTheme: (name: string) => boolean; themes: string[] }) {
-  const { project, diagnostics, open, openComputer, runValidation } = useApp();
+export function Terminal(props: { setTheme: (name: string) => boolean; themes: string[]; activePath: string | null }) {
+  const { project, diagnostics, open, openComputer, runValidation, prefs, game, openSettings, openPanel } = useApp();
   const [tab, setTab] = useState<"diag" | "term">("diag");
-  const [show, setShow] = useState({ error: true, warning: true, info: false });
+  const [show, setShow] = useState({ error: true, warning: true, info: prefs.showInfo, ignored: false });
   const [lines, setLines] = useState<Line[]>(() => [
     { text: "VRift terminal. Type 'help' for commands.", cls: "dim" },
   ]);
@@ -26,7 +27,7 @@ export function Terminal(props: { setTheme: (name: string) => boolean; themes: s
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
   }, [lines, tab]);
 
-  const shown = useMemo(() => diagnostics.filter((d) => show[d.severity]), [diagnostics, show]);
+  const shown = useMemo(() => diagnostics.filter((d) => (d.suppressed ? show.ignored : show[d.severity])), [diagnostics, show]);
 
   const print = (...ls: Line[]) => setLines((prev) => [...prev, ...ls].slice(-2000));
 
@@ -50,6 +51,11 @@ export function Terminal(props: { setTheme: (name: string) => boolean; themes: s
             "nodes                list computers",
             "theme <name>         switch the editor theme (see 'themes')",
             "themes               list available themes",
+            "mods                 schema modules (Stuxnet, 0DTK…) and why they are on",
+            "story                open the mission flow view",
+            "game                 HacknetHotReplace connection status",
+            "reload [path]        reload the open file (or a path) in the running game",
+            "connect <id>         connect to a computer in the running game",
             "clear                clear the terminal",
           ].map((t) => ({ text: t, cls: "dim" })),
         );
@@ -121,6 +127,39 @@ export function Terminal(props: { setTheme: (name: string) => boolean; themes: s
         return print({ text: `Unknown theme "${arg}". Try 'themes'.`, cls: "error" });
       case "themes":
         return print(...props.themes.map((t) => ({ text: "  " + t, cls: "link", onClick: () => props.setTheme(t) })));
+      case "mods":
+        return print(
+          ...project.modules.map((m) => ({
+            text: `  ${m.active ? "●" : "○"} ${m.module.name} [${m.mode}]${m.detected ? ` · ${m.detected}` : ""}`,
+            cls: m.active ? "ok link" : "dim link",
+            onClick: () => openSettings("mods"),
+          })),
+        );
+      case "story":
+        openPanel("story");
+        return print({ text: "Opened the story view.", cls: "ok" });
+      case "game": {
+        const st = game.status;
+        if (!game.available) return print({ text: "Hot reload needs the desktop app.", cls: "error" });
+        if (!st.port) return print({ text: "HacknetHotReplace not found. Install it in Hacknet/BepInEx/plugins and start the game.", cls: "error" });
+        return print({ text: `${st.online ? "Connected" : "Not running"} · UDP ${st.port} · ${st.source}${st.wine ? " (Wine paths)" : ""}`, cls: st.online ? "ok" : "warning" });
+      }
+      case "reload": {
+        const path = arg || props.activePath;
+        if (!path) return print({ text: "usage: reload <path>", cls: "error" });
+        game.reload(path).then(
+          () => print({ text: `Reloaded ${path} in the game.`, cls: "ok" }),
+          (e) => print({ text: String(e), cls: "error" }),
+        );
+        return;
+      }
+      case "connect":
+        if (!arg) return print({ text: "usage: connect <computer id>", cls: "error" });
+        game.connect(arg).then(
+          () => print({ text: `Connected to ${arg} in the game.`, cls: "ok" }),
+          (e) => print({ text: String(e), cls: "error" }),
+        );
+        return;
       default:
         print({ text: `${cmd}: command not found`, cls: "error" });
     }
@@ -150,6 +189,11 @@ export function Terminal(props: { setTheme: (name: string) => boolean; themes: s
             <button className={"i" + (show.info ? " on" : "")} onClick={() => setShow({ ...show, info: !show.info })}>
               info {s.infos}
             </button>
+            {s.suppressed > 0 && (
+              <button className={"i" + (show.ignored ? " on" : "")} title="Problems hidden by VRift.json rules or vrift-ignore comments" onClick={() => setShow({ ...show, ignored: !show.ignored })}>
+                ignored {s.suppressed}
+              </button>
+            )}
             <span style={{ flex: 1 }} />
             <button onClick={runValidation} title="Re-run all checks">
               re-scan
@@ -158,15 +202,18 @@ export function Terminal(props: { setTheme: (name: string) => boolean; themes: s
           <div className="module-body terminal">
             {shown.length === 0 && <div className="term-line ok">No problems found. {s.infos && !show.info ? `(${s.infos} info hidden)` : ""}</div>}
             {shown.slice(0, 1500).map((d, i) => (
-              <div key={i} className={"term-line link " + d.severity} style={{ marginBottom: 5 }} onClick={() => d.file && open({ path: d.file, elId: d.elId, line: d.line })}>
+              <div key={i} className={"term-line link diag " + d.severity + (d.suppressed ? " suppressed" : "")} style={{ marginBottom: 5 }} onClick={() => d.file && open({ path: d.file, elId: d.elId, line: d.line })}>
                 <div>
                   {d.severity === "error" ? "✖ " : d.severity === "warning" ? "▲ " : "● "}
                   {d.message}
                 </div>
                 <div className="loc">
-                  {"  "}
-                  {d.file || "(project)"}
-                  {d.line ? ":" + d.line : ""}
+                  <span>
+                    {"  "}
+                    {d.file || "(project)"}
+                    {d.line ? ":" + d.line : ""}
+                  </span>
+                  <DiagActions d={d} />
                 </div>
               </div>
             ))}

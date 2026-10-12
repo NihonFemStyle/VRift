@@ -8,6 +8,7 @@
   "permissions": [
     "core:default",
     "core:window:allow-destroy",
+    "core:webview:allow-set-webview-zoom",
     "dialog:default",
     "opener:default"
   ]

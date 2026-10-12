@@ -1,7 +1,9 @@
 //! VRift backend: a small set of filesystem commands the editor UI uses.
 //! Everything is plain std::fs so it behaves the same on Windows, Linux and macOS.
 
+mod hotreload;
 mod library;
+mod textio;
 
 use serde::Serialize;
 use std::fs;
@@ -9,7 +11,8 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 const SKIP_DIRS: &[&str] = &[".git", "node_modules", ".vs", ".vscode", ".idea"];
-const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
+/// Text files larger than this are listed but not loaded into the editor.
+const MAX_TEXT_SIZE: u64 = 4_000_000;
 
 #[derive(Serialize)]
 struct Entry {
@@ -18,6 +21,8 @@ struct Entry {
     is_dir: bool,
     size: u64,
     mtime: u64,
+    /// True when the file holds text VRift can edit (decided by extension, then by content).
+    text: bool,
 }
 
 #[derive(Serialize)]
@@ -25,6 +30,24 @@ struct TextFile {
     text: String,
     bom: bool,
     mtime: u64,
+    /// "utf-8", "utf-16le", "utf-16be" or "windows-1252"
+    encoding: &'static str,
+}
+
+/// Decide whether a file is text: by extension when it is a known one, otherwise by
+/// looking at its first 8 KB.
+fn sniff_text(p: &Path, size: u64) -> bool {
+    use std::io::Read;
+    if size > MAX_TEXT_SIZE {
+        return false;
+    }
+    let ext = p.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+    if let Some(known) = textio::known_extension(&ext) {
+        return known;
+    }
+    let mut head = vec![0u8; 8192];
+    let n = fs::File::open(p).and_then(|mut f| f.read(&mut head)).unwrap_or(0);
+    textio::looks_like_text(&ext, &head[..n])
 }
 
 fn err<E: std::fmt::Display>(e: E) -> String {
@@ -59,10 +82,11 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<Entry>) -> Result<(), String> {
             if SKIP_DIRS.contains(&name.as_str()) {
                 continue;
             }
-            out.push(Entry { path: rel, is_dir: true, size: 0, mtime: mtime_of(&p) });
+            out.push(Entry { path: rel, is_dir: true, size: 0, mtime: mtime_of(&p), text: false });
             walk(root, &p, out)?;
         } else {
-            out.push(Entry { path: rel, is_dir: false, size: meta.len(), mtime: mtime_of(&p) });
+            let text = sniff_text(&p, meta.len());
+            out.push(Entry { path: rel, is_dir: false, size: meta.len(), mtime: mtime_of(&p), text });
         }
     }
     Ok(())
@@ -83,22 +107,18 @@ fn list_tree(root: String) -> Result<Vec<Entry>, String> {
 fn read_text(path: String) -> Result<TextFile, String> {
     let p = PathBuf::from(&path);
     let bytes = fs::read(&p).map_err(err)?;
-    let (bom, body) = if bytes.starts_with(UTF8_BOM) { (true, &bytes[3..]) } else { (false, &bytes[..]) };
-    let text = String::from_utf8_lossy(body).to_string();
-    Ok(TextFile { text, bom, mtime: mtime_of(&p) })
+    let d = textio::decode(&bytes);
+    Ok(TextFile { text: d.text, bom: d.bom, mtime: mtime_of(&p), encoding: d.encoding.name() })
 }
 
 #[tauri::command]
-fn write_text(path: String, text: String, bom: bool) -> Result<u64, String> {
+fn write_text(path: String, text: String, bom: bool, encoding: Option<String>) -> Result<u64, String> {
     let p = PathBuf::from(&path);
     if let Some(parent) = p.parent() {
         fs::create_dir_all(parent).map_err(err)?;
     }
-    let mut data = Vec::with_capacity(text.len() + 3);
-    if bom {
-        data.extend_from_slice(UTF8_BOM);
-    }
-    data.extend_from_slice(text.as_bytes());
+    let enc = textio::Encoding::from_name(encoding.as_deref().unwrap_or("utf-8"));
+    let data = textio::encode(&text, enc, bom)?;
     fs::write(&p, data).map_err(err)?;
     Ok(mtime_of(&p))
 }
@@ -189,6 +209,33 @@ async fn copy_extension(src: String, dest_parent: String, name: String) -> Resul
     .map_err(err)?
 }
 
+// ------------------------------------------------------------------ hot reload (HacknetHotReplace)
+
+/// Whether a game with HacknetHotReplace is running, and on which port.
+#[tauri::command]
+async fn hotreload_status() -> hotreload::Status {
+    tauri::async_runtime::spawn_blocking(|| {
+        let libs = library::steam_libraries(&library::steam_roots());
+        hotreload::discover(&libs)
+    })
+    .await
+    .unwrap_or_default()
+}
+
+/// Send one HotReplace command. `payload` is the inner XML of <Payload>.
+#[tauri::command]
+async fn hotreload_send(command: String, payload: String, timeout_ms: Option<u64>) -> Result<hotreload::Response, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let libs = library::steam_libraries(&library::steam_roots());
+        let status = hotreload::discover(&libs);
+        let port = status.port.ok_or("HacknetHotReplace was not found. Install it in Hacknet's BepInEx/plugins folder and start the game.")?;
+        let timeout = std::time::Duration::from_millis(timeout_ms.unwrap_or(10_000).clamp(500, 120_000));
+        hotreload::send(port, &command, &payload, timeout)
+    })
+    .await
+    .map_err(err)?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -206,7 +253,9 @@ pub fn run() {
             path_exists,
             detect_steam_sources,
             scan_extension_folders,
-            copy_extension
+            copy_extension,
+            hotreload_status,
+            hotreload_send
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRift");

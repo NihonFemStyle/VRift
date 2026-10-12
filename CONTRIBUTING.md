@@ -95,6 +95,8 @@ After schema changes:
 
 Project-local Pathfinder support belongs in `VRift.schema.json`; its complete format is documented in [docs/custom-schema.md](docs/custom-schema.md).
 
+The built-in mod modules in `src/schema/mods/` are generated too. Change the curated metadata in `scripts/build_mod_schemas.py` and regenerate them from the mods' source (see [scripts/README.md](scripts/README.md)) instead of editing the JSON by hand. Support for another widely used mod can be added the same way: a new function in that script, a `detect` rule, and tests in `src/core/__tests__/modules.test.ts`.
+
 ## Required checks
 
 Run these before opening a pull request:

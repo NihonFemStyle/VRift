@@ -1,9 +1,10 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import type { FileKind } from "../templates/templates";
-import { NEW_FILE_TEMPLATES } from "../templates/templates";
-import { basename, dirname } from "../fs/fs";
+import { BUILTIN_MODULES } from "../core/modules";
+import { basename, dirname, isImagePath } from "../fs/fs";
 import { useApp } from "./context";
+import { ImageThumb } from "./ImagePreview";
 
 const KIND_ICON: Record<string, string> = {
   extensionInfo: "★",
@@ -14,9 +15,12 @@ const KIND_ICON: Record<string, string> = {
   theme: "◐",
   people: "☺",
   hackerScript: "$",
+  json: "{}",
   text: "≡",
   other: "·",
+  image: "▨",
 };
+for (const m of BUILTIN_MODULES) for (const k of m.fileKinds ?? []) KIND_ICON[k.kind] = k.icon ?? "◇";
 
 interface Group {
   key: string;
@@ -24,6 +28,15 @@ interface Group {
   match: (path: string, kind: FileKind) => boolean;
   newKind?: FileKind;
 }
+
+const MODULE_GROUPS: Group[] = BUILTIN_MODULES.flatMap((m) =>
+  (m.fileKinds ?? []).map((k) => ({
+    key: "mod:" + k.kind,
+    title: `${k.folder ?? k.label} · ${m.name.split(" ")[0]}`,
+    match: (_p: string, kind: FileKind) => kind === k.kind,
+    newKind: m.templates?.some((t) => t.kind === k.kind) ? k.kind : undefined,
+  })),
+);
 
 const GROUPS: Group[] = [
   { key: "core", title: "ExtensionInfo", match: (_p, k) => k === "extensionInfo" },
@@ -34,13 +47,18 @@ const GROUPS: Group[] = [
   { key: "themes", title: "Themes", match: (_p, k) => k === "theme", newKind: "theme" },
   { key: "people", title: "People", match: (_p, k) => k === "people", newKind: "people" },
   { key: "scripts", title: "HackerScripts", match: (_p, k) => k === "hackerScript", newKind: "hackerScript" },
+  ...MODULE_GROUPS,
+  { key: "web", title: "Web pages", match: (p) => /\.html?$/i.test(p) },
+  { key: "config", title: "Config & data (JSON)", match: (_p, k) => k === "json" },
+  { key: "images", title: "Images", match: (p) => isImagePath(p) },
   { key: "other", title: "Other files", match: () => true },
 ];
 
 export function Explorer(props: { active: string | null; onNewFile: (kind: FileKind, folder?: string) => void }) {
   const { project, diagnostics, open, prompt, confirm, toast } = useApp();
   const [filter, setFilter] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ other: true });
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ other: true, images: true });
+  const [hoverImg, setHoverImg] = useState<{ path: string; y: number } | null>(null);
   const [collapsedDirs, setCollapsedDirs] = useState<Record<string, boolean>>({});
   const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null);
 
@@ -62,7 +80,7 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
     const out: Record<string, string[]> = {};
     for (const g of GROUPS) out[g.key] = [];
     for (const p of files) {
-      const kind = project.files.get(p)?.kind ?? "other";
+      const kind = project.files.get(p)?.kind ?? (isImagePath(p) ? "image" : "other");
       if (q && !p.toLowerCase().includes(q)) {
         // also match computer ids/names
         const f = project.files.get(p);
@@ -107,13 +125,15 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
           className={"tree-item" + (props.active === p ? " selected" : "")}
           style={{ ["--depth" as string]: groupKey === "core" ? 0 : 1 }}
           onClick={() => open({ path: p })}
+          onMouseEnter={(e) => isImagePath(p) && setHoverImg({ path: p, y: e.currentTarget.getBoundingClientRect().top })}
+          onMouseLeave={() => setHoverImg(null)}
           onContextMenu={(e) => {
             e.preventDefault();
             setMenu({ x: e.clientX, y: e.clientY, path: p });
           }}
           title={p + (comp ? `\nid: ${comp}` : "")}
         >
-          <span className="kind-icon">{KIND_ICON[f?.kind ?? "other"]}</span>
+          <span className="kind-icon">{KIND_ICON[f?.kind ?? (isImagePath(p) ? "image" : "other")]}</span>
           <span className="name">{basename(p)}</span>
           {project.isDirty(p) && <span className="dirty">●</span>}
           <span className="badges">
@@ -164,7 +184,7 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
       <div className="module-body" onClick={() => setMenu(null)}>
         {GROUPS.map((g) => {
           const files = grouped[g.key];
-          if (!files.length && (g.key === "other" || g.key === "core")) return null;
+          if (!files.length && !["nodes", "missions", "actions", "factions", "themes", "people", "scripts"].includes(g.key)) return null;
           const isCollapsed = collapsed[g.key] && !filter;
           return (
             <div className="exe" key={g.key}>
@@ -191,11 +211,19 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
           );
         })}
       </div>
+      {hoverImg && (
+        <div className="img-hover" style={{ top: hoverImg.y }}>
+          <ImageThumb project={project} path={hoverImg.path} size={160} />
+        </div>
+      )}
       {menu && (
         <div className="dropdown" style={{ left: menu.x, top: menu.y, position: "fixed" }} onMouseLeave={() => setMenu(null)}>
           <div className="di" onClick={() => { open({ path: menu.path }); setMenu(null); }}>Open</div>
           <div className="di" onClick={() => { doRename(menu.path); setMenu(null); }}>Rename / move…</div>
-          <div className="di" onClick={() => { const t = NEW_FILE_TEMPLATES.find((t) => t.kind === project.files.get(menu.path)?.kind); if (t) props.onNewFile(t.kind, dirname(menu.path)); setMenu(null); }}>New file here…</div>
+          {project.files.get(menu.path) && (
+            <div className="di" onClick={() => { props.onNewFile(project.files.get(menu.path)!.kind, dirname(menu.path)); setMenu(null); }}>New file here…</div>
+          )}
+          <div className="di" onClick={() => { navigator.clipboard?.writeText(menu.path); setMenu(null); }}>Copy path</div>
           <div className="dsep" />
           <div className="di" onClick={() => { doDelete(menu.path); setMenu(null); }}>Delete</div>
         </div>

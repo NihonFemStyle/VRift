@@ -16,4 +16,4 @@ The repository [README](../README.md) remains the short project overview, build 
 
 ## Documentation scope
 
-The guides describe the behavior of VRift 1.0.1 as implemented in this repository. Hacknet extension format details are documented only where they affect VRift; for game-format reference material, use the official Hacknet Extensions guide linked from VRift's Help menu.
+The guides describe the behavior of VRift 1.1.0 as implemented in this repository. Hacknet extension format details are documented only where they affect VRift; for game-format reference material, use the official Hacknet Extensions guide linked from VRift's Help menu.

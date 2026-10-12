@@ -8,7 +8,9 @@ Pathfinder mods can add daemons, actions, goals, and other XML tags that base Ha
 - which controls, suggestions, and descriptions to show; and
 - which values are computer, file, folder, faction, or flag references.
 
-Place a file named `VRift.schema.json` in the extension root, beside `ExtensionInfo.xml`. Reload the extension with **File → Reload from disk** after editing it externally.
+Place a file named `VRift.schema.json` in the extension root, beside `ExtensionInfo.xml`. VRift opens it like any other file (as JSON), and edits made inside VRift apply as you type. After editing it in another program, use **File → Reload from disk**. **Project → Mods… → VRift.schema.json → create** writes a starter file for you.
+
+> **Stuxnet and ZeroDayToolKit are built in.** Since VRift 1.1, support for those two mods ships as *schema modules* that switch on automatically when an extension uses them (see [Built-in modules](#built-in-modules)). You only need a custom schema for other mods or your own plugin. Your `VRift.schema.json` is loaded as one more module, so everything the built-in modules can do, it can do too.
 
 ## A complete first example
 
@@ -73,7 +75,7 @@ VRift now offers the tag under `<Computer>`, shows a computer picker for `Linked
 
 ## File structure
 
-The root object currently contains one supported property:
+The smallest schema is:
 
 ```json
 {
@@ -81,7 +83,24 @@ The root object currently contains one supported property:
 }
 ```
 
-Each item in `nodes` defines one logical tag in one or more locations. JSON must be valid: comments and trailing commas are not allowed.
+Each item in `nodes` defines one logical tag in one or more locations. Everything else at the root is optional and described in [Module properties](#module-properties):
+
+```json
+{
+  "name": "My mod",
+  "nodes": [],
+  "names": {},
+  "contentRefs": [],
+  "fileKinds": [],
+  "enumExtensions": {},
+  "executables": [],
+  "daemons": [],
+  "delayHosts": [],
+  "templates": []
+}
+```
+
+Stick to standard JSON. VRift tolerates `//` comments and trailing commas but reports them as warnings, because other tools may not.
 
 Custom definitions override bundled definitions when their paths match. This can extend support for modded content, but an accidental match can also replace VRift's normal form definition for a base-game tag.
 
@@ -98,6 +117,7 @@ A node describes an XML element.
 | `content` | field | Text between the opening and closing tags. Omit for tags without editable text. |
 | `container` | boolean | Marks a structural tag intended to hold child elements. |
 | `conditions` | condition array | Adds or replaces fields according to another attribute's value. |
+| `group` | string | Heading the tag is listed under in add menus and the action builder palette, e.g. `"My mod · Relay"`. |
 
 Use `content` for `<Tag>value</Tag>` and `attributes` for `<Tag Value="value" />`. They are not interchangeable: Hacknet and mods normally read one exact representation.
 
@@ -199,6 +219,12 @@ The same shape is used for attributes, node `content`, conditional attributes, a
 | `compFilter` | string array | Requires a referenced computer to have at least one named daemon. |
 | `extra` | string array | Adds special accepted/suggested computer or child values. |
 | `steps` | step array | Defines the function selector used by `step`. |
+| `ns` | string | For the `name` hint: the namespace of the value, e.g. `"mymod.channel"`. |
+| `define` | boolean | For the `name` hint: this field *defines* a name instead of referring to one. |
+| `list` | boolean | The value is a comma-separated list (shown as chips; each item is checked). |
+| `scope` | `"file"` | For the `name` hint: names only need to exist in the same file. |
+| `regex` | string | Regular expression the value must match; otherwise a `format` warning. Values containing `#` (wildcards) are skipped. |
+| `kinds` | string array | For `path`: only suggest files of these kinds, and warn when the target is another kind (e.g. `["stuxnetCutscene"]`). |
 
 For clarity, provide `required`, `default`, `desc`, and `hint` on normal fields, even though VRift fills missing basics on custom attributes.
 
@@ -221,6 +247,7 @@ New fields initialize recognized boolean, valid enum, numeric, and color default
 | `ip` | IP input with random-address controls. | `192.168.1.4` |
 | `computerip` | Suggests IPs from indexed computers. | `192.168.1.4` |
 | `step` | Selector for `function:argument` values. | `setFaction:entropy` |
+| `name` | A value from a namespace (see [Named values](#named-values-name)). | `goldKey` |
 
 ### Computer references
 
@@ -275,6 +302,22 @@ The `path` hint supports `*` for characters except `/`, `**` for any depth, `?` 
 ```
 
 Suggestion matching is case-insensitive. VRift still warns when reference capitalization differs from disk because that can break on Linux or macOS.
+
+### Named values (`name`)
+
+Many mods use names that are defined in one place and referred to elsewhere: a vault's key name, a radio song ID, an event signal, an animation element's ID. The `name` hint connects them:
+
+```json
+{ "name": "KeyName", "hint": "name", "ns": "mymod.vault", "define": true, "desc": "Key name of this vault" }
+```
+
+```json
+{ "name": "KeyName", "hint": "name", "ns": "mymod.vault", "desc": "Vault the key opens" }
+```
+
+Fields with `define: true` add their value to the namespace; other fields with the same `ns` must use a defined value. They get suggestions, inline red/green feedback and "did you mean…?" diagnostics. Describe the namespace in the root [`names`](#names) object; a namespace without a description is not checked.
+
+Add `"scope": "file"` when names are local to one file (for example element IDs inside one animation file), and `"list": true` for comma-separated values.
 
 ### Dependent child suggestions
 
@@ -462,6 +505,106 @@ A step ending in `:` gets an argument control. `next` chooses its suggestions an
 }
 ```
 
+## Module properties
+
+### `name`
+
+Shown in **Project → Mods…** and as a badge on the module's tags. Defaults to `VRift.schema.json`.
+
+### `names`
+
+Describes the namespaces used by `name` fields. Keys are namespace IDs:
+
+```json
+"names": {
+  "mymod.vault": {
+    "label": "vault key",
+    "severity": "warning",
+    "source": "a RelayVault's KeyName",
+    "builtin": ["master"]
+  }
+}
+```
+
+| Property | Meaning |
+| --- | --- |
+| `label` | Used in messages: *no vault key named "x"*. |
+| `severity` | `error`, `warning`, `info`, or `none` (suggestions only, never reported). |
+| `source` | Where names come from, shown in messages. |
+| `builtin` | Names that always exist. |
+
+### `contentRefs`
+
+References hidden inside text or attribute values, found with a regular expression whose first group is the referenced value. They are indexed like normal references:
+
+```json
+"contentRefs": [
+  { "pattern": "#MYMOD_IMAGE:([^#]+)#", "kind": "file" },
+  { "pattern": "\\[\\[([A-Za-z0-9_]+)\\]\\]", "kind": "name", "ns": "mymod.channel" }
+]
+```
+
+`kind` is `file` or `name` (with `ns`). The patterns run on every attribute value and on the text of tags without child tags.
+
+### `fileKinds`
+
+New kinds of XML file, recognised by their root tag. They get their own group in the RAM panel and their own icon:
+
+```json
+"fileKinds": [
+  { "root": "RelayScript", "kind": "relayScript", "label": "Relay script", "folder": "Relays", "icon": "≈" }
+]
+```
+
+`alias` makes a kind count as a built-in kind for references; for example Stuxnet's animated themes use `"alias": "theme"` so they are offered wherever a theme file is expected.
+
+### `enumExtensions`
+
+Adds allowed values to existing attributes, keyed `"Tag.Path@attribute"` (use `"Tag.Path@"` for the tag's text content):
+
+```json
+"enumExtensions": {
+  "Computer@icon": [ { "value": "relay", "desc": "Relay icon (My mod)" } ]
+}
+```
+
+### `executables`, `daemons`, `delayHosts`
+
+- `executables`: file contents such as `#RELAY_EXE#` that the mod turns into programs. They appear in the wildcard menu.
+- `daemons`: tags that create a daemon on a computer, so the netMap and computer pickers list them.
+- `delayHosts`: daemons that can host delayed actions (like `FastActionHost`).
+
+### `templates`
+
+Entries for the **New** menu while the module is active:
+
+```json
+"templates": [
+  { "kind": "relayScript", "label": "Relay script", "folder": "Relays", "ext": ".xml", "body": "<RelayScript name=\"{{id}}\" />\n" }
+]
+```
+
+`{{id}}` becomes the new file's name. `fixedPath` creates the file at exactly that path instead of asking.
+
+## Built-in modules
+
+VRift ships modules for two popular mods. They are generated from the mods' own C# source by `scripts/build_mod_schemas.py`, so they list exactly the tags and attributes the mods read. The generated files in `src/schema/mods/` use this same format and are good examples to copy from.
+
+| Module | Detected when the extension… | Adds |
+| --- | --- | --- |
+| **Stuxnet** | has `stuxnet_config.json`, a `Plugins/*Stuxnet*.dll`, a `<StuxnetCutscene>`/`<StuxnetAnimatedTheme>` file, or uses a Stuxnet tag | RadioV3, SMS, quests, cutscenes and animated themes, vaults, BYOD and code redemption daemons, persistence and achievements, Wireshark captures, Stuxnet.Audio. Reads `stuxnet_config.json` for custom computer icons, song IDs, sequencer presets and achievements, and checks the paths inside it. |
+| **ZeroDayToolKit (0DTK)** | has a `Plugins/*ZeroDayToolKit*.dll`, a `Networks/` folder, a `<TraceV2>` file, or uses a 0DTK tag | TraceV2 networks, IRC conditions (`OnIRCMessageTone`…), events, file conditions, strict logs, `SetRAM`, `RunCommand`, new executables, `Locales/` files and `{{key}}` text, `#0DTK_IMAGE:…#` image references. |
+
+Detection can be overridden per extension in **Project → Mods…** (Auto / On / Off). The choice is saved in `VRift.json` in the extension root, which Hacknet ignores:
+
+```json
+{
+  "modules": { "stuxnet": "on", "zerodaytoolkit": "off" }
+}
+```
+
+`VRift.json` also stores ignored warnings and extra allowed values; see the [user guide](user-guide.md#ignoring-warnings).
+
 ## Validation and reference behavior
 
 A custom schema affects more than layout:
@@ -471,7 +614,9 @@ A custom schema affects more than layout:
 - semantic reference hints enter the project index;
 - indexed files and computers gain inline validity and definition links;
 - indexed references appear in `refs`, diagnostics, and supported renames; and
-- defined content no longer produces unknown-tag or unknown-attribute messages.
+- defined content no longer produces unknown-tag or unknown-attribute messages;
+- `name` fields are checked against their namespace; and
+- `regex` fields report values with the wrong format.
 
 The schema describes static meaning; it does not execute a Pathfinder mod. A schema-valid value may fail at runtime, while a runtime-generated value may need a deliberately permissive field.
 
@@ -483,7 +628,8 @@ The schema describes static meaning; it does not execute a Pathfinder mod. A sch
 - Start the path at the XML root and include every level.
 - Remember `*` matches only one level.
 - Reload after external changes.
-- Check Diagnostics for invalid JSON.
+- Check Diagnostics for invalid JSON (errors point at the line).
+- If the tag belongs to Stuxnet or 0DTK, turn that module on instead (**Project → Mods…**).
 
 ### The tag is absent from the add menu
 

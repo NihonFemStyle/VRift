@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createElement, insertChild, parseXml, removeChild, serializeDoc, setAttr } from "../xml";
+import { createElement, insertChild, parseXml, removeChild, serializeDoc, setAttr, treeIsReliable } from "../xml";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -59,5 +59,63 @@ describe.skipIf(!corpus)("corpus round-trip", () => {
     }
     console.log(`corpus: ${files.length} xml files, ${withIssues} with parse issues, ${failed.length} round-trip failures`);
     expect(failed).toEqual([]);
+  });
+});
+
+describe("parser edge cases (1.1)", () => {
+  it("never throws on out-of-range character references", () => {
+    const src = `<a t="&#99999999;">&#xD800; &#1114112; ok</a>`;
+    const { doc, issues } = parseXml(src);
+    expect(serializeDoc(doc)).toBe(src);
+    expect(issues.filter((i) => /not an XML entity/.test(i.message))).toHaveLength(2);
+  });
+
+  it("flags things Hacknet's XML reader rejects, but keeps the tree usable", () => {
+    const { issues } = parseXml(`<a b="x < y" c="Tom & Jerry">Fish &amp; Chips &nbsp; & more</a>`);
+    const msgs = issues.map((i) => i.message);
+    expect(msgs.some((m) => m.includes("contains '<'"))).toBe(true);
+    expect(msgs.some((m) => m.includes("bare '&'"))).toBe(true);
+    expect(msgs.some((m) => m.includes('"&nbsp;" is not an XML entity'))).toBe(true);
+    expect(treeIsReliable(issues)).toBe(true);
+  });
+
+  it("requires the XML declaration to come first", () => {
+    expect(parseXml(`\n<?xml version="1.0"?><a/>`).issues[0].message).toMatch(/Nothing may come before/);
+    expect(parseXml(`﻿<?xml version="1.0"?><a/>`).issues).toEqual([]);
+    expect(parseXml(`<?xml version = "1.0" encoding = "UTF-8" ?>\n<a/>`).issues).toEqual([]);
+  });
+
+  it("handles a DOCTYPE with an internal subset", () => {
+    const src = `<!DOCTYPE a [ <!ENTITY e "x>y"> ]>\n<a/>`;
+    const { doc, issues } = parseXml(src);
+    expect(issues).toEqual([]);
+    expect(doc.root?.name).toBe("a");
+    expect(serializeDoc(doc)).toBe(src);
+  });
+
+  it("marks broken trees as structural and explains case mismatches", () => {
+    const { issues } = parseXml(`<Computer id="a">\n  <file>x</File>\n</Computer>`);
+    expect(issues.some((i) => i.structural && i.message.includes("case-sensitive"))).toBe(true);
+    expect(treeIsReliable(issues)).toBe(false);
+    expect(treeIsReliable(parseXml(`<a b="1" b="2" />`).issues)).toBe(true);
+  });
+
+  it("reports text outside the root element as a warning", () => {
+    const { issues } = parseXml(`<a/>\noops`);
+    expect(issues).toEqual([expect.objectContaining({ severity: "warning" })]);
+  });
+});
+
+describe("index paths", () => {
+  it("find the same element again after re-parsing", async () => {
+    const { indexPathOf, elementAtIndexPath } = await import("../xml");
+    const a = parseXml(`<r><a/><b><c x="1"/><d/></b></r>`).doc;
+    const d = a.root!.children[1] as import("../xml").XElement;
+    const target = (d.children[1] as import("../xml").XElement).id;
+    const ip = indexPathOf(a, target)!;
+    expect(ip).toEqual([1, 1]);
+    const b = parseXml(`<r>\n  <a/>\n  <b>\n    <c x="2"/>\n    <d/>\n  </b>\n</r>`).doc;
+    expect(elementAtIndexPath(b, ip)?.name).toBe("d");
+    expect(elementAtIndexPath(b, [5])?.name).toBe("r");
   });
 });

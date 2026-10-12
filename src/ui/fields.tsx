@@ -1,11 +1,12 @@
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FieldDef } from "../core/schema";
-import { schema } from "../core/schema";
 import { splitList } from "../core/project";
 import type { XElement } from "../core/xml";
+import { isImagePath } from "../fs/fs";
 import { useApp } from "./context";
-import { checkValue, Option, optionsFor } from "./suggest";
+import { ImageThumb } from "./ImagePreview";
+import { checkValue, Option, optionsFor, wildcardOptions } from "./suggest";
 import { parseColor } from "./themes";
 
 // ------------------------------------------------------------------ Combo box
@@ -121,6 +122,8 @@ export interface FieldProps {
   isContent?: boolean;
   unknown?: boolean;
   multiline?: boolean;
+  /** File being edited (for file-scoped names). */
+  file?: string;
 }
 
 const FILE_HINTS = new Set(["missionfile", "actionfile", "themefile", "factionfile", "peoplefile", "path"]);
@@ -141,8 +144,8 @@ export function FieldEditor(p: FieldProps) {
     commit(v, `${p.el?.id}:${p.label}`);
   };
 
-  const options = useMemo(() => optionsFor(project, p.field, p.el), [project, project.version, p.field, p.el]);
-  const check = useMemo(() => checkValue(project, p.field, draft), [project, project.version, p.field, draft]);
+  const options = useMemo(() => optionsFor(project, p.field, p.el, p.file), [project, project.version, p.field, p.el, p.file]);
+  const check = useMemo(() => checkValue(project, p.field, draft, p.file), [project, project.version, p.field, draft, p.file]);
 
   const goto = () => {
     const v = draft.trim();
@@ -178,8 +181,15 @@ export function FieldEditor(p: FieldProps) {
     );
   } else if (hint === "color") {
     control = <ColorField value={draft} onChange={live} />;
-  } else if (hint === "computerlist" || hint === "flags") {
-    control = <ChipsField value={draft} onChange={live} options={options} validate={(v) => (hint === "flags" ? true : checkValue(project, { ...p.field, hint: "computeroreos" }, v).ok)} />;
+  } else if (hint === "computerlist" || hint === "flags" || (hint === "name" && p.field.list)) {
+    control = (
+      <ChipsField
+        value={draft}
+        onChange={live}
+        options={options}
+        validate={(v) => (hint === "flags" ? true : hint === "name" ? checkValue(project, { ...p.field, list: false }, v, p.file).ok : checkValue(project, { ...p.field, hint: "computeroreos" }, v).ok)}
+      />
+    );
   } else if (hint === "step") {
     control = <StepField field={p.field} value={draft} onChange={live} el={p.el} />;
   } else if (hint === "ip") {
@@ -214,6 +224,7 @@ export function FieldEditor(p: FieldProps) {
           </button>
         )}
         {p.field.wildcards && <WildcardMenu onInsert={(w) => live(draft + w)} />}
+        {FILE_HINTS.has(hint) && isImagePath(draft) && <ImageThumb project={project} path={draft.trim()} size={34} onClick={goto} />}
       </div>
     );
   }
@@ -238,7 +249,9 @@ function randomIp() {
 }
 
 function WildcardMenu({ onInsert }: { onInsert: (w: string) => void }) {
+  const { project } = useApp();
   const [open, setOpen] = useState(false);
+  const items = useMemo(() => wildcardOptions(project), [project, project.version]);
   return (
     <div className="add-menu">
       <button className="icon-btn" title="Insert a wildcard like #PLAYERNAME#" onClick={() => setOpen(!open)}>
@@ -246,7 +259,7 @@ function WildcardMenu({ onInsert }: { onInsert: (w: string) => void }) {
       </button>
       {open && (
         <div className="menu" style={{ right: 0, left: "auto" }} onMouseLeave={() => setOpen(false)}>
-          {schema.wildcards.map((w) => (
+          {items.map((w) => (
             <div
               key={w.value}
               className="menu-item"

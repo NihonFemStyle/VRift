@@ -1,4 +1,4 @@
-import { dirname, FsEntry, normalizeRel, ProjectFs } from "./fs";
+import { dirname, FsEntry, looksLikeText, normalizeRel, ProjectFs } from "./fs";
 
 /** In-memory project used by the browser build and by tests. */
 export class MemoryFs implements ProjectFs {
@@ -23,7 +23,8 @@ export class MemoryFs implements ProjectFs {
   async list(): Promise<FsEntry[]> {
     const out: FsEntry[] = [];
     for (const d of this.dirs) out.push({ path: d, isDir: true, size: 0, mtime: 0 });
-    for (const [p, f] of this.files) out.push({ path: p, isDir: false, size: typeof f.data === "string" ? f.data.length : f.data.length, mtime: f.mtime });
+    for (const [p, f] of this.files)
+      out.push({ path: p, isDir: false, size: f.data.length, mtime: f.mtime, text: typeof f.data === "string" ? true : f.data.length > 0 && looksLikeText(p, f.data) });
     return out.sort((a, b) => a.path.localeCompare(b.path));
   }
   async readText(rel: string) {

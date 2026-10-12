@@ -11,7 +11,8 @@ import {
   ProjectFile,
   resolveComputer,
 } from "./project";
-import { allPossibleAttributes, attributesFor, childOptions, lookupNode } from "./schema";
+import { BUILTIN_MODULES, CONFIG_FILE, CUSTOM_SCHEMA_FILE, nameSpace, SuppressRule } from "./modules";
+import { allPossibleAttributes, attributesFor, childOptions, lookupNode, lookupNodeIn } from "./schema";
 import { elementChildren, getAttr, getAttrCI, trimmedText, walkElements, XElement } from "./xml";
 
 export type Severity = "error" | "warning" | "info";
@@ -23,6 +24,17 @@ export interface Diagnostic {
   elId?: number;
   message: string;
   code: string;
+  /**
+   * Identifies this exact problem independently of its line number, for "ignore this warning".
+   * Defaults to the message.
+   */
+  key?: string;
+  /** Set when a suppression rule (VRift.json or a vrift-ignore comment) hides this diagnostic. */
+  suppressed?: string;
+  /** For unknown values: the attribute ("Computer@icon") and value that could be allowed. */
+  allow?: { key: string; value: string };
+  /** A schema module that would make this diagnostic go away ("stuxnet"). */
+  module?: string;
 }
 
 /** Songs that ship with Hacknet (and the Labyrinths DLC) and can be referenced by name. */
@@ -65,20 +77,21 @@ export function validateProject(project: Project): Diagnostic[] {
   const idx = project.index;
   const add = (d: Diagnostic) => out.push(d);
 
-  if (project.customSchemaError) add({ severity: "error", file: "VRift.schema.json", line: 0, code: "schema", message: project.customSchemaError });
+  if (project.customSchemaError) add({ severity: "error", file: CUSTOM_SCHEMA_FILE, line: 0, code: "schema", message: project.customSchemaError });
+  if (project.configError) add({ severity: "error", file: CONFIG_FILE, line: 0, code: "config", message: `${CONFIG_FILE}: ${project.configError}` });
   const infoFiles = idx.filesByKind.get("extensionInfo") ?? [];
   if (!infoFiles.length) {
     add({ severity: "error", file: "", line: 0, code: "no-extinfo", message: "No ExtensionInfo.xml found in the extension root. Hacknet will not list this extension." });
   }
 
+  const inactive = BUILTIN_MODULES.filter((m) => !project.activeModules.some((a) => a.id === m.id));
   for (const f of project.files.values()) {
-    for (const i of f.parseIssues) add({ severity: "error", file: f.path, line: i.line, message: i.message, code: "xml" });
+    for (const i of f.parseIssues) add({ severity: i.severity ?? "error", file: f.path, line: i.line, message: i.message, code: /\.json$/i.test(f.path) ? "json" : "xml" });
     if (!f.doc?.root) continue;
-    validateFileStructure(f, add);
+    validateFileStructure(f, add, inactive);
     if (f.kind === "mission") validateMission(f, add);
     if (f.kind === "extensionInfo") validateExtensionInfo(f, add);
   }
-
   // duplicate IDs
   for (const [id, list] of idx.computers) {
     if (list.length > 1) {
@@ -96,8 +109,23 @@ export function validateProject(project: Project): Diagnostic[] {
 
   // references
   for (const ref of idx.refs) {
-    const base = { file: ref.file, line: ref.line, elId: ref.elId };
-    const where = ref.attr ? `${ref.tag}.${ref.attr}` : `<${ref.tag}>`;
+    const base = { file: ref.file, line: ref.line, elId: ref.elId >= 0 ? ref.elId : undefined, key: `${ref.kind}:${ref.where ?? ref.tag + "." + (ref.attr ?? "")}=${ref.value}` };
+    const where = ref.where ? `${ref.tag} → ${ref.where}` : ref.attr ? `${ref.tag}.${ref.attr}` : `<${ref.tag}>`;
+    if (ref.kind === "name") {
+      const nsName = (ref.ns ?? "").split("@")[0];
+      const def = nameSpace(project.activeModules, nsName);
+      if (!def || def.severity === "none") continue;
+      if (idx.names.get(ref.ns!)?.has(ref.value) || def.builtin?.includes(ref.value)) continue;
+      const known = [...(idx.names.get(ref.ns!)?.keys() ?? []), ...(def.builtin ?? [])];
+      const hint = didYouMean(ref.value, known);
+      add({
+        ...base,
+        severity: def.severity,
+        code: "ref-name",
+        message: `${where}: no ${def.label} named "${ref.value}"${def.source ? ` (defined by ${def.source})` : ""}.${hint}`,
+      });
+      continue;
+    }
     if (ref.kind === "computer") {
       const r = resolveComputer(idx, ref.value);
       if (!r) {
@@ -120,6 +148,10 @@ export function validateProject(project: Project): Diagnostic[] {
         add({ ...base, severity: "error", code: "ref-file", message: `${where}: file "${v}" does not exist.${hint}` });
       } else if (!project.fileExactCase(v)) {
         add({ ...base, severity: "warning", code: "ref-case", message: `${where}: "${v}" only matches with different capitalisation. This works on Windows but breaks on Linux/macOS.` });
+      } else if (ref.field?.kinds?.length) {
+        const target = project.files.get(normalizeRel(v));
+        if (target && !ref.field.kinds.includes(target.kind))
+          add({ ...base, severity: "warning", code: "ref-kind", message: `${where}: "${v}" is not a ${ref.field.kinds.join(" / ")} file.` });
       }
     } else if (ref.kind === "folder") {
       if (!project.folderExists(ref.value)) add({ ...base, severity: "warning", code: "ref-folder", message: `${where}: folder "${ref.value}" does not exist.` });
@@ -128,7 +160,6 @@ export function validateProject(project: Project): Diagnostic[] {
         add({ ...base, severity: "warning", code: "ref-faction", message: `${where}: no custom faction with id "${ref.value}" (it may be a built-in faction).` });
     }
   }
-
   // flags checked but never set anywhere
   for (const [flag, e] of idx.flags) {
     if (e.used.length && !e.set.length) {
@@ -137,14 +168,80 @@ export function validateProject(project: Project): Diagnostic[] {
     }
   }
 
+  applySuppressions(project, out);
   return out;
 }
 
-function validateFileStructure(f: ProjectFile, add: (d: Diagnostic) => void) {
+/** Mark diagnostics hidden by VRift.json rules or vrift-ignore comments. */
+function applySuppressions(project: Project, diags: Diagnostic[]) {
+  const rules = project.config.suppress ?? [];
+  const inline = new Map<string, { file: Set<string>; byEl: Map<number, Set<string>> }>();
+  const inlineFor = (path: string) => {
+    let v = inline.get(path);
+    if (v) return v;
+    v = { file: new Set(), byEl: new Map() };
+    const f = project.files.get(path);
+    if (f?.doc?.root) collectIgnoreComments(f.doc.children, null, v);
+    inline.set(path, v);
+    return v;
+  };
+  for (const d of diags) {
+    d.key ??= d.message;
+    const rule = rules.find((r) => ruleMatches(r, d));
+    if (rule) {
+      d.suppressed = rule.note || (rule.key ? "Ignored in VRift.json" : rule.file ? `"${rule.code}" ignored in this file (VRift.json)` : `"${rule.code}" ignored everywhere (VRift.json)`);
+      continue;
+    }
+    if (!d.file || d.code === "xml") continue;
+    const ig = inlineFor(d.file);
+    if (ig.file.has("*") || ig.file.has(d.code)) d.suppressed = "vrift-ignore-file comment";
+    else if (d.elId !== undefined) {
+      const s = ig.byEl.get(d.elId);
+      if (s && (s.has("*") || s.has(d.code))) d.suppressed = "vrift-ignore comment";
+    }
+  }
+}
+
+export function ruleMatches(r: SuppressRule, d: Diagnostic): boolean {
+  if (r.code !== "*" && r.code !== d.code) return false;
+  if (r.file && normalizeRel(r.file).toLowerCase() !== normalizeRel(d.file).toLowerCase()) return false;
+  if (r.key !== undefined && r.key !== (d.key ?? d.message)) return false;
+  return true;
+}
+
+/**
+ * `<!-- vrift-ignore -->` or `<!-- vrift-ignore: enum, ref-file -->` right before an element hides
+ * that element's diagnostics; `<!-- vrift-ignore-file: code -->` anywhere hides them for the file.
+ */
+function collectIgnoreComments(nodes: import("./xml").XNode[], _parent: XElement | null, out: { file: Set<string>; byEl: Map<number, Set<string>> }) {
+  let pending: Set<string> | null = null;
+  for (const n of nodes) {
+    if (n.type === "comment") {
+      const m = /^\s*vrift-ignore(-file)?\s*(?::\s*([\w\-*,\s]+))?\s*$/i.exec(n.value);
+      if (m) {
+        const codes = new Set((m[2] ?? "*").split(/[,\s]+/).filter(Boolean));
+        if (m[1]) codes.forEach((c) => out.file.add(c));
+        else pending = codes;
+      }
+      continue;
+    }
+    if (n.type === "text" && !n.value.trim()) continue;
+    if (n.type === "element") {
+      if (pending) out.byEl.set(n.id, pending);
+      collectIgnoreComments(n.children, n, out);
+    }
+    pending = null;
+  }
+}
+
+function validateFileStructure(f: ProjectFile, add: (d: Diagnostic) => void, inactive: typeof BUILTIN_MODULES) {
   const root = f.doc!.root!;
   const rootDef = lookupNode([root.name]);
   if (!rootDef) {
-    if (/^(Nodes|Missions|Actions|Factions|Themes|People)\//i.test(f.path))
+    const mod = inactive.find((m) => lookupNodeIn(m.nodes, [root.name]));
+    if (mod)
+      add({ severity: "warning", file: f.path, line: root.line, elId: root.id, code: "module-off", module: mod.id, message: `<${root.name}> files come from ${mod.name}. Turn on the ${mod.name} module to edit and check them.` });
+    else if (/^(Nodes|Missions|Actions|Factions|Themes|People)\//i.test(f.path))
       add({ severity: "info", file: f.path, line: root.line, elId: root.id, code: "unknown-root", message: `<${root.name}> is not a known Hacknet root tag.` });
     return;
   }
@@ -156,15 +253,41 @@ function validateFileStructure(f: ProjectFile, add: (d: Diagnostic) => void) {
       if (!a.name) continue;
       const v = getAttrCI(el, a.name);
       if (v === undefined) {
-        if (a.required && isTrulyRequired(el.name, a.name, a.hint))
+        // Module and VRift.schema.json definitions are curated, so their "required" is trusted.
+        if (a.required && (def.custom || isTrulyRequired(el.name, a.name, a.hint)))
           add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "missing-attr", message: `<${el.name}> is missing "${a.name}" (${a.desc}).` });
         continue;
       }
       if ((a.hint === "enum" || a.hint === "bool") && a.enums?.length && a.diag) {
         const ci = a.ignoreCase || a.hint === "bool";
         const ok = a.enums.some((e) => (ci ? e.value.toLowerCase() === v.toLowerCase() : e.value === v));
-        if (!ok && !/^-?\d+$/.test(v))
-          add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "enum", message: `<${el.name} ${a.name}="${v}">: expected one of ${a.enums.map((e) => e.value).join(", ")}.` });
+        if (!ok && !/^-?\d+$/.test(v)) {
+          const nodePath = def.paths.find((p) => !p.includes("*")) ?? def.paths[0];
+          const allowKey = `${nodePath}@${a.name}`;
+          const list = a.enums.length > 14 ? `${a.enums.slice(0, 14).map((e) => e.value).join(", ")}…` : a.enums.map((e) => e.value).join(", ");
+          const mod = inactive.find((m) => m.enumExtensions?.[allowKey]?.some((e) => e.value === v) || (m.id === "stuxnet" && el.name === "Computer" && a.name === "icon"));
+          add({
+            severity: "warning",
+            file: f.path,
+            line: el.line,
+            elId: el.id,
+            code: "enum",
+            key: `enum:${el.name}@${a.name}=${v}`,
+            allow: { key: allowKey, value: v },
+            module: mod?.id,
+            message: `<${el.name} ${a.name}="${v}">: expected one of ${list}.${mod ? ` (${mod.name} adds custom values; turn its module on if you use it.)` : ""}`,
+          });
+        }
+      }
+      if (a.regex && v && !v.includes("#")) {
+        let re: RegExp | null = null;
+        try {
+          re = new RegExp(a.regex);
+        } catch {
+          re = null;
+        }
+        if (re && !re.test(v))
+          add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "format", key: `format:${el.name}@${a.name}=${v}`, message: `<${el.name} ${a.name}="${v}">: unexpected format (${a.desc}).` });
       }
     }
     const known = allPossibleAttributes(def);
@@ -180,14 +303,19 @@ function validateFileStructure(f: ProjectFile, add: (d: Diagnostic) => void) {
       if (allowed.length) {
         const names = new Set(allowed.map((c) => c.name.toLowerCase()));
         for (const c of elementChildren(el)) {
-          if (!names.has(c.name.toLowerCase()))
-            add({ severity: "info", file: f.path, line: c.line, elId: c.id, code: "unknown-tag", message: `<${c.name}> is not a known child of <${el.name}> (fine if a Pathfinder mod adds it).` });
+          if (names.has(c.name.toLowerCase())) continue;
+          const mod = inactive.find((m) => lookupNodeIn(m.nodes, [...path, c.name]));
+          if (mod)
+            add({ severity: "info", file: f.path, line: c.line, elId: c.id, code: "unknown-tag", key: `unknown-tag:${el.name}/${c.name}`, module: mod.id, message: `<${c.name}> comes from ${mod.name}. Turn on the ${mod.name} module to edit and check it.` });
+          else
+            add({ severity: "info", file: f.path, line: c.line, elId: c.id, code: "unknown-tag", key: `unknown-tag:${el.name}/${c.name}`, message: `<${c.name}> is not a known child of <${el.name}> (fine if a Pathfinder mod adds it; describe it in VRift.schema.json).` });
         }
       }
     }
     // delayed actions need a host (AddIRCMessage uses its TargetComp as the host instead)
     const delay = getAttr(el, "Delay");
-    if (el.name !== "AddIRCMessage" && delay !== undefined && parseFloat(delay) > 0 && !getAttr(el, "DelayHost"))
+    const isAction = (path.length === 3 && /^conditionalactions$/i.test(path[0])) || (path.length === 3 && /^customfaction$/i.test(path[0]) && /^action$/i.test(path[1]));
+    if (isAction && el.name !== "AddIRCMessage" && delay !== undefined && parseFloat(delay) > 0 && !getAttr(el, "DelayHost"))
       add({ severity: "warning", file: f.path, line: el.line, elId: el.id, code: "delay-host", message: `<${el.name}> has Delay="${delay}" but no DelayHost, so the delay is ignored.` });
   });
 }
@@ -254,17 +382,21 @@ function validateExtensionInfo(f: ProjectFile, add: (d: Diagnostic) => void) {
     add({ severity: "info", file: f.path, line: root.line, elId: root.id, code: "ext-location", message: "ExtensionInfo.xml should be in the extension's root folder." });
 }
 
-function levenshtein(a: string, b: string): number {
-  if (Math.abs(a.length - b.length) > 3) return 99;
+/** Edit distance, giving up (returning max+1) as soon as it must exceed `max`. */
+function levenshtein(a: string, b: string, max = 2): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
   const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
     let diag = prev[0];
     prev[0] = i;
+    let rowMin = prev[0];
     for (let j = 1; j <= b.length; j++) {
       const tmp = prev[j];
-      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1));
       diag = tmp;
+      if (prev[j] < rowMin) rowMin = prev[j];
     }
+    if (rowMin > max) return max + 1;
   }
   return prev[b.length];
 }
@@ -275,20 +407,25 @@ export function didYouMean(value: string, candidates: string[]): string {
   let best: string | null = null;
   let bestD = 3;
   for (const c of candidates) {
-    const d = c.toLowerCase() === v ? 0 : levenshtein(v, c.toLowerCase());
+    if (Math.abs(c.length - v.length) >= bestD) continue;
+    const cl = c.toLowerCase();
+    const d = cl === v ? 0 : levenshtein(v, cl, bestD - 1);
     if (d < bestD) {
       bestD = d;
       best = c;
+      if (d === 0) break;
     }
   }
   return best ? ` Did you mean "${best}"?` : "";
 }
 
 export function summarize(diags: Diagnostic[]) {
+  const live = diags.filter((d) => !d.suppressed);
   return {
-    errors: diags.filter((d) => d.severity === "error").length,
-    warnings: diags.filter((d) => d.severity === "warning").length,
-    infos: diags.filter((d) => d.severity === "info").length,
+    errors: live.filter((d) => d.severity === "error").length,
+    warnings: live.filter((d) => d.severity === "warning").length,
+    infos: live.filter((d) => d.severity === "info").length,
+    suppressed: diags.length - live.length,
   };
 }
 

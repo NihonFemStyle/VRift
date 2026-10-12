@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { xml } from "@codemirror/lang-xml";
+import { json } from "@codemirror/lang-json";
+import { html } from "@codemirror/lang-html";
 import { EditorView, Decoration, ViewPlugin, ViewUpdate, DecorationSet, MatchDecorator } from "@codemirror/view";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
@@ -14,8 +16,9 @@ export interface LineDiag {
 
 const hacknetTheme = EditorView.theme(
   {
-    "&": { backgroundColor: "rgba(0,0,0,0.35)", color: "var(--term)", fontSize: "12.5px", height: "100%" },
+    "&": { backgroundColor: "rgba(0,0,0,0.35)", color: "var(--term)", fontSize: "var(--code-size, 12.5px)", height: "100%" },
     ".cm-content": { fontFamily: "var(--font-mono)", caretColor: "var(--shell)" },
+    ".cm-scroller": { fontSize: "var(--code-size, 12.5px)" },
     ".cm-cursor": { borderLeftColor: "var(--shell)", borderLeftWidth: "2px" },
     ".cm-gutters": { backgroundColor: "rgba(0,0,0,0.5)", color: "var(--subtle)", border: "none", borderRight: "1px solid rgba(var(--module-rgb),0.6)" },
     ".cm-activeLine": { backgroundColor: "rgba(var(--hl-rgb),0.07)" },
@@ -41,7 +44,22 @@ const highlight = HighlightStyle.define([
   { tag: t.angleBracket, color: "var(--subtle)" },
   { tag: t.processingInstruction, color: "var(--subtle)" },
   { tag: t.string, color: "rgb(150,220,150)" },
+  { tag: t.propertyName, color: "rgb(180,200,230)" },
+  { tag: t.number, color: "rgb(230,190,120)" },
+  { tag: [t.bool, t.null], color: "var(--shell)" },
+  { tag: t.keyword, color: "var(--hl)" },
 ]);
+
+export type CodeMode = "xml" | "hackerscript" | "text" | "json" | "html";
+
+/** Pick the editor mode for a file. */
+export function codeModeFor(path: string, kind: string): CodeMode {
+  if (kind === "hackerScript") return "hackerscript";
+  if (/\.xml$/i.test(path)) return "xml";
+  if (/\.json$/i.test(path)) return "json";
+  if (/\.html?$/i.test(path)) return "html";
+  return "text";
+}
 
 /** Highlight #WILDCARDS# like #PLAYERNAME# anywhere in the text. */
 const wildcardMatcher = new MatchDecorator({
@@ -82,7 +100,7 @@ const hackerScript = ViewPlugin.fromClass(
 export function CodeEditor(props: {
   value: string;
   onChange: (v: string) => void;
-  mode: "xml" | "hackerscript" | "text";
+  mode: CodeMode;
   diagnostics?: LineDiag[];
   gotoLine?: { line: number } | null;
 }) {
@@ -93,6 +111,8 @@ export function CodeEditor(props: {
   const extensions = useMemo(() => {
     const ext = [hacknetTheme, syntaxHighlighting(highlight), wildcards, EditorView.lineWrapping, lintGutter()];
     if (props.mode === "xml") ext.push(xml());
+    if (props.mode === "json") ext.push(json());
+    if (props.mode === "html") ext.push(html());
     if (props.mode === "hackerscript") ext.push(hackerScript);
     ext.push(
       linter(
@@ -127,7 +147,7 @@ export function CodeEditor(props: {
         value={props.value}
         height="100%"
         theme="none"
-        basicSetup={{ foldGutter: true, highlightActiveLine: true, autocompletion: props.mode === "xml", bracketMatching: true }}
+        basicSetup={{ foldGutter: true, highlightActiveLine: true, autocompletion: props.mode === "xml" || props.mode === "html", bracketMatching: true }}
         extensions={extensions}
         onChange={(v) => props.onChange(v)}
       />

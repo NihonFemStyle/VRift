@@ -6,6 +6,7 @@ interface RawEntry {
   is_dir: boolean;
   size: number;
   mtime: number;
+  text?: boolean;
 }
 
 export class TauriFs implements ProjectFs {
@@ -18,13 +19,17 @@ export class TauriFs implements ProjectFs {
 
   async list(): Promise<FsEntry[]> {
     const raw = await invoke<RawEntry[]>("list_tree", { root: this.root });
-    return raw.map((e) => ({ path: e.path, isDir: e.is_dir, size: e.size, mtime: e.mtime }));
+    return raw.map((e) => ({ path: e.path, isDir: e.is_dir, size: e.size, mtime: e.mtime, text: e.text }));
   }
   readText(rel: string) {
     return invoke<TextRead>("read_text", { path: this.abs(rel) });
   }
-  writeText(rel: string, text: string, bom: boolean) {
-    return invoke<number>("write_text", { path: this.abs(rel), text, bom });
+  writeText(rel: string, text: string, bom: boolean, encoding?: string) {
+    return invoke<number>("write_text", { path: this.abs(rel), text, bom, encoding: encoding ?? null });
+  }
+  /** Absolute path on disk (for hot reload). */
+  absolute(rel: string) {
+    return this.abs(rel);
   }
   async readBinary(rel: string) {
     const data = await invoke<number[]>("read_binary", { path: this.abs(rel) });

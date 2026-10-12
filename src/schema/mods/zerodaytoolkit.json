@@ -1,0 +1,2076 @@
+{
+ "id": "zerodaytoolkit",
+ "name": "ZeroDayToolKit (0DTK)",
+ "version": "1.0.x",
+ "url": "https://github.com/prodzpod/ZeroDayToolKit",
+ "description": "prodzpod's 'build-your-own community DLC': TraceV2 networks, IRC conversations, events, file conditions, new executables and locales.",
+ "detect": {
+  "plugins": "zerodaytoolkit|0dtk",
+  "folders": [
+   "Networks"
+  ],
+  "roots": [
+   "TraceV2"
+  ]
+ },
+ "executables": [
+  {
+   "value": "#SSH_SWIFT#",
+   "desc": "SSHSwift: opens 22 (0DTK)"
+  },
+  {
+   "value": "#TELE_SMOOTH#",
+   "desc": "teleSMOOTH: opens 23 (0DTK)"
+  },
+  {
+   "value": "#PACKET_HEADER_INJECTION#",
+   "desc": "pkthdr: opens 80 (0DTK)"
+  },
+  {
+   "value": "#SQL_TX_CRASHER#",
+   "desc": "THE_LAST_RESORT: opens 1433 (0DTK)"
+  },
+  {
+   "value": "#GIT_TUNNEL#",
+   "desc": "GitTunnel: opens 9418 (0DTK)"
+  },
+  {
+   "value": "#PORT_BACKDOOR#",
+   "desc": "PortBackdoor: opens port 0 (0DTK)"
+  },
+  {
+   "value": "#0DTK_IMAGE:Images/file.png#",
+   "desc": "Image file content (0DTK)"
+  },
+  {
+   "value": "#STUXNET_RADIO:songID#",
+   "desc": "Audio file content (0DTK + Stuxnet)"
+  }
+ ],
+ "ports": [
+  {
+   "protocol": "backdoor",
+   "name": "Backdoor Connection",
+   "port": 0
+  },
+  {
+   "protocol": "telnet",
+   "name": "Telnet",
+   "port": 23
+  },
+  {
+   "protocol": "ntp",
+   "name": "Network Time Protocol",
+   "port": 123
+  },
+  {
+   "protocol": "mqtt",
+   "name": "MQTT",
+   "port": 1883
+  },
+  {
+   "protocol": "docker",
+   "name": "Docker Plaintext API",
+   "port": 2375
+  }
+ ],
+ "fileKinds": [
+  {
+   "root": "TraceV2",
+   "kind": "network",
+   "label": "TraceV2 network",
+   "folder": "Networks",
+   "icon": "◎"
+  },
+  {
+   "root": "Locale",
+   "kind": "locale",
+   "label": "Locale",
+   "folder": "Locales",
+   "icon": "あ"
+  }
+ ],
+ "enumExtensions": {
+  "HacknetExtension.Language@": [
+   {
+    "value": "dynamic",
+    "desc": "0DTK: choose the language at runtime from Locales/"
+   }
+  ]
+ },
+ "names": {
+  "0dtk.network": {
+   "label": "TraceV2 network",
+   "severity": "error",
+   "source": "a TraceV2 file in Networks/"
+  },
+  "0dtk.event": {
+   "label": "event",
+   "severity": "warning",
+   "source": "SendEvent"
+  },
+  "0dtk.tone": {
+   "label": "IRC tone",
+   "severity": "warning",
+   "source": "0DTK's tones or a 0dtk::tone_<name> locale key",
+   "builtin": [
+    "no",
+    "yes",
+    "help",
+    "hey",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ]
+  },
+  "0dtk.locale": {
+   "label": "locale key",
+   "severity": "info",
+   "source": "Locales/*.xml (or Hacknet/locales/Custom)"
+  }
+ },
+ "contentRefs": [
+  {
+   "pattern": "#0DTK_IMAGE:([^#]+)#",
+   "kind": "file"
+  },
+  {
+   "pattern": "!ATTACHMENT:image#%#[^#]*#%#([^\\s<#]+)",
+   "kind": "file"
+  },
+  {
+   "pattern": "#STUXNET_RADIO:([^#]+)#",
+   "kind": "name",
+   "ns": "stuxnet.song"
+  },
+  {
+   "pattern": "\\{\\{([^{}\\s]+)\\}\\}",
+   "kind": "name",
+   "ns": "0dtk.locale"
+  }
+ ],
+ "provider": "zdtkLocales",
+ "templates": [
+  {
+   "kind": "network",
+   "label": "0DTK TraceV2 network",
+   "folder": "Networks",
+   "ext": ".xml",
+   "body": "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<TraceV2 name=\"{{id}}\" head=\"\">\n  <trace time=\"600\" />\n  <reboot time=\"10\" />\n  <Computer name=\"\" />\n</TraceV2>\n"
+  },
+  {
+   "kind": "locale",
+   "label": "0DTK locale",
+   "folder": "Locales",
+   "ext": ".xml",
+   "body": "<Locale>\n  <en-us>\n    <l key=\"hello\">Hello</l>\n  </en-us>\n</Locale>\n"
+  }
+ ],
+ "nodes": [
+  {
+   "paths": [
+    "ConditionalActions.*.DisableCommand",
+    "CustomFaction.Action.DisableCommand"
+   ],
+   "multi": true,
+   "desc": "Disable a terminal command",
+   "attributes": [
+    {
+     "name": "command",
+     "required": true,
+     "default": "",
+     "desc": "Command",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "alias",
+       "desc": ""
+      },
+      {
+       "value": "unalias",
+       "desc": ""
+      },
+      {
+       "value": "btoa",
+       "desc": ""
+      },
+      {
+       "value": "atob",
+       "desc": ""
+      },
+      {
+       "value": "binary",
+       "desc": ""
+      },
+      {
+       "value": "cp",
+       "desc": ""
+      },
+      {
+       "value": "date",
+       "desc": ""
+      },
+      {
+       "value": "echo",
+       "desc": ""
+      },
+      {
+       "value": "expr",
+       "desc": ""
+      },
+      {
+       "value": "head",
+       "desc": ""
+      },
+      {
+       "value": "tail",
+       "desc": ""
+      },
+      {
+       "value": "history",
+       "desc": ""
+      },
+      {
+       "value": "hostname",
+       "desc": ""
+      },
+      {
+       "value": "last",
+       "desc": ""
+      },
+      {
+       "value": "w",
+       "desc": ""
+      },
+      {
+       "value": "man",
+       "desc": ""
+      },
+      {
+       "value": "mkdir",
+       "desc": ""
+      },
+      {
+       "value": "ping",
+       "desc": ""
+      },
+      {
+       "value": "pwd",
+       "desc": ""
+      },
+      {
+       "value": "radio",
+       "desc": ""
+      },
+      {
+       "value": "rmdir",
+       "desc": ""
+      },
+      {
+       "value": "send",
+       "desc": ""
+      },
+      {
+       "value": "/",
+       "desc": ""
+      },
+      {
+       "value": ">",
+       "desc": ""
+      },
+      {
+       "value": "irc",
+       "desc": ""
+      },
+      {
+       "value": "shutdown",
+       "desc": ""
+      },
+      {
+       "value": "sleep",
+       "desc": ""
+      },
+      {
+       "value": "source",
+       "desc": ""
+      },
+      {
+       "value": "touch",
+       "desc": ""
+      },
+      {
+       "value": "wc",
+       "desc": ""
+      },
+      {
+       "value": "who",
+       "desc": ""
+      },
+      {
+       "value": "whoami",
+       "desc": ""
+      },
+      {
+       "value": "zip",
+       "desc": ""
+      },
+      {
+       "value": "unzip",
+       "desc": ""
+      },
+      {
+       "value": "netstat",
+       "desc": ""
+      }
+     ],
+     "diag": "I"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.DisableStrictLog",
+    "CustomFaction.Action.DisableStrictLog"
+   ],
+   "multi": true,
+   "desc": "Turn strict logging off",
+   "attributes": [
+    {
+     "name": "targetComp",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.EnableCommand",
+    "CustomFaction.Action.EnableCommand"
+   ],
+   "multi": true,
+   "desc": "Enable a command (some 0DTK commands start disabled)",
+   "attributes": [
+    {
+     "name": "command",
+     "required": true,
+     "default": "",
+     "desc": "Command",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "alias",
+       "desc": ""
+      },
+      {
+       "value": "unalias",
+       "desc": ""
+      },
+      {
+       "value": "btoa",
+       "desc": ""
+      },
+      {
+       "value": "atob",
+       "desc": ""
+      },
+      {
+       "value": "binary",
+       "desc": ""
+      },
+      {
+       "value": "cp",
+       "desc": ""
+      },
+      {
+       "value": "date",
+       "desc": ""
+      },
+      {
+       "value": "echo",
+       "desc": ""
+      },
+      {
+       "value": "expr",
+       "desc": ""
+      },
+      {
+       "value": "head",
+       "desc": ""
+      },
+      {
+       "value": "tail",
+       "desc": ""
+      },
+      {
+       "value": "history",
+       "desc": ""
+      },
+      {
+       "value": "hostname",
+       "desc": ""
+      },
+      {
+       "value": "last",
+       "desc": ""
+      },
+      {
+       "value": "w",
+       "desc": ""
+      },
+      {
+       "value": "man",
+       "desc": ""
+      },
+      {
+       "value": "mkdir",
+       "desc": ""
+      },
+      {
+       "value": "ping",
+       "desc": ""
+      },
+      {
+       "value": "pwd",
+       "desc": ""
+      },
+      {
+       "value": "radio",
+       "desc": ""
+      },
+      {
+       "value": "rmdir",
+       "desc": ""
+      },
+      {
+       "value": "send",
+       "desc": ""
+      },
+      {
+       "value": "/",
+       "desc": ""
+      },
+      {
+       "value": ">",
+       "desc": ""
+      },
+      {
+       "value": "irc",
+       "desc": ""
+      },
+      {
+       "value": "shutdown",
+       "desc": ""
+      },
+      {
+       "value": "sleep",
+       "desc": ""
+      },
+      {
+       "value": "source",
+       "desc": ""
+      },
+      {
+       "value": "touch",
+       "desc": ""
+      },
+      {
+       "value": "wc",
+       "desc": ""
+      },
+      {
+       "value": "who",
+       "desc": ""
+      },
+      {
+       "value": "whoami",
+       "desc": ""
+      },
+      {
+       "value": "zip",
+       "desc": ""
+      },
+      {
+       "value": "unzip",
+       "desc": ""
+      },
+      {
+       "value": "netstat",
+       "desc": ""
+      }
+     ],
+     "diag": "I"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.EnableStrictLog",
+    "CustomFaction.Action.EnableStrictLog"
+   ],
+   "multi": true,
+   "desc": "This computer also logs connections; players must clean up and ForkBomb out",
+   "attributes": [
+    {
+     "name": "targetComp",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnCrash"
+   ],
+   "multi": true,
+   "desc": "Runs when a computer or network head crashes",
+   "attributes": [
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "targetComp",
+     "required": false,
+     "default": "",
+     "desc": "Computer (default: the current one)",
+     "hint": "computer"
+    },
+    {
+     "name": "targetNetwork",
+     "required": false,
+     "default": "",
+     "desc": "TraceV2 network name",
+     "hint": "name",
+     "ns": "0dtk.network"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · TraceV2"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnEvent"
+   ],
+   "multi": true,
+   "desc": "Runs when SendEvent sends this signal",
+   "attributes": [
+    {
+     "name": "signal",
+     "required": true,
+     "default": "",
+     "desc": "Event name",
+     "hint": "name",
+     "ns": "0dtk.event"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · Events"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnFileCreation"
+   ],
+   "multi": true,
+   "desc": "Runs when a matching file exists on a computer",
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    },
+    {
+     "name": "path",
+     "required": false,
+     "default": "",
+     "desc": "Folder (empty: whole computer)",
+     "hint": "text"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "File name",
+     "hint": "text"
+    },
+    {
+     "name": "content",
+     "required": false,
+     "default": "",
+     "desc": "File content",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnFileDeletion"
+   ],
+   "multi": true,
+   "desc": "Runs when no matching file exists on a computer",
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    },
+    {
+     "name": "path",
+     "required": false,
+     "default": "",
+     "desc": "Folder (empty: whole computer)",
+     "hint": "text"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "File name",
+     "hint": "text"
+    },
+    {
+     "name": "content",
+     "required": false,
+     "default": "",
+     "desc": "File content",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnHostileActionTaken"
+   ],
+   "multi": true,
+   "desc": "Runs when a hostile action (hack attempt) is taken",
+   "attributes": [
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "targetComp",
+     "required": false,
+     "default": "",
+     "desc": "Computer (default: the current one)",
+     "hint": "computer"
+    },
+    {
+     "name": "targetNetwork",
+     "required": false,
+     "default": "",
+     "desc": "TraceV2 network name",
+     "hint": "name",
+     "ns": "0dtk.network"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · TraceV2"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCAttachment"
+   ],
+   "multi": true,
+   "desc": "Runs when an attachment is posted",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "Attachment name",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCAttachmentAccount"
+   ],
+   "multi": true,
+   "desc": "Runs when an account attachment is posted",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "Name",
+     "hint": "text"
+    },
+    {
+     "name": "ip",
+     "required": false,
+     "default": "",
+     "desc": "IP",
+     "hint": "computerip"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "default": "",
+     "desc": "Username",
+     "hint": "text"
+    },
+    {
+     "name": "password",
+     "required": false,
+     "default": "",
+     "desc": "Password",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCAttachmentFile"
+   ],
+   "multi": true,
+   "desc": "Runs when a file attachment is posted",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "File name",
+     "hint": "text"
+    },
+    {
+     "name": "content",
+     "required": false,
+     "default": "",
+     "desc": "File content (hash data for images/executables)",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCAttachmentLink"
+   ],
+   "multi": true,
+   "desc": "Runs when a link attachment is posted",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "default": "",
+     "desc": "Link name",
+     "hint": "text"
+    },
+    {
+     "name": "ip",
+     "required": false,
+     "default": "",
+     "desc": "IP",
+     "hint": "computerip"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCMessage"
+   ],
+   "multi": true,
+   "desc": "Runs when a word is said on IRC (& = and, | = or)",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "word",
+     "required": true,
+     "default": "",
+     "desc": "Words, e.g. what&this|that",
+     "hint": "text"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCMessageAny"
+   ],
+   "multi": true,
+   "desc": "Runs on any IRC message",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnIRCMessageTone"
+   ],
+   "multi": true,
+   "desc": "Runs when a reply has a tone (yes, no, help, 1-10…)",
+   "attributes": [
+    {
+     "name": "target",
+     "required": false,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    },
+    {
+     "name": "user",
+     "required": false,
+     "default": "",
+     "desc": "Only messages from this user (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "notUser",
+     "required": false,
+     "default": "",
+     "desc": "Ignore messages from this user",
+     "hint": "text"
+    },
+    {
+     "name": "minDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at least",
+     "hint": "text"
+    },
+    {
+     "name": "maxDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds since ResetIRCDelay, at most",
+     "hint": "text"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "tone",
+     "required": true,
+     "default": "",
+     "desc": "Tone",
+     "hint": "name",
+     "ns": "0dtk.tone"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnReboot"
+   ],
+   "multi": true,
+   "desc": "Runs when a computer or network head reboots after a crash",
+   "attributes": [
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "targetComp",
+     "required": false,
+     "default": "",
+     "desc": "Computer (default: the current one)",
+     "hint": "computer"
+    },
+    {
+     "name": "targetNetwork",
+     "required": false,
+     "default": "",
+     "desc": "TraceV2 network name",
+     "hint": "name",
+     "ns": "0dtk.network"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · TraceV2"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnRebootCompleted"
+   ],
+   "multi": true,
+   "desc": "Runs when a network finishes its Retrace timer",
+   "attributes": [
+    {
+     "name": "RequireLogsOnSource",
+     "required": false,
+     "default": "",
+     "desc": "Only if logs are left on the network",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": false,
+     "default": "",
+     "desc": "Only if sys/netcfgx.dll is still on a device",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "requiredFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has all these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "doesNotHaveFlags",
+     "required": false,
+     "default": "",
+     "desc": "Only fire when the player has none of these flags",
+     "hint": "flags"
+    },
+    {
+     "name": "targetNetwork",
+     "required": false,
+     "default": "",
+     "desc": "TraceV2 network name",
+     "hint": "name",
+     "ns": "0dtk.network"
+    }
+   ],
+   "container": true,
+   "group": "0DTK · TraceV2"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ResetIRCDelay",
+    "CustomFaction.Action.ResetIRCDelay"
+   ],
+   "multi": true,
+   "desc": "Restart the IRC delay timer used by minDelay/maxDelay",
+   "attributes": [
+    {
+     "name": "target",
+     "required": true,
+     "default": "",
+     "desc": "Computer with the IRC/DHS chat",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon"
+     ]
+    }
+   ],
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RunCommand",
+    "CustomFaction.Action.RunCommand"
+   ],
+   "multi": true,
+   "desc": "Run a terminal command",
+   "attributes": [
+    {
+     "name": "command",
+     "required": true,
+     "default": "",
+     "desc": "Command line",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendEvent",
+    "CustomFaction.Action.SendEvent"
+   ],
+   "multi": true,
+   "desc": "Send an event to every OnEvent listening for it",
+   "attributes": [
+    {
+     "name": "signal",
+     "required": true,
+     "default": "",
+     "desc": "Event name",
+     "hint": "name",
+     "ns": "0dtk.event",
+     "define": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK · Events"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SetNumberOfChoices",
+    "CustomFaction.Action.SetNumberOfChoices"
+   ],
+   "multi": true,
+   "desc": "Number of choices offered in an interactive IRC log",
+   "attributes": [
+    {
+     "name": "choices",
+     "required": true,
+     "default": "",
+     "desc": "Number of choices",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK · IRC"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SetRAM",
+    "CustomFaction.Action.SetRAM"
+   ],
+   "multi": true,
+   "desc": "Set the player's RAM",
+   "attributes": [
+    {
+     "name": "ram",
+     "required": true,
+     "default": "",
+     "desc": "RAM in MB, e.g. 1200",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "0DTK"
+  },
+  {
+   "paths": [
+    "TraceV2"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "A 0DTK network: nodes that share a TraceV2 'Track' timer",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "",
+     "desc": "Network name (used by targetNetwork)",
+     "hint": "name",
+     "ns": "0dtk.network",
+     "define": true
+    },
+    {
+     "name": "head",
+     "required": true,
+     "default": "",
+     "desc": "Head computer; crashing it starts Retrace",
+     "hint": "computer"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.trace"
+   ],
+   "multi": false,
+   "desc": "Track timer",
+   "attributes": [
+    {
+     "name": "time",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.reboot"
+   ],
+   "multi": false,
+   "desc": "Retrace timer",
+   "attributes": [
+    {
+     "name": "time",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.Computer"
+   ],
+   "multi": true,
+   "desc": "Member computer",
+   "attributes": [
+    {
+     "name": "name",
+     "required": true,
+     "default": "",
+     "desc": "Computer ID",
+     "hint": "computer"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.onStart"
+   ],
+   "multi": false,
+   "desc": "Actions when hostile activity is detected (OnHostileActionTaken)",
+   "attributes": [
+    {
+     "name": "action",
+     "required": true,
+     "default": "",
+     "desc": "Actions to load",
+     "hint": "actionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Delay host (default: the triggering computer)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "RequireLogsOnSource",
+     "required": false,
+     "default": "",
+     "desc": "Only if logs are left on the network",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": false,
+     "default": "",
+     "desc": "Only if sys/netcfgx.dll is still on a device",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.onCrash"
+   ],
+   "multi": false,
+   "desc": "Actions when the head crashes (OnCrash)",
+   "attributes": [
+    {
+     "name": "action",
+     "required": true,
+     "default": "",
+     "desc": "Actions to load",
+     "hint": "actionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Delay host (default: the triggering computer)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "RequireLogsOnSource",
+     "required": false,
+     "default": "",
+     "desc": "Only if logs are left on the network",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": false,
+     "default": "",
+     "desc": "Only if sys/netcfgx.dll is still on a device",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.onComplete"
+   ],
+   "multi": false,
+   "desc": "Actions when Retrace finishes (OnRebootCompleted)",
+   "attributes": [
+    {
+     "name": "action",
+     "required": true,
+     "default": "",
+     "desc": "Actions to load",
+     "hint": "actionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Delay host (default: the triggering computer)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "RequireLogsOnSource",
+     "required": false,
+     "default": "",
+     "desc": "Only if logs are left on the network",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": false,
+     "default": "",
+     "desc": "Only if sys/netcfgx.dll is still on a device",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "TraceV2.afterComplete"
+   ],
+   "multi": false,
+   "desc": "Actions every N connections after completion",
+   "attributes": [
+    {
+     "name": "action",
+     "required": true,
+     "default": "",
+     "desc": "Actions to load",
+     "hint": "actionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Delay host (default: the triggering computer)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ]
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "RequireLogsOnSource",
+     "required": false,
+     "default": "",
+     "desc": "Only if logs are left on the network",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "RequireSourceIntact",
+     "required": false,
+     "default": "",
+     "desc": "Only if sys/netcfgx.dll is still on a device",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "every",
+     "required": false,
+     "default": "",
+     "desc": "Every N connections",
+     "hint": "text"
+    },
+    {
+     "name": "offAfter",
+     "required": false,
+     "default": "",
+     "desc": "Stop after this many triggers (-1: never)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Locale"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "0DTK locale file (Locales/*.xml)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Locale.*"
+   ],
+   "multi": true,
+   "container": true,
+   "desc": "Language (e.g. en-us, ko-kr)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Locale.*.l"
+   ],
+   "multi": true,
+   "desc": "Translation",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Text",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "key",
+     "required": true,
+     "default": "",
+     "desc": "Key, used as {{key}} in text",
+     "hint": "name",
+     "ns": "0dtk.locale",
+     "define": true
+    },
+    {
+     "name": "exact",
+     "required": false,
+     "default": "",
+     "desc": "Only replace whole matches",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  }
+ ]
+}

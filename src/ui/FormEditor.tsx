@@ -18,7 +18,11 @@ import {
   XElement,
   XNode,
 } from "../core/xml";
+import { BUILTIN_MODULES } from "../core/modules";
+import { lookupNodeIn } from "../core/schema";
+import { serializeNode } from "../core/xml";
 import { useApp } from "./context";
+import { DiagActions } from "./DiagActions";
 import { FieldEditor } from "./fields";
 import { ThemePreview } from "./ThemePreview";
 
@@ -136,9 +140,12 @@ export function FormEditor({ file }: { file: ProjectFile }) {
   void project;
 }
 
-function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement; parent: XElement | null; path: string[] }) {
-  const { project, selectElement, diagnostics, open, prompt, toast, confirm, setUiTheme } = useApp();
+export function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement; parent: XElement | null; path: string[] }) {
+  const { project, selectElement, diagnostics, open, prompt, toast, confirm, setUiTheme, game, setModuleMode } = useApp();
   const def = lookupNode(path);
+  const offModule = !def ? BUILTIN_MODULES.find((m) => !project.activeModules.some((a) => a.id === m.id) && lookupNodeIn(m.nodes, path)) : undefined;
+  const isAction = path.length === 3 && (/^conditionalactions$/i.test(path[0]) || (/^customfaction$/i.test(path[0]) && /^action$/i.test(path[1])));
+  const isTrigger = path.length === 2 && /^conditionalactions$/i.test(path[0]);
   const doc = file.doc!;
   const commit = (key?: string) => project.commitDoc(file.path, key);
 
@@ -148,7 +155,9 @@ function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement
   const kids = elementChildren(el);
   const hasElementKids = kids.length > 0;
   const contentField: FieldDef | null = def?.content ?? (!hasElementKids && !def?.container && textContent(el).trim() ? { hint: "text", required: false, default: "", desc: "" } : null);
-  const myDiags = diagnostics.filter((d) => d.file === file.path && d.elId === el.id);
+  const allDiags = diagnostics.filter((d) => d.file === file.path && d.elId === el.id);
+  const myDiags = allDiags.filter((d) => !d.suppressed);
+  const ignored = allDiags.length - myDiags.length;
 
   const setA = (name: string, v: string | undefined, key?: string) => {
     const real = el.attrs.find((a) => a.name.toLowerCase() === name.toLowerCase())?.name ?? name;
@@ -188,19 +197,47 @@ function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement
           {el.name}
           <span className="lt">&gt;</span>
         </h2>
-        {def?.custom && <span className="badge kind">custom schema</span>}
+        {def?.module && <span className="badge kind" title={`Added by the ${def.module} schema module`}>{def.module}</span>}
         {!def && <span className="badge warn">unknown tag</span>}
         <span className="msg info">line {el.line || "new"}</span>
       </div>
-      <p className="insp-desc">{def?.desc ?? "VRift has no schema for this tag. You can still edit its attributes and content. If it comes from a Pathfinder mod, add it to VRift.schema.json to get full support."}</p>
+      <p className="insp-desc">
+        {def?.desc ??
+          (offModule
+            ? `<${el.name}> comes from ${offModule.name}, which is not turned on for this extension.`
+            : "VRift has no schema for this tag. You can still edit its attributes and content. If it comes from a Pathfinder mod, describe it in VRift.schema.json to get full support.")}
+      </p>
+      {offModule && (
+        <button className="hn-btn small primary" style={{ marginBottom: 8 }} onClick={() => setModuleMode(offModule.id, "on").catch((e) => toast(String(e), "error"))}>
+          turn on {offModule.name}
+        </button>
+      )}
 
       {myDiags.map((d, i) => (
-        <div key={i} className={"msg " + d.severity} style={{ marginBottom: 4 }}>
-          {d.severity === "error" ? "✖" : d.severity === "warning" ? "▲" : "●"} {d.message}
+        <div key={i} className={"msg diag-line " + d.severity} style={{ marginBottom: 4 }}>
+          <span>
+            {d.severity === "error" ? "✖" : d.severity === "warning" ? "▲" : "●"} {d.message}
+          </span>
+          <DiagActions d={d} compact />
         </div>
       ))}
+      {ignored > 0 && <div className="msg info">{ignored} ignored problem{ignored > 1 ? "s" : ""} on this tag</div>}
 
       <div className="insp-actions">
+        {game.status.online && (isAction || isTrigger) && (
+          <button
+            className="hn-btn small"
+            title={isTrigger ? "Run this trigger's actions in the game now (ignores the condition)" : "Run this action in the game now"}
+            onClick={() => game.run(isTrigger ? elementChildren(el).map(serializeNode).join("") : serializeNode(el), el.name).catch((e) => toast(String(e), "error"))}
+          >
+            ▶ run in game
+          </button>
+        )}
+        {game.status.online && !parent && file.kind === "computer" && getAttr(el, "id") && (
+          <button className="hn-btn small" title="Connect to this computer in the game with admin access" onClick={() => game.connect(getAttr(el, "id")!).catch((e) => toast(String(e), "error"))}>
+            connect in game
+          </button>
+        )}
         {parent && (
           <>
             <button className="hn-btn small" onClick={() => selectElement(file.path, parent.id)}>
@@ -267,7 +304,7 @@ function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement
 
       {(fields.length > 0 || unknownAttrs.length > 0) && <div className="section-title">ATTRIBUTES</div>}
       {fields.map((f) => (
-        <FieldEditor key={f.name} field={f} label={f.name!} value={getAttrCI(el, f.name!)} el={el} onChange={(v, key) => setA(f.name!, v, key)} />
+        <FieldEditor key={f.name} field={f} label={f.name!} value={getAttrCI(el, f.name!)} el={el} file={file.path} onChange={(v, key) => setA(f.name!, v, key)} />
       ))}
       {unknownAttrs.map((a) => (
         <div key={a.name} className="field">
@@ -289,6 +326,7 @@ function Inspector({ file, el, parent, path }: { file: ProjectFile; el: XElement
           <div className="section-title">CONTENT</div>
           <FieldEditor
             field={contentField}
+            file={file.path}
             label={el.name}
             value={contentField.hint === "text" ? textContent(el) : trimmedText(el)}
             el={el}
@@ -390,6 +428,7 @@ function ChildrenSection({ file, el, path, kids, addChild }: { file: ProjectFile
           {inline.map(([c, d]) => (
             <FieldEditor
               key={c.id}
+              file={file.path}
               field={{ ...d!.content!, desc: d!.desc, required: false }}
               label={c.name}
               value={d!.content!.hint === "text" ? textContent(c) : trimmedText(c)}
@@ -442,7 +481,10 @@ function AddChildMenu({ options, kids, onAdd }: { options: { name: string; def: 
     window.addEventListener("mousedown", close);
     return () => window.removeEventListener("mousedown", close);
   }, [open]);
-  const shown = options.filter((o) => !q || o.name.toLowerCase().includes(q.toLowerCase()) || o.def.desc.toLowerCase().includes(q.toLowerCase()));
+  const shown = options
+    .filter((o) => !q || o.name.toLowerCase().includes(q.toLowerCase()) || o.def.desc.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => (a.def.module ?? "").localeCompare(b.def.module ?? "") || (a.def.group ?? "").localeCompare(b.def.group ?? "") || a.name.localeCompare(b.name));
+  let lastGroup = "";
   return (
     <div className="add-menu" ref={ref}>
       <button className="hn-btn small primary" onClick={() => setOpen(!open)}>
@@ -461,9 +503,13 @@ function AddChildMenu({ options, kids, onAdd }: { options: { name: string; def: 
           </div>
           {shown.map((o) => {
             const exists = !o.def.multi && kids.some((k) => k.name.toLowerCase() === o.name.toLowerCase());
+            const group = o.def.group ?? o.def.module ?? "";
+            const head = group !== lastGroup ? group : null;
+            lastGroup = group;
             return (
+              <div key={o.name}>
+              {head && <div className="dhead">{head}</div>}
               <div
-                key={o.name}
                 className={"menu-item" + (exists ? " disabled" : "")}
                 title={exists ? "Already present (only one allowed)" : ""}
                 onClick={() => {
@@ -474,6 +520,7 @@ function AddChildMenu({ options, kids, onAdd }: { options: { name: string; def: 
               >
                 <div className="n">&lt;{o.name}&gt;</div>
                 <div className="d">{o.def.desc}</div>
+              </div>
               </div>
             );
           })}

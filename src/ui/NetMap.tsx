@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComputerInfo } from "../core/project";
 import { dirname } from "../fs/fs";
@@ -126,8 +127,9 @@ function layout(comps: ComputerInfo[]): { pos: Map<string, Pos>; clusters: { nam
   return { pos, clusters };
 }
 
-export function NetMap({ activePath }: { activePath: string | null }) {
-  const { project, openComputer, diagnostics } = useApp();
+export function NetMap({ activePath, head }: { activePath: string | null; head?: React.ReactNode }) {
+  const { project, openComputer, diagnostics, game, toast } = useApp();
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const idx = project.index;
   const [folderFilter, setFolderFilter] = useState("");
   const comps = useMemo(() => [...idx.computers.values()].map((l) => l[0]).filter((c) => !folderFilter || dirname(c.file) === folderFilter), [idx, folderFilter]);
@@ -189,6 +191,7 @@ export function NetMap({ activePath }: { activePath: string | null }) {
     <div className="module">
       <div className="module-head">
         <span className="title">netMap v1.7</span>
+        {head}
         <span className="meta">
           {comps.length} nodes · {comps.reduce((n, c) => n + c.links.length, 0)} links
         </span>
@@ -270,6 +273,11 @@ export function NetMap({ activePath }: { activePath: string | null }) {
                     onClick={() => {
                       if (!drag.current?.moved) openComputer(c.id);
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      const r = box.current!.getBoundingClientRect();
+                      setMenu({ id: c.id, x: e.clientX - r.left, y: e.clientY - r.top });
+                    }}
                   >
                     <rect x={-s / 2} y={-s / 2} width={s} height={s} strokeWidth={1.4 / view.k} />
                     {c.id === activeComp && <circle className="ring" r={s * 1.2} strokeWidth={1 / view.k} />}
@@ -299,7 +307,25 @@ export function NetMap({ activePath }: { activePath: string | null }) {
               </div>
             );
           })()}
-        <div className="netmap-legend">drag to pan · wheel to zoom · click a node to open it</div>
+        {menu && (
+          <div className="dropdown" style={{ position: "absolute", left: menu.x, top: menu.y }} onMouseLeave={() => setMenu(null)}>
+            <div className="di" onClick={() => (openComputer(menu.id), setMenu(null))}>
+              Open {menu.id}
+            </div>
+            <div
+              className={"di" + (game.status.online ? "" : " disabled")}
+              title={game.status.online ? "" : "Start Hacknet with HacknetHotReplace first"}
+              onClick={() => {
+                const id = menu.id;
+                setMenu(null);
+                if (game.status.online) game.connect(id).catch((e) => toast(String(e), "error"));
+              }}
+            >
+              Connect in game (admin)
+            </div>
+          </div>
+        )}
+        <div className="netmap-legend">drag to pan · wheel to zoom · click a node to open it · right-click for more</div>
       </div>
     </div>
   );

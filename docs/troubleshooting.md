@@ -14,7 +14,9 @@ Steam can replace Workshop files during updates. Use **make copy**. VRift copies
 
 ## The form editor is disabled
 
-The XML has a parse error or no usable root. Switch to **XML**, inspect diagnostics, and fix unclosed tags, missing quotes, duplicate attributes, stray `<` characters, or multiple roots. Form view returns after successful parsing.
+The XML structure is broken, so the tag tree can't be trusted: an unclosed tag, a closing tag with different capitalisation (`<File>…</file>`), a missing quote, or a stray `<`. Switch to **XML**, check the red bar above the editor and the diagnostics, and fix the first structural problem. Form view returns as soon as the structure parses.
+
+Since 1.1, smaller problems (duplicate attributes, a bare `&`, text outside the root) no longer disable the form; they are listed as diagnostics instead.
 
 Unknown tags do not disable forms. They remain generically editable. For mod-specific controls, add [`VRift.schema.json`](custom-schema.md).
 
@@ -22,9 +24,27 @@ Unknown tags do not disable forms. They remain generically editable. For mod-spe
 
 - Name it `VRift.schema.json` and place it at the extension root.
 - Use a JSON object containing a `nodes` array.
-- Reload the extension after external changes.
-- Check Diagnostics for a schema read error.
+- Edits made in VRift apply immediately; reload the extension after editing it in another program.
+- Check Diagnostics for a schema error; it points at the line.
 - Ensure dotted paths and case match the XML; `*` matches one segment.
+- **Project → Mods…** shows whether the schema loaded.
+
+## Stuxnet / 0DTK tags show as unknown
+
+The module for that mod is off. VRift turns it on automatically when it finds `stuxnet_config.json`, `Plugins/Stuxnet*.dll`, a `Networks/` folder, a cutscene or network file, or a tag only that mod uses. If your extension uses the mod differently, open **Project → Mods…** and set it to **On**. The choice is saved in `VRift.json`.
+
+## A warning is wrong for my extension
+
+Hover it in the diagnostics list and choose **ignore ▾** (this one, this kind in this file, or this kind everywhere), or **allow "value"** for "expected one of…" warnings. You can also put `<!-- vrift-ignore -->` on the line before the tag. See [Ignoring warnings](user-guide.md#ignoring-warnings). If you think VRift's rule is wrong for everyone, please report it.
+
+## Hot reload says the game is not running
+
+- HacknetHotReplace must be installed **globally** in `Hacknet/BepInEx/plugins`, with Pathfinder installed.
+- Start Hacknet and wait a few seconds; the top bar shows **● GAME** when VRift sees the plugin's heartbeat.
+- The plugin publishes its port in the Windows registry (`HKCU\Software\Hacknet`), in `~/.HacknetHotReplace/` for a native Linux/macOS game, or in the Proton prefix's registry (`steamapps/compatdata/365450/pfx/user.reg`). VRift checks all three.
+- Hot reload commands only work after an extension is loaded in the game (**Game → Open extension in game**).
+- Reloading happens on the game's next frame. If a command times out, check that the game isn't paused on a loading screen or a modal dialog.
+- Firewalls rarely matter (everything stays on 127.0.0.1), but security software that blocks local UDP will stop it.
 
 ## A path works on Windows but has a capitalization warning
 
@@ -45,7 +65,11 @@ Use `refs <old-value>` before renaming and `find <old-value>` afterward. Add sch
 
 ## A file is missing from the editor
 
-VRift loads `.xml`, `.txt`, `.html`, `.htm`, `.css`, and `.md` files smaller than 4 MB. The desktop walker skips `.git`, `node_modules`, `.vs`, `.vscode`, and `.idea`. Binary assets remain in the extension but are not text-editable.
+VRift loads every text file smaller than 4 MB, whatever its extension. The desktop app looks at the start of each file with an unknown extension to decide whether it is text. Images open as previews. Other binary assets remain in the extension but are not editable. The desktop walker skips `.git`, `node_modules`, `.vs`, `.vscode`, and `.idea`.
+
+## Accented characters look wrong, or saving fails with "Windows-1252"
+
+VRift reads UTF-8, UTF-16 and Windows ANSI (Windows-1252) files and saves them back in the same encoding. An ANSI file cannot store characters outside its code page (for example Chinese or emoji), so saving such a character fails with a message naming the line. Remove the character, or convert the file to UTF-8 in another editor; Hacknet reads UTF-8 fine.
 
 ## Undo does not behave as expected
 

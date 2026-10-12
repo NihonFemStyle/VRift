@@ -339,7 +339,7 @@ mod tests {
         let lib = tmp("lib");
         fs::create_dir_all(lib.join("steamapps/common/Hacknet/Extensions")).unwrap();
         fs::create_dir_all(lib.join("steamapps/workshop/content/365450/111")).unwrap();
-        let s = hacknet_sources(&[lib.clone()]);
+        let s = hacknet_sources(std::slice::from_ref(&lib));
         assert_eq!(s.len(), 2);
         assert_eq!(s[0].kind, "game");
         assert_eq!(s[1].kind, "workshop");

@@ -1,0 +1,192 @@
+<!doctype html>
+<!--
+  Source for docs/banner.png and docs/social-preview.png.
+  Regenerate with:  python scripts/art/render.py   (needs Playwright + Chromium)
+  ?mode=banner (1280x360) or ?mode=social (1280x640)
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: "STM"; src: url("../../node_modules/@fontsource/share-tech-mono/files/share-tech-mono-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "JBM"; src: url("../../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+  :root {
+    --hl: rgb(0, 139, 199);
+    --hl-rgb: 0, 139, 199;
+    --module: rgb(50, 59, 90);
+    --topbar: rgb(130, 65, 27);
+    --term: rgb(213, 245, 255);
+    --shell: rgb(222, 201, 24);
+    --node: rgb(95, 220, 83);
+    --subtle: rgb(130, 130, 130);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; background: rgb(6, 6, 6); }
+  body { font-family: "STM", monospace; color: var(--term); position: relative; }
+  .bg { position: absolute; inset: 0; }
+  .hex { position: absolute; inset: 0; opacity: 0.11;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'><path d='M28 1 L55 17 L55 48 L28 64 L1 48 L1 17 Z M28 64 L28 97' fill='none' stroke='white' stroke-width='1'/></svg>");
+    background-size: 28px 48.5px; }
+  .glow { position: absolute; inset: 0;
+    background: radial-gradient(ellipse 55% 75% at 22% 55%, rgba(var(--hl-rgb), 0.28), transparent 70%),
+                radial-gradient(ellipse 45% 60% at 82% 45%, rgba(var(--hl-rgb), 0.14), transparent 70%); }
+  .scan { position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0 1px, transparent 1px 3px); }
+  .vignette { position: absolute; inset: 0; box-shadow: inset 0 0 160px rgba(0,0,0,0.9); }
+
+  .topbar { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: var(--topbar); display: flex; align-items: center; gap: 22px; padding: 0 14px; font-size: 15px; color: white; }
+  .topbar b { color: var(--hl); filter: brightness(1.5); font-weight: normal; }
+  .topbar .m { opacity: 0.85; }
+  .topbar .r { margin-left: auto; opacity: 0.85; }
+
+  .brand { position: absolute; display: flex; align-items: center; gap: 30px; }
+  .word { font-size: var(--word); line-height: 0.9; letter-spacing: 0.02em; }
+  .word .v { color: rgb(213, 245, 255); }
+  .word .rift { color: var(--hl); filter: brightness(1.35); }
+  .sub { font-size: var(--sub); letter-spacing: 0.24em; color: white; opacity: 0.92; margin-top: 10px; }
+  .prompt { font-family: "JBM", monospace; font-size: var(--prompt); color: var(--shell); margin-top: 16px; white-space: nowrap; }
+  .prompt .dim { color: var(--subtle); }
+  .cursor { display: inline-block; width: 0.6em; height: 1.05em; background: var(--shell); vertical-align: -0.15em; margin-left: 2px; }
+
+  .module { position: absolute; border: 1px solid var(--module); background: rgba(5, 6, 7, 0.82); }
+  .module .head { height: 22px; background: var(--module); color: white; font-size: 14px; display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+  .module .head .meta { opacity: 0.6; }
+  .module .head .tab { background: var(--hl); padding: 0 6px; font-size: 12px; }
+  .module svg { display: block; }
+  .term { font-family: "JBM", monospace; font-size: 12.5px; line-height: 1.55; padding: 8px 10px; }
+  .e { color: rgb(230, 60, 60); } .w { color: var(--shell); } .ok { color: var(--node); } .loc { color: var(--subtle); }
+
+  .chips { position: absolute; display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { border: 1px solid rgba(var(--hl-rgb), 0.9); border-left: 4px solid var(--hl); background: rgba(var(--hl-rgb), 0.14); color: white; font-size: 15.5px; padding: 4px 10px; }
+  .chip.y { border-color: rgba(222, 201, 24, 0.7); border-left-color: var(--shell); background: rgba(222, 201, 24, 0.08); }
+  .repo { position: absolute; font-size: 17px; color: var(--subtle); }
+  .repo b { color: white; font-weight: normal; }
+</style>
+</head>
+<body>
+  <div class="bg"><div class="glow"></div><div class="hex"></div><div class="scan"></div></div>
+  <div id="root"></div>
+  <div class="vignette"></div>
+<script>
+const mode = new URLSearchParams(location.search).get("mode") || "banner";
+const W = 1280, H = mode === "social" ? 640 : 360;
+document.documentElement.style.setProperty("--w", W + "px");
+document.documentElement.style.setProperty("--h", H + "px");
+const root = document.getElementById("root");
+
+// deterministic pseudo-random
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+function icon(size) {
+  // the app icon's split "V" with node rings
+  return `<svg width="${size}" height="${size}" viewBox="0 0 256 256">
+    <rect x="14" y="12" width="228" height="230" rx="24" fill="#0a0a0a" stroke="rgb(0,139,199)" stroke-width="12"/>
+    <path d="M60 66 L106 66 L130 212 Z" fill="rgb(213,245,255)"/>
+    <path d="M150 66 L198 66 L136 212 Z" fill="rgb(0,139,199)"/>
+    <circle cx="74" cy="56" r="8" fill="none" stroke="rgb(95,220,83)" stroke-width="4"/>
+    <circle cx="181" cy="56" r="8" fill="none" stroke="rgb(95,220,83)" stroke-width="4"/>
+  </svg>`;
+}
+
+function netmap(w, h, n) {
+  // clustered nodes like VRift's netMap
+  const nodes = [];
+  const clusters = mode === "social" ? [[0.17, 0.3], [0.5, 0.24], [0.83, 0.38], [0.3, 0.74], [0.7, 0.76]] : [[0.16, 0.32], [0.5, 0.27], [0.84, 0.4], [0.3, 0.74], [0.68, 0.76]];
+  for (let i = 0; i < n; i++) {
+    const c = i % clusters.length;
+    nodes.push({ c, x: (clusters[c][0] + (rnd() - 0.5) * 0.2) * w, y: (clusters[c][1] + (rnd() - 0.5) * 0.28) * h });
+  }
+  // each node links to its nearest earlier neighbour in the same folder; folder hubs form a backbone
+  const links = [];
+  for (let i = clusters.length; i < n; i++) {
+    let best = -1, bd = Infinity;
+    for (let j = 0; j < i; j++) {
+      if (nodes[j].c !== nodes[i].c) continue;
+      const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
+      if (d < bd) { bd = d; best = j; }
+    }
+    if (best >= 0) links.push([i, best]);
+  }
+  for (let c = 1; c < clusters.length; c++) links.push([c, c === 4 ? 2 : c - 1]);
+  links.push([0, 3]);
+  const sel = 3, player = 0;
+  const hot = new Set(links.filter(([a, b]) => a === sel || b === sel).flatMap((x) => x));
+  let s = `<svg width="${w}" height="${h}">`;
+  for (const cl of clusters) {
+    const x = cl[0] * w - w * 0.13, y = cl[1] * h - h * 0.2;
+    s += `<rect x="${x}" y="${y}" width="${w * 0.26}" height="${h * 0.4}" fill="rgba(50,59,90,0.07)" stroke="rgba(50,59,90,0.6)" stroke-dasharray="4 3"/>`;
+  }
+  for (const [a, b] of links) {
+    const isHot = a === sel || b === sel;
+    s += `<line x1="${nodes[a].x}" y1="${nodes[a].y}" x2="${nodes[b].x}" y2="${nodes[b].y}" stroke="${isHot ? "rgb(222,201,24)" : "rgba(0,139,199,0.7)"}" stroke-width="${isHot ? 1.8 : 1}"/>`;
+  }
+  nodes.forEach((p, i) => {
+    const col = i === player ? "rgb(95,220,83)" : "rgb(0,139,199)";
+    const fill = i === sel ? "rgb(0,139,199)" : "rgba(0,0,0,0.85)";
+    s += `<rect x="${p.x - 5}" y="${p.y - 5}" width="10" height="10" fill="${fill}" stroke="${col}" stroke-width="1.6"/>`;
+    if (i === sel) s += `<circle cx="${p.x}" cy="${p.y}" r="13" fill="none" stroke="rgb(222,201,24)" stroke-dasharray="3 3"/>`;
+  });
+  const labels = { 0: "playerComp", 3: "sunVault", 7: "relayHub", 11: "jmail" };
+  for (const [i, t] of Object.entries(labels)) if (nodes[i]) s += `<text x="${nodes[i].x + 10}" y="${nodes[i].y + 4}" fill="rgb(213,245,255)" font-family="STM" font-size="12">${t}</text>`;
+  return s + `</svg>`;
+}
+
+if (mode === "banner") {
+  document.documentElement.style.setProperty("--word", "112px");
+  document.documentElement.style.setProperty("--sub", "19px");
+  document.documentElement.style.setProperty("--prompt", "16px");
+  root.innerHTML = `
+    <div class="brand" style="left:70px; top:76px">
+      ${icon(168)}
+      <div>
+        <div class="word"><span class="v">V</span><span class="rift">Rift</span></div>
+        <div class="sub">HACKNET EXTENSION EDITOR</div>
+        <div class="prompt"><span class="dim">vrift:~$</span> forms · validation · hot reload<span class="cursor"></span></div>
+      </div>
+    </div>
+    <div class="module" style="left:840px; top:44px; width:392px; height:272px">
+      <div class="head">netMap v1.7 <span class="tab">netMap</span><span class="meta">25 nodes · 25 links</span></div>
+      ${netmap(390, 248, 25)}
+    </div>`;
+} else {
+  document.documentElement.style.setProperty("--word", "136px");
+  document.documentElement.style.setProperty("--sub", "21px");
+  document.documentElement.style.setProperty("--prompt", "19px");
+  const t = new Date(2026, 9, 12, 14, 19);
+  root.innerHTML = `
+    <div class="topbar"><span>V<b>Rift</b></span><span class="m">File</span><span class="m">New</span><span class="m">View</span><span class="m">Project</span><span class="m">Game</span><span class="m">Help</span>
+      <span class="r">● GAME · 0 errors · 0 warnings · ${t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span></div>
+    <div class="brand" style="left:70px; top:104px">
+      ${icon(180)}
+      <div>
+        <div class="word"><span class="v">V</span><span class="rift">Rift</span></div>
+        <div class="sub">HACKNET EXTENSION EDITOR</div>
+      </div>
+    </div>
+    <div class="prompt" style="position:absolute; left:74px; top:352px"><span class="dim">vrift@extension:~$</span> edit every file the game reads<span class="cursor"></span></div>
+    <div class="chips" style="left:74px; top:410px; width:670px; gap: 9px">
+      <span class="chip">forms for every tag</span><span class="chip">live validation</span><span class="chip">netMap</span>
+      <span class="chip">story graph</span><span class="chip">action builder</span><span class="chip">flag timeline</span>
+      <span class="chip y">Stuxnet</span><span class="chip y">0DTK</span><span class="chip y">Pathfinder</span><span class="chip y">hot reload</span>
+    </div>
+    <div class="repo" style="left:74px; bottom:34px">github.com/<b>NihonFemStyle/HackNet-Extension-Editor</b> · GPL-3.0 · Windows · Linux · macOS</div>
+    <div class="module" style="left:770px; top:66px; width:462px; height:300px">
+      <div class="head">netMap v1.7 <span class="tab">netMap</span><span class="meta">story · flags · people</span></div>
+      ${netmap(460, 276, 30)}
+    </div>
+    <div class="module" style="left:770px; top:388px; width:462px; height:196px">
+      <div class="head">Terminal <span class="tab">diagnostics</span></div>
+      <div class="term">
+        <div class="e">✖ AddSongToRadio.SongID: no RadioV3 song named "outro".</div>
+        <div class="loc">&nbsp;&nbsp;Did you mean "intro"? · Actions/Radio.xml:3</div>
+        <div class="w">▲ &lt;AddVaultKey&gt; has Delay="2" but no DelayHost.</div>
+        <div class="loc">&nbsp;&nbsp;Actions/Vault.xml:7</div>
+        <div class="ok">vrift:~$ reload Nodes/Vault.xml</div>
+        <div class="ok">Reloaded Vault.xml in the game.</div>
+      </div>
+    </div>`;
+}
+document.fonts.ready.then(() => document.body.setAttribute("data-ready", "1"));
+</script>
+</body>
+</html>

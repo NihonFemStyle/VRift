@@ -12,8 +12,11 @@ export type FileKind =
   | "theme"
   | "people"
   | "hackerScript"
+  | "json"
   | "text"
-  | "other";
+  | "other"
+  /** Kinds added by schema modules ("stuxnetCutscene", "network"…). */
+  | (string & {});
 
 export interface NewFileTemplate {
   kind: FileKind;
@@ -22,6 +25,10 @@ export interface NewFileTemplate {
   ext: string;
   /** `{{id}}` is replaced with the file's base name. */
   body: string;
+  /** Always created at this path (e.g. stuxnet_config.json). */
+  fixedPath?: string;
+  /** Module that provides the template ("Stuxnet"). */
+  module?: string;
 }
 
 export const NEW_FILE_TEMPLATES: NewFileTemplate[] = [
@@ -200,7 +207,7 @@ export function newExtensionFiles(name: string): Record<string, string | Uint8Ar
 </Computer>
 `,
     "Nodes/MailServer.xml": `<?xml version="1.0" encoding="UTF-8" ?>
-<Computer id="jmail" name="JMail Email Server" security="4" allowsDefaultBootModule="true" icon="mail" type="3">
+<Computer id="jmail" name="JMail Email Server" security="4" allowsDefaultBootModule="true" type="3">
   <account username="#PLAYERNAME#" password="password" type="MAIL" />
   <mailServer name="JMail" color="50,237,212" generateJunk="false">
   </mailServer>

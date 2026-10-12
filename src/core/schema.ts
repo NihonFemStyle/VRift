@@ -30,7 +30,9 @@ export type Hint =
   | "folder"
   | "faction"
   | "flags"
-  | "step";
+  | "step"
+  /** A named value from a namespace (field.ns), e.g. a vault key or a song ID. */
+  | "name";
 
 export interface EnumOption {
   value: string;
@@ -64,6 +66,18 @@ export interface FieldDef {
   childAttr?: string;
   matchAttr?: string;
   matchChildAttr?: string;
+  /** For hint "name": the namespace of the value ("stuxnet.vault"). */
+  ns?: string;
+  /** For hint "name": this field defines a name (instead of referring to one). */
+  define?: boolean;
+  /** The value is a comma separated list. */
+  list?: boolean;
+  /** "file": names only need to exist in the same file. */
+  scope?: "file";
+  /** Regular expression the value must match. */
+  regex?: string;
+  /** For path hints: file kinds that are valid targets (e.g. ["stuxnetCutscene"]). */
+  kinds?: string[];
 }
 
 export interface ConditionDef {
@@ -84,6 +98,10 @@ export interface NodeDef {
   conditions?: ConditionDef[];
   /** True for definitions added by the user/mod schema rather than the built-in one. */
   custom?: boolean;
+  /** Name of the schema module that added this tag ("Stuxnet"), for badges. */
+  module?: string;
+  /** Group in the "add child" menu ("Stuxnet · SMS"). */
+  group?: string;
 }
 
 export interface SchemaFile {
@@ -95,15 +113,81 @@ export interface SchemaFile {
 
 export const schema = raw as unknown as SchemaFile;
 
-/** Extra node definitions (e.g. from a project-local VRift.schema.json). */
-let extraNodes: NodeDef[] = [];
-export function setExtraSchema(nodes: NodeDef[]) {
-  extraNodes = nodes.map((n) => ({ ...n, custom: true }));
+/** The base nodes with module/project enum extensions applied, followed by module nodes. */
+let activeNodes: NodeDef[] = schema.nodes;
+let activeSignature = "";
+
+export interface ModuleNodes {
+  name: string;
+  nodes: NodeDef[];
+  /** Changes whenever the node list changes (e.g. the text of VRift.schema.json). */
+  rev?: string;
+}
+
+/**
+ * Activate schema modules (Stuxnet, 0DTK, VRift.schema.json…).
+ * `enumExtras` adds allowed values to existing attributes, keyed "Tag.Path@attr" ("Tag@" for content).
+ */
+export function setModules(mods: ModuleNodes[], enumExtras: Record<string, EnumOption[]> = {}) {
+  const signature = JSON.stringify([mods.map((m) => [m.name, m.rev ?? m.nodes.length]), enumExtras]);
+  if (signature === activeSignature) return;
+  activeSignature = signature;
+  const extended = (nodes: NodeDef[]) => (Object.keys(enumExtras).length ? nodes.map((n) => extendNode(n, enumExtras)) : nodes);
+  const modNodes = mods.flatMap((m) => m.nodes.map((n) => ({ ...n, custom: true, module: m.name })));
+  activeNodes = [...extended(schema.nodes), ...extended(modNodes)];
   cache.clear();
+  childCache.clear();
+}
+
+/** Back-compat: a single custom schema. */
+export function setExtraSchema(nodes: NodeDef[]) {
+  setModules(nodes.length ? [{ name: "VRift.schema.json", nodes }] : []);
+}
+
+function extendNode(n: NodeDef, extras: Record<string, EnumOption[]>): NodeDef {
+  let out: NodeDef | null = null;
+  for (const [key, opts] of Object.entries(extras)) {
+    const at = key.lastIndexOf("@");
+    const path = key.slice(0, at).toLowerCase();
+    const attr = key.slice(at + 1).toLowerCase();
+    if (!n.paths.some((p) => p.toLowerCase() === path)) continue;
+    const patch = (f: FieldDef): FieldDef => {
+      const have = new Set((f.enums ?? []).map((e) => e.value));
+      const add = opts.filter((o) => !have.has(o.value));
+      return add.length ? { ...f, enums: [...(f.enums ?? []), ...add] } : f;
+    };
+    out ??= { ...n };
+    if (!attr) {
+      if (out.content) out.content = patch(out.content);
+    } else {
+      out.attributes = out.attributes.map((f) => (f.name?.toLowerCase() === attr ? patch(f) : f));
+      if (out.conditions) out.conditions = out.conditions.map((c) => ({ ...c, attributes: c.attributes.map((f) => (f.name?.toLowerCase() === attr ? patch(f) : f)) }));
+    }
+  }
+  return out ?? n;
 }
 
 function allNodes(): NodeDef[] {
-  return extraNodes.length ? [...schema.nodes, ...extraNodes] : schema.nodes;
+  return activeNodes;
+}
+
+const listCaches = new WeakMap<NodeDef[], Map<string, NodeDef | null>>();
+
+/** Look a path up in a specific list of nodes, ignoring active modules. Cached per list. */
+export function lookupNodeIn(nodes: NodeDef[], path: string[]): NodeDef | null {
+  let c = listCaches.get(nodes);
+  if (!c) listCaches.set(nodes, (c = new Map()));
+  const key = path.join("/").toLowerCase();
+  const hit = c.get(key);
+  if (hit !== undefined) return hit;
+  let found: NodeDef | null = null;
+  for (const n of nodes) {
+    for (const p of n.paths) {
+      if (pathMatches(p, path) && (!found || !p.includes("*"))) found = n;
+    }
+  }
+  c.set(key, found);
+  return found;
 }
 
 /** Does a schema path pattern ("A.*.B") match a concrete element path (["A","X","B"])? */
@@ -178,8 +262,19 @@ export interface ChildOption {
   def: NodeDef;
 }
 
+const childCache = new Map<string, ChildOption[]>();
+
 /** Child tags allowed under an element at `path`. */
 export function childOptions(path: string[]): ChildOption[] {
+  const key = path.join("/").toLowerCase();
+  const hit = childCache.get(key);
+  if (hit) return hit;
+  const r = computeChildOptions(path);
+  childCache.set(key, r);
+  return r;
+}
+
+function computeChildOptions(path: string[]): ChildOption[] {
   const out = new Map<string, ChildOption>();
   for (const n of allNodes()) {
     for (const p of n.paths) {

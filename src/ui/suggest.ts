@@ -2,8 +2,10 @@
  * Suggestions for reference fields: every computer ID, mission file, theme, flag... that exists
  * in the project, filtered to what makes sense for the field being edited.
  */
+import { nameSpace } from "../core/modules";
 import { BUILTIN_COMPUTERS, BUILTIN_THEMES, Project } from "../core/project";
-import type { FieldDef } from "../core/schema";
+import type { EnumOption, FieldDef } from "../core/schema";
+import { schema } from "../core/schema";
 import { BUILTIN_SONGS } from "../core/validate";
 import { getAttrCI, XElement } from "../core/xml";
 
@@ -38,10 +40,29 @@ export function globToRegExp(glob: string): RegExp {
 }
 
 function filesOfKind(project: Project, kind: string): Option[] {
-  return (project.index.filesByKind.get(kind as never) ?? []).sort().map((p) => ({ value: p, group: "Project files" }));
+  return project
+    .filesOfKind(kind)
+    .sort()
+    .map((p) => ({ value: p, group: "Project files" }));
 }
 
-export function optionsFor(project: Project, field: FieldDef, el: XElement | null): Option[] {
+/** The namespace key used in the index for a name field (file-scoped names include the file). */
+export function nameKey(field: FieldDef, file: string | undefined): string {
+  return field.scope === "file" && file ? `${field.ns}@${file}` : field.ns ?? "";
+}
+
+/** Wildcards usable in text: Hacknet's own, executables from active mods, and Stuxnet custom wildcards. */
+export function wildcardOptions(project: Project): EnumOption[] {
+  const out: EnumOption[] = [...schema.wildcards];
+  for (const m of project.activeModules) for (const e of m.executables ?? []) out.push({ value: e.value, desc: e.desc });
+  for (const name of project.index.names.get("stuxnet.wildcard")?.keys() ?? []) {
+    const n = name.toUpperCase();
+    out.push({ value: `#${n}#`, desc: "Custom wildcard (AddCustomWildcard)" }, { value: `#${n}_IP#`, desc: "Node IP wildcard" }, { value: `#${n}_PASS#`, desc: "Node admin password wildcard" });
+  }
+  return out;
+}
+
+export function optionsFor(project: Project, field: FieldDef, el: XElement | null, file?: string): Option[] {
   const idx = project.index;
   const enums: Option[] = (field.enums ?? []).map((e) => ({ value: e.value, desc: e.desc, group: "Values" }));
   const suggest: Option[] = (field.suggest ?? []).map((e) => ({ value: e.value, desc: e.desc, group: "Special IDs" }));
@@ -101,11 +122,20 @@ export function optionsFor(project: Project, field: FieldDef, el: XElement | nul
       const builtins = enums.length ? enums : BUILTIN_THEMES.map((t) => ({ value: t, desc: "Built-in theme", group: "Built in" }));
       return [...builtins.map((b) => ({ ...b, group: "Built in" })), ...filesOfKind(project, "theme")];
     }
+    case "name": {
+      const def = field.ns ? nameSpace(project.activeModules, field.ns) : undefined;
+      const names = idx.names.get(nameKey(field, file));
+      const out: Option[] = [...(names?.entries() ?? [])].sort((a, b) => a[0].localeCompare(b[0])).map(([v, defs]) => ({ value: v, desc: `${defs[0].file}:${defs[0].line}`, group: def ? `Known ${def.label}s` : "Known values" }));
+      for (const b of def?.builtin ?? []) if (!names?.has(b)) out.push({ value: b, desc: "Built in", group: "Built in" });
+      return [...enums, ...out];
+    }
     case "path": {
       const re = field.pattern ? globToRegExp(field.pattern.trim()) : null;
+      const kinds = field.kinds ? new Set(field.kinds) : null;
       const files = project
         .allFiles()
         .filter((p) => !re || re.test(p))
+        .filter((p) => !kinds || kinds.has(project.files.get(p)?.kind ?? ""))
         .sort()
         .map((p) => ({ value: p, group: "Project files" }));
       const builtinSongs = field.pattern?.includes(".ogg") && !enums.length ? BUILTIN_SONGS.map((s) => ({ value: s, desc: "Built-in song", group: "Built in" })) : [];
@@ -126,11 +156,28 @@ export function optionsFor(project: Project, field: FieldDef, el: XElement | nul
 }
 
 /** Is a reference value resolvable? Used for inline red/green feedback. */
-export function checkValue(project: Project, field: FieldDef, value: string): { ok: boolean; message?: string } {
+export function checkValue(project: Project, field: FieldDef, value: string, file?: string): { ok: boolean; message?: string } {
   const v = value.trim();
   if (!v) return { ok: true };
   const idx = project.index;
+  if (field.regex && !v.includes("#")) {
+    try {
+      if (!new RegExp(field.regex).test(v)) return { ok: false, message: "Unexpected format" };
+    } catch {
+      /* bad pattern in a custom schema */
+    }
+  }
   switch (field.hint) {
+    case "name": {
+      if (field.define || !field.ns) return { ok: true };
+      const def = nameSpace(project.activeModules, field.ns);
+      if (!def || def.severity === "none") return { ok: true };
+      const names = idx.names.get(nameKey(field, file));
+      const values = field.list ? v.split(",").map((x) => x.trim()).filter(Boolean) : [v];
+      const missing = values.filter((x) => !names?.has(x) && !def.builtin?.includes(x));
+      if (!missing.length) return { ok: true };
+      return { ok: def.severity === "info", message: `No ${def.label} named "${missing[0]}"${def.source ? ` (defined by ${def.source})` : ""}` };
+    }
     case "computer":
     case "computeroreos": {
       if (v.includes("#")) return { ok: true };

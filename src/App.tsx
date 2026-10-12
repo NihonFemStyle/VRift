@@ -1,31 +1,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { canHotReload, connectComputer, enterExtension, executeActions, gameStatus, GameStatus, OFFLINE, reloadFile } from "./core/hotreload";
+import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, ModuleMode } from "./core/modules";
 import { Project } from "./core/project";
-import { findById, walkElements } from "./core/xml";
+import { elementAtIndexPath, elementChildren, findById, indexPathOf, trimmedText, walkElements } from "./core/xml";
 import { Diagnostic, summarize, validateProject } from "./core/validate";
-import { basename, isTauri, joinPath, normalizeRel } from "./fs/fs";
+import { basename, isImagePath, isTauri, joinPath, looksLikeText, normalizeRel } from "./fs/fs";
 import { MemoryFs } from "./fs/memoryFs";
 import { pickFolder, TauriFs } from "./fs/tauriFs";
 import { detectSteamSources } from "./fs/library";
 import { demoExtensionFiles } from "./templates/demo";
-import { FileKind, NEW_FILE_TEMPLATES, newExtensionFiles } from "./templates/templates";
-import { AppApi, AppContext, NavTarget, PromptOptions, useProjectVersion } from "./ui/context";
-import { Editor, ViewMode } from "./ui/Editor";
+import { FileKind, NEW_FILE_TEMPLATES, NewFileTemplate, newExtensionFiles } from "./templates/templates";
+import { AppApi, AppContext, GameApi, NavTarget, PanelId, PromptOptions, SettingsTab, SuppressScope, useProjectVersion } from "./ui/context";
+import { Editor, TabActions, ViewMode } from "./ui/Editor";
 import { Explorer } from "./ui/Explorer";
+import { FlagsView } from "./ui/FlagsView";
 import { ConfirmModal, PromptModal, QuickItem, QuickOpen } from "./ui/Modal";
 import { NetMap } from "./ui/NetMap";
+import { openUrl } from "./ui/openUrl";
+import { PanelTabs } from "./ui/PanelTabs";
+import { PeopleView } from "./ui/PeopleView";
+import { applyCodeFont, applyScale, loadPrefs, Prefs, savePrefs, stepScale, UI_SCALES } from "./ui/prefs";
+import { SettingsModal } from "./ui/SettingsModal";
+import { StoryView } from "./ui/StoryView";
 import { Terminal } from "./ui/Terminal";
 import { applyTheme, BUILTIN_UI_THEMES, themeFromCustom, UiTheme } from "./ui/themes";
-import { elementChildren, trimmedText } from "./core/xml";
 import { pushRecent, Welcome } from "./ui/Welcome";
 
 const THEME_KEY = "vrift.theme";
+const DOCS = "https://github.com/NihonFemStyle/HackNet-Extension-Editor/blob/main/docs";
+
+type Selection = { elId: number; ip: number[] | null };
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
   const version = useProjectVersion(project);
   const [tabs, setTabs] = useState<string[]>([]);
+  const [closedTabs, setClosedTabs] = useState<string[]>([]);
   const [active, setActive] = useState<string | null>(null);
-  const [selection, setSelection] = useState<Record<string, number>>({});
+  const [selection, setSelection] = useState<Record<string, Selection>>({});
   const [modes, setModes] = useState<Record<string, ViewMode>>({});
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [gotoLine, setGotoLine] = useState<{ path: string; line: number; n: number } | null>(null);
@@ -34,6 +46,9 @@ export default function App() {
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; ok?: string; resolve: (v: boolean) => void } | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [quick, setQuick] = useState(false);
+  const [settings, setSettings] = useState<SettingsTab | null>(null);
+  const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
+  const [game, setGame] = useState<GameStatus>(OFFLINE);
   const [themeName, setThemeName] = useState(() => {
     try {
       return localStorage.getItem(THEME_KEY) ?? "HacknetBlue";
@@ -42,14 +57,29 @@ export default function App() {
     }
   });
   const [clock, setClock] = useState(() => new Date());
-  const [showNetmap, setShowNetmap] = useState(true);
-  const [netmapH, setNetmapH] = useState(() => Number(localStorage.getItem("vrift.netmapH")) || 280);
+  const [showPanel, setShowPanel] = useState(true);
+  const [panel, setPanel] = useState<PanelId>(() => (localStorage.getItem("vrift.panel") as PanelId) || "netmap");
+  const [panelMax, setPanelMax] = useState(false);
+  const [panelH, setPanelH] = useState(() => Number(localStorage.getItem("vrift.netmapH")) || 280);
   const gotoCounter = useRef(0);
 
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 15000);
     return () => clearInterval(t);
   }, []);
+
+  // ------------------------------------------------------------------ preferences
+  const setPrefs = useCallback((p: Partial<Prefs>) => {
+    setPrefsState((prev) => {
+      const next = { ...prev, ...p };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    applyScale(prefs.uiScale);
+  }, [prefs.uiScale]);
+  useEffect(() => applyCodeFont(prefs.codeFontSize), [prefs.codeFontSize]);
 
   // ------------------------------------------------------------------ themes
   const projectThemes = useMemo(() => {
@@ -100,16 +130,25 @@ export default function App() {
   const prompt = useCallback((opts: PromptOptions) => new Promise<string | null>((resolve) => setPromptState({ opts, resolve })), []);
   const confirm = useCallback((title: string, message: string, ok?: string) => new Promise<boolean>((resolve) => setConfirmState({ title, message, ok, resolve })), []);
 
+  const openTab = useCallback((path: string) => {
+    setTabs((tabs) => (tabs.includes(path) ? tabs : [...tabs, path].slice(-20)));
+    setActive(path);
+  }, []);
+
   const open = useCallback(
     (t: NavTarget) => {
       if (!project) return;
-      const path = normalizeRel(t.path);
+      let path = normalizeRel(t.path);
       if (!project.files.has(path)) {
-        toast(`${path} is not a text file VRift can edit.`, "error");
-        return;
+        const real = project.allFiles().find((p) => p.toLowerCase() === path.toLowerCase());
+        if (real && project.files.has(real)) path = real;
+        else if (real && isImagePath(real)) return openTab(real);
+        else {
+          toast(real ? `${real} is not a text file VRift can edit.` : `${path} does not exist.`, "error");
+          return;
+        }
       }
-      setTabs((tabs) => (tabs.includes(path) ? tabs : [...tabs, path].slice(-14)));
-      setActive(path);
+      openTab(path);
       const f = project.files.get(path)!;
       let elId = t.elId;
       if (elId === undefined && t.line && f.doc?.root) {
@@ -120,14 +159,15 @@ export default function App() {
         });
         elId = best;
       }
-      if (elId !== undefined && f.doc && findById(f.doc, elId)) {
-        setSelection((s) => ({ ...s, [path]: elId! }));
+      if (elId !== undefined && elId >= 0 && f.doc && findById(f.doc, elId)) {
+        setSelection((s) => ({ ...s, [path]: { elId: elId!, ip: indexPathOf(f.doc!, elId!) } }));
         if ((modes[path] ?? "form") === "xml" && t.line) setGotoLine({ path, line: t.line, n: ++gotoCounter.current });
       } else if (t.line) {
+        setModes((m) => (/\.xml$/i.test(path) ? { ...m, [path]: "xml" } : m));
         setGotoLine({ path, line: t.line, n: ++gotoCounter.current });
       }
     },
-    [project, modes, toast],
+    [project, modes, toast, openTab],
   );
 
   const openComputer = useCallback(
@@ -147,6 +187,163 @@ export default function App() {
     [project, open, toast],
   );
 
+  // ------------------------------------------------------------------ tabs
+  const tabActions: TabActions = useMemo(() => {
+    const closeMany = (keep: (t: string, i: number, all: string[]) => boolean) =>
+      setTabs((ts) => {
+        const next = ts.filter((t, i) => keep(t, i, ts));
+        const closed = ts.filter((t) => !next.includes(t));
+        if (closed.length) setClosedTabs((c) => [...c, ...closed].slice(-30));
+        setActive((a) => (a && next.includes(a) ? a : next[next.length - 1] ?? null));
+        return next;
+      });
+    return {
+      closeTab: (p) => closeMany((t) => t !== p),
+      closeOthers: (p) => closeMany((t) => t === p),
+      closeRight: (p) => closeMany((_t, i, all) => i <= all.indexOf(p)),
+      closeSaved: () => closeMany((t) => !!project?.isDirty(t)),
+      moveTab: (from, to) =>
+        setTabs((ts) => {
+          const n = ts.filter((t) => t !== from);
+          n.splice(n.indexOf(to) + (ts.indexOf(from) < ts.indexOf(to) ? 1 : 0), 0, from);
+          return n;
+        }),
+    };
+  }, [project]);
+
+  const cycleTab = useCallback(
+    (dir: 1 | -1) => {
+      if (!tabs.length) return;
+      const i = active ? tabs.indexOf(active) : -1;
+      setActive(tabs[(i + dir + tabs.length) % tabs.length]);
+    },
+    [tabs, active],
+  );
+
+  // ------------------------------------------------------------------ settings (VRift.json)
+  const suppress = useCallback(
+    async (d: Diagnostic, scope: SuppressScope) => {
+      if (!project) return;
+      await project.updateConfig((c) => {
+        const rule = scope === "this" ? { code: d.code, file: d.file || undefined, key: d.key ?? d.message } : scope === "file" ? { code: d.code, file: d.file } : { code: d.code };
+        c.suppress = [...(c.suppress ?? []), JSON.parse(JSON.stringify(rule))];
+      });
+    },
+    [project],
+  );
+  const unsuppress = useCallback(
+    async (d: Diagnostic) => {
+      if (!project) return;
+      const { ruleMatches } = await import("./core/validate");
+      const before = project.config.suppress ?? [];
+      if (!before.some((r) => ruleMatches(r, d))) {
+        toast(d.suppressed?.includes("comment") ? "This is hidden by a vrift-ignore comment in the file. Remove the comment to show it again." : "No rule to remove.", "error");
+        return;
+      }
+      await project.updateConfig((c) => (c.suppress = (c.suppress ?? []).filter((r) => !ruleMatches(r, d))));
+    },
+    [project, toast],
+  );
+  const allowValue = useCallback(
+    async (key: string, value: string) => {
+      if (!project) return;
+      await project.updateConfig((c) => {
+        c.allowValues ??= {};
+        const l = c.allowValues[key] ?? [];
+        if (!l.includes(value)) c.allowValues[key] = [...l, value];
+      });
+    },
+    [project],
+  );
+  const setModuleMode = useCallback(
+    async (id: string, mode: ModuleMode) => {
+      if (!project) return;
+      await project.updateConfig((c) => {
+        c.modules ??= {};
+        if (mode === "auto") delete c.modules[id];
+        else c.modules[id] = mode;
+      });
+    },
+    [project],
+  );
+
+  // ------------------------------------------------------------------ game (HacknetHotReplace)
+  useEffect(() => {
+    if (!isTauri() || !project) return;
+    let alive = true;
+    const poll = () => gameStatus().then((s) => alive && setGame((g) => (g.online === s.online && g.port === s.port && g.wine === s.wine ? g : s)));
+    poll();
+    const t = setInterval(poll, 4000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [project]);
+
+  const gameApi: GameApi = useMemo(() => {
+    const abs = (rel: string) => (project?.fs instanceof TauriFs ? project.fs.absolute(rel) : rel);
+    const need = () => {
+      if (!isTauri()) throw new Error("Hot reload needs the desktop app.");
+      if (!game.online) throw new Error("The game is not running with HacknetHotReplace (Settings → Game for help).");
+    };
+    return {
+      status: game,
+      available: isTauri(),
+      reload: async (path) => {
+        need();
+        if (!project) return;
+        if (path === "People") {
+          await reloadFile("", "people", game);
+          toast("Reloaded people in the game");
+          return;
+        }
+        const f = project.files.get(path);
+        if (!f || !canHotReload(f.kind)) throw new Error(`${path} cannot be hot-reloaded (computers, missions, actions, themes, factions and people can).`);
+        if (project.isDirty(path)) await project.save(path);
+        await reloadFile(abs(path), f.kind, game, { clearOldActions: prefs.clearOldActions });
+        toast(`Reloaded ${basename(path)} in the game`);
+      },
+      connect: async (id) => {
+        need();
+        await connectComputer(id);
+        toast(`Connected to ${id} in the game`);
+      },
+      run: async (xml, label) => {
+        need();
+        await executeActions(xml);
+        toast(`Ran ${label} in the game`);
+      },
+      launch: async () => {
+        need();
+        if (!project) return;
+        if (project.isDirty()) await project.saveAll();
+        await enterExtension(project.fs.root, game, { needApproval: false, noAccount: false });
+        toast("Opened the extension in the game");
+      },
+    };
+  }, [game, project, prefs.clearOldActions, toast]);
+
+  const quickStart = useCallback(async () => {
+    try {
+      if (!project || !game.online) throw new Error("The game is not running with HacknetHotReplace.");
+      if (project.isDirty()) await project.saveAll();
+      await enterExtension(project.fs.root, game, { needApproval: false, noAccount: true });
+      toast("Started the extension in the game (no account)");
+    } catch (e) {
+      toast(String(e), "error");
+    }
+  }, [project, game, toast]);
+
+  const openPanel = useCallback((p: PanelId) => {
+    setPanel(p);
+    setShowPanel(true);
+    try {
+      localStorage.setItem("vrift.panel", p);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const api: AppApi | null = useMemo(
     () =>
       project
@@ -155,16 +352,40 @@ export default function App() {
             diagnostics,
             open,
             openComputer,
-            selectElement: (path, elId) => setSelection((s) => (elId === null ? (({ [path]: _, ...rest }) => rest)(s) : { ...s, [path]: elId })),
-            selected: (path) => selection[path] ?? null,
+            selectElement: (path, elId) =>
+              setSelection((s) => {
+                if (elId === null) {
+                  const { [path]: _, ...rest } = s;
+                  return rest;
+                }
+                const doc = project.files.get(path)?.doc;
+                return { ...s, [path]: { elId, ip: doc ? indexPathOf(doc, elId) : null } };
+              }),
+            selected: (path) => {
+              const s = selection[path];
+              const doc = project.files.get(path)?.doc;
+              if (!s || !doc) return null;
+              if (findById(doc, s.elId)) return s.elId;
+              // the file was re-parsed (raw XML edit, undo…): find the same position again
+              return s.ip ? elementAtIndexPath(doc, s.ip)?.id ?? null : null;
+            },
             toast,
             prompt,
             confirm,
             runValidation,
             setUiTheme: setTheme,
+            suppress,
+            unsuppress,
+            allowValue,
+            setModuleMode,
+            game: gameApi,
+            prefs,
+            setPrefs,
+            openSettings: (tab) => setSettings(tab ?? "mods"),
+            openPanel,
           }
         : null,
-    [project, diagnostics, open, openComputer, selection, toast, prompt, confirm, runValidation, version, setTheme],
+    [project, diagnostics, open, openComputer, selection, toast, prompt, confirm, runValidation, version, setTheme, suppress, unsuppress, allowValue, setModuleMode, gameApi, prefs, setPrefs, openPanel],
   );
 
   // ------------------------------------------------------------------ project lifecycle
@@ -178,6 +399,7 @@ export default function App() {
       }
       setProject(p);
       setTabs([]);
+      setClosedTabs([]);
       setActive(null);
       setSelection({});
       setDiagnostics(validateProject(p));
@@ -188,6 +410,8 @@ export default function App() {
       }
       if (recentPath) pushRecent({ path: recentPath, name: p.name, time: Date.now() });
       if (!info) toast("No ExtensionInfo.xml in this folder. Is this the extension's root folder?", "error");
+      const mods = p.modules.filter((m) => m.module.builtin && m.active).map((m) => m.module.name);
+      if (mods.length) setTimeout(() => toast(`Mod support on: ${mods.join(", ")} (Project → Mods)`), 600);
     },
     [toast],
   );
@@ -227,8 +451,9 @@ export default function App() {
         rootName = parts[0];
         const inner = parts.slice(1).join("/");
         if (!inner || /(^|\/)\.git\//.test(inner)) continue;
-        if (/\.(xml|txt|html?|css|md)$/i.test(inner) && f.size < 4_000_000) files[inner] = (await f.text()).replace(/^﻿/, "");
-        else files[inner] = new Uint8Array(0);
+        if (f.size < 4_000_000 && (isImagePath(inner) || looksLikeText(inner, new Uint8Array(await f.slice(0, 8192).arrayBuffer())))) {
+          files[inner] = isImagePath(inner) ? new Uint8Array(await f.arrayBuffer()) : (await f.text()).replace(/^﻿/, "");
+        } else files[inner] = new Uint8Array(0);
       }
       loadProject(new Project(new MemoryFs(rootName, files)));
     },
@@ -262,16 +487,33 @@ export default function App() {
     }
   }, [guardUnsaved, prompt, loadProject, toast]);
 
+  /** Vanilla templates plus the ones from active schema modules. */
+  const templates: NewFileTemplate[] = useMemo(() => {
+    const mods = (project?.activeModules ?? []).flatMap((m) => (m.templates ?? []).map((t) => ({ ...t, module: m.name.split(" ")[0] })));
+    return [...NEW_FILE_TEMPLATES, ...mods];
+  }, [project, version]);
+
   const newFile = useCallback(
-    async (kind: FileKind, folder?: string) => {
+    async (kind: FileKind, folder?: string, tplOverride?: NewFileTemplate) => {
       if (!project) return;
-      const tpl = NEW_FILE_TEMPLATES.find((t) => t.kind === kind);
+      const tpl = tplOverride ?? templates.find((t) => t.kind === kind);
       if (!tpl) return;
+      if (tpl.fixedPath) {
+        if (project.fileExists(tpl.fixedPath)) return open({ path: tpl.fixedPath });
+        try {
+          const created = await project.createFile(tpl.fixedPath, tpl.body);
+          open({ path: created });
+          toast(`Created ${created}`);
+        } catch (e) {
+          toast(String(e), "error");
+        }
+        return;
+      }
       const base = folder ?? tpl.folder;
       const path = await prompt({
         title: `New ${tpl.label.toLowerCase()}`,
         label: "Path inside the extension",
-        value: `${base}/New${tpl.label.replace(/[^A-Za-z]/g, "")}${tpl.ext}`,
+        value: `${base ? base + "/" : ""}New${tpl.label.replace(/[^A-Za-z]/g, "")}${tpl.ext}`,
         okLabel: "Create",
         validate: (s) => (!s.trim() ? "Enter a path" : !s.endsWith(tpl.ext) ? `Must end with ${tpl.ext}` : project.fileExists(s) ? "That file already exists" : null),
       });
@@ -285,40 +527,103 @@ export default function App() {
         toast(String(e), "error");
       }
     },
-    [project, prompt, open, toast],
+    [project, prompt, open, toast, templates],
+  );
+
+  const saveFile = useCallback(
+    async (path: string) => {
+      if (!project) return;
+      await project.save(path);
+      toast(`Saved ${path}`);
+      const f = project.files.get(path);
+      if (prefs.autoReload && game.online && f && canHotReload(f.kind)) gameApi.reload(path).catch((e) => toast(`Saved, but the game reload failed: ${e}`, "error"));
+    },
+    [project, toast, prefs.autoReload, game.online, gameApi],
   );
 
   const saveAll = useCallback(async () => {
     if (!project) return;
-    const n = project.dirtyFiles().length;
+    const dirty = project.dirtyFiles();
     try {
       await project.saveAll();
-      toast(n ? `Saved ${n} file(s)` : "Nothing to save");
+      toast(dirty.length ? `Saved ${dirty.length} file(s)` : "Nothing to save");
+      if (prefs.autoReload && game.online)
+        for (const p of dirty) {
+          const f = project.files.get(p);
+          if (f && canHotReload(f.kind)) await gameApi.reload(p).catch((e) => toast(`Game reload of ${p} failed: ${e}`, "error"));
+        }
     } catch (e) {
       toast(`Save failed: ${e}`, "error");
     }
-  }, [project, toast]);
+  }, [project, toast, prefs.autoReload, game.online, gameApi]);
 
   const closeProject = useCallback(async () => {
     if (!(await guardUnsaved())) return;
     setProject(null);
     setDiagnostics([]);
+    setGame(OFFLINE);
   }, [guardUnsaved]);
 
   // ------------------------------------------------------------------ keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
+      const k = e.key.toLowerCase();
+      // Never let the webview reload the page and lose unsaved work.
+      if (e.key === "F5" || (mod && k === "r" && !e.altKey)) {
+        e.preventDefault();
+        return;
+      }
+      if (mod && (k === "=" || k === "+")) {
+        e.preventDefault();
+        setPrefs({ uiScale: stepScale(prefs.uiScale, 1) });
+        return;
+      }
+      if (mod && (k === "-" || k === "_")) {
+        e.preventDefault();
+        setPrefs({ uiScale: stepScale(prefs.uiScale, -1) });
+        return;
+      }
+      if (mod && k === "0") {
+        e.preventDefault();
+        setPrefs({ uiScale: 1 });
+        return;
+      }
+      if (mod && k === ",") {
+        e.preventDefault();
+        setSettings("interface");
+        return;
+      }
       if (!mod || !project) return;
       const inText = (e.target as HTMLElement)?.closest?.("input, textarea, .cm-editor");
-      const k = e.key.toLowerCase();
       if (k === "s") {
         e.preventDefault();
         if (e.shiftKey) saveAll();
-        else if (active) project.save(active).then(() => toast(`Saved ${active}`), (err) => toast(String(err), "error"));
+        else if (active && project.files.has(active)) saveFile(active).catch((err) => toast(String(err), "error"));
       } else if (k === "p") {
         e.preventDefault();
         setQuick(true);
+      } else if (k === "tab" || k === "pagedown" || k === "pageup") {
+        e.preventDefault();
+        cycleTab(k === "pageup" || (k === "tab" && e.shiftKey) ? -1 : 1);
+      } else if (k === "w") {
+        e.preventDefault();
+        if (active) tabActions.closeTab(active);
+      } else if (k === "t" && e.shiftKey) {
+        e.preventDefault();
+        const last = closedTabs[closedTabs.length - 1];
+        if (last) {
+          setClosedTabs((c) => c.slice(0, -1));
+          open({ path: last });
+        }
+      } else if (/^[1-9]$/.test(e.key) && !e.altKey) {
+        e.preventDefault();
+        const n = Number(e.key);
+        const t = n === 9 ? tabs[tabs.length - 1] : tabs[n - 1];
+        if (t) setActive(t);
+      } else if (k === "r" && e.altKey) {
+        e.preventDefault();
+        if (active) gameApi.reload(active).catch((err) => toast(String(err), "error"));
       } else if (!inText && active && k === "z" && !e.shiftKey) {
         e.preventDefault();
         project.undo(active);
@@ -329,7 +634,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [project, active, saveAll, toast]);
+  }, [project, active, saveAll, saveFile, toast, prefs.uiScale, setPrefs, cycleTab, tabActions, closedTabs, tabs, open, gameApi]);
 
   // ------------------------------------------------------------------ close protection (desktop)
   useEffect(() => {
@@ -361,36 +666,107 @@ export default function App() {
     const items: QuickItem[] = [];
     for (const [id, l] of project.index.computers) items.push({ label: id, detail: `computer · ${l[0].name} · ${l[0].file}`, run: () => openComputer(id) });
     for (const p of project.files.keys()) items.push({ label: basename(p), detail: p, run: () => open({ path: p }) });
+    for (const p of project.allFiles()) if (isImagePath(p)) items.push({ label: basename(p), detail: `image · ${p}`, run: () => open({ path: p }) });
     return items;
   }, [project, version, open, openComputer]);
 
-  const menus: Record<string, { label: string; key?: string; run?: () => void; disabled?: boolean; sep?: boolean; head?: boolean }[]> = {
+  type MenuItem = { label: string; key?: string; run?: () => void; disabled?: boolean; sep?: boolean; head?: boolean };
+  const runSafe = (fn: () => Promise<unknown>) => () => fn().catch((e) => toast(String(e), "error"));
+  const activeFile = active ? project?.files.get(active) : undefined;
+  const menus: Record<string, MenuItem[]> = {
     file: [
       { label: "New extension…", run: newExtension },
       { label: isTauri() ? "Open extension folder…" : "Open example extension", run: isTauri() ? openFolder : openDemo },
       { label: "Extension library…", run: closeProject },
       { label: "", sep: true },
-      { label: "Save", key: "Ctrl+S", run: () => active && project?.save(active), disabled: !active },
+      { label: "Save", key: "Ctrl+S", run: () => active && project?.files.has(active) && saveFile(active), disabled: !activeFile },
       { label: "Save all", key: "Ctrl+Shift+S", run: saveAll, disabled: !project },
       { label: "Reload from disk", run: async () => project && (await guardUnsaved()) && loadProject(new Project(project.fs)), disabled: !project },
       { label: "", sep: true },
+      { label: "Close tab", key: "Ctrl+W", run: () => active && tabActions.closeTab(active), disabled: !active },
+      { label: "Reopen closed tab", key: "Ctrl+Shift+T", run: () => closedTabs.length && open({ path: closedTabs[closedTabs.length - 1] }), disabled: !closedTabs.length },
       { label: "Close extension", run: closeProject, disabled: !project },
     ],
-    new: NEW_FILE_TEMPLATES.map((t) => ({ label: t.label + "…", run: () => newFile(t.kind), disabled: !project })),
+    new: [
+      ...templates.filter((t) => !t.module).map((t) => ({ label: t.label + "…", run: () => newFile(t.kind, undefined, t), disabled: !project })),
+      ...(templates.some((t) => t.module) ? [{ label: "From mods", head: true }] : []),
+      ...templates.filter((t) => t.module).map((t) => ({ label: `${t.label}${t.fixedPath ? "" : "…"}`, run: () => newFile(t.kind, undefined, t), disabled: !project })),
+      { label: "VRift", head: true },
+      {
+        label: `${CUSTOM_SCHEMA_FILE} (custom tags)`,
+        run: () => setSettings("mods"),
+        disabled: !project,
+      },
+    ],
     view: [
       { label: "Quick open", key: "Ctrl+P", run: () => setQuick(true), disabled: !project },
-      { label: showNetmap ? "Hide netMap" : "Show netMap", run: () => setShowNetmap(!showNetmap) },
+      { label: "Next tab", key: "Ctrl+Tab", run: () => cycleTab(1), disabled: tabs.length < 2 },
+      { label: "Previous tab", key: "Ctrl+Shift+Tab", run: () => cycleTab(-1), disabled: tabs.length < 2 },
+      { label: "", sep: true },
+      { label: "Panels", head: true },
+      { label: (panel === "netmap" && showPanel ? "● " : "  ") + "netMap", run: () => openPanel("netmap") },
+      { label: (panel === "story" && showPanel ? "● " : "  ") + "Story (mission flow)", run: () => openPanel("story") },
+      { label: (panel === "flags" && showPanel ? "● " : "  ") + "Flags timeline", run: () => openPanel("flags") },
+      { label: (panel === "people" && showPanel ? "● " : "  ") + "People & factions", run: () => openPanel("people") },
+      { label: showPanel ? "  Hide panel" : "  Show panel", run: () => setShowPanel(!showPanel) },
+      { label: "", sep: true },
+      { label: `Interface scale · ${Math.round(prefs.uiScale * 100)}%`, head: true },
+      { label: "  Bigger", key: "Ctrl+=", run: () => setPrefs({ uiScale: stepScale(prefs.uiScale, 1) }), disabled: prefs.uiScale >= UI_SCALES[UI_SCALES.length - 1] },
+      { label: "  Smaller", key: "Ctrl+-", run: () => setPrefs({ uiScale: stepScale(prefs.uiScale, -1) }), disabled: prefs.uiScale <= UI_SCALES[0] },
+      { label: "  Reset", key: "Ctrl+0", run: () => setPrefs({ uiScale: 1 }) },
+      { label: "  More display settings…", key: "Ctrl+,", run: () => setSettings("interface") },
       { label: "", sep: true },
       { label: "Editor theme", head: true },
       ...BUILTIN_UI_THEMES.map((t) => ({ label: (t.name === themeName ? "● " : "  ") + t.name, run: () => setTheme(t.name) })),
       ...(projectThemes.length ? [{ label: "From this extension", head: true }] : []),
       ...projectThemes.map((t) => ({ label: (t.name === themeName ? "● " : "  ") + t.name, run: () => setTheme(t.name) })),
     ],
+    project: [
+      { label: "Mods (schema modules)…", run: () => setSettings("mods"), disabled: !project },
+      { label: "Ignored warnings…", run: () => setSettings("ignored"), disabled: !project },
+      { label: "Re-check everything", run: runValidation, disabled: !project },
+      { label: "", sep: true },
+      ...(project
+        ? project.modules
+            .filter((m) => m.module.builtin)
+            .map((m) => ({ label: `${m.active ? "● " : "○ "}${m.module.name}`, run: () => setSettings("mods") }))
+        : []),
+      ...(project?.fileExists(CONFIG_FILE) ? [{ label: "", sep: true }, { label: `Open ${CONFIG_FILE}`, run: () => open({ path: CONFIG_FILE }) }] : []),
+    ],
+    game: [
+      { label: !isTauri() ? "Desktop app only" : game.online ? `● Connected (UDP ${game.port})` : game.port ? "○ Game not running" : "○ HacknetHotReplace not found", head: true },
+      { label: "Open extension in game", run: runSafe(gameApi.launch), disabled: !game.online || !project },
+      { label: "Quick start (new session, no account)", run: quickStart, disabled: !game.online || !project },
+      { label: "Reload current file", key: "Ctrl+Alt+R", run: runSafe(() => gameApi.reload(active!)), disabled: !game.online || !activeFile || !canHotReload(activeFile.kind) },
+      { label: "Reload people", run: runSafe(() => gameApi.reload("People")), disabled: !game.online },
+      { label: "", sep: true },
+      { label: (prefs.autoReload ? "● " : "○ ") + "Reload on save", run: () => setPrefs({ autoReload: !prefs.autoReload }) },
+      { label: (prefs.clearOldActions ? "● " : "○ ") + "Clear old actions on reload", run: () => setPrefs({ clearOldActions: !prefs.clearOldActions }) },
+      { label: "Hot reload settings & help…", run: () => setSettings("game") },
+    ],
     help: [
       { label: "Official extensions guide", run: () => openUrl("https://steamcommunity.com/sharedfiles/filedetails/?id=914587661") },
-      { label: "About VRift", run: () => confirm("About VRift", `VRift ${__APP_VERSION__} - a visual editor for Hacknet extensions.\nLicensed under GPL-3.0.\n\nTag schema derived from fengxu-30338/HacknetExtensionEditor (GPL-3.0).`, "Close") },
+      { label: "VRift user guide", run: () => openUrl(`${DOCS}/user-guide.md`) },
+      { label: "Custom schemas (VRift.schema.json)", run: () => openUrl(`${DOCS}/custom-schema.md`) },
+      { label: "Keyboard shortcuts", run: () => confirm("Keyboard shortcuts", SHORTCUTS, "Close") },
+      { label: "About VRift", run: () => confirm("About VRift", `VRift ${__APP_VERSION__} - a visual editor for Hacknet extensions.\nLicensed under GPL-3.0.\n\nTag schema derived from fengxu-30338/HacknetExtensionEditor (GPL-3.0).\nStuxnet and ZeroDayToolKit schemas built from their source (MIT).\nHot reload via fengxu-30338/HacknetHotReplace.`, "Close") },
     ],
   };
+
+  const center = (
+    <Editor tabs={tabs} active={active} setActive={setActive} tabActions={tabActions} modes={modes} setMode={(p, m) => setModes((x) => ({ ...x, [p]: m }))} gotoLine={gotoLine} />
+  );
+  const panelHead = <PanelTabs current={panel} onMaximize={() => setPanelMax(!panelMax)} maximized={panelMax} />;
+  const panelView =
+    panel === "story" ? (
+      <StoryView head={panelHead} activePath={active} />
+    ) : panel === "flags" ? (
+      <FlagsView head={panelHead} />
+    ) : panel === "people" ? (
+      <PeopleView head={panelHead} />
+    ) : (
+      <NetMap activePath={active} head={panelHead} />
+    );
 
   return (
     <>
@@ -426,6 +802,7 @@ export default function App() {
                         key={i}
                         className={"di" + (it.disabled ? " disabled" : "")}
                         onClick={() => {
+                          if (it.disabled) return;
                           setMenu(null);
                           it.run?.();
                         }}
@@ -440,10 +817,16 @@ export default function App() {
             </div>
           ))}
           <span className="sep" />
+          {project && isTauri() && (
+            <span className={"game-pill" + (game.online ? " on" : "")} title={game.online ? `Hacknet is running with HacknetHotReplace (UDP ${game.port})` : "Hacknet with HacknetHotReplace is not running"} onClick={() => setSettings("game")}>
+              {game.online ? "● GAME" : "○ GAME"}
+            </span>
+          )}
           {project && (
             <span className="status">
               {project.name}
               {project.fs.kind === "memory" ? " (in memory)" : ""} · {project.index.computers.size} nodes · {s.errors ? <span style={{ color: "#ff8080" }}>{s.errors} errors</span> : "0 errors"} · {s.warnings} warnings
+              {s.suppressed ? ` · ${s.suppressed} ignored` : ""}
               {project.dirtyFiles().length ? <span style={{ color: "var(--shell)" }}> · {project.dirtyFiles().length} unsaved</span> : null}
             </span>
           )}
@@ -465,35 +848,22 @@ export default function App() {
         ) : (
           <AppContext.Provider value={api}>
             <div className="workspace">
-              <Explorer active={active} onNewFile={newFile} />
-              <div className="center-col" style={{ gridTemplateRows: showNetmap ? `1fr 6px ${netmapH}px` : "1fr", gap: 0 }}>
-                <Editor
-                  tabs={tabs}
-                  active={active}
-                  setActive={setActive}
-                  closeTab={(t) => {
-                    setTabs((ts) => {
-                      const n = ts.filter((x) => x !== t);
-                      if (active === t) setActive(n[n.length - 1] ?? null);
-                      return n;
-                    });
-                  }}
-                  modes={modes}
-                  setMode={(p, m) => setModes((x) => ({ ...x, [p]: m }))}
-                  gotoLine={gotoLine}
-                />
-                {showNetmap && (
+              <Explorer active={active} onNewFile={(k, folder) => newFile(k, folder)} />
+              <div className="center-col" style={{ gridTemplateRows: !showPanel ? "1fr" : panelMax ? "1fr" : `1fr 6px ${panelH}px`, gap: 0 }}>
+                {!(showPanel && panelMax) && center}
+                {showPanel && !panelMax && (
                   <div
                     className="splitter"
-                    title="Drag to resize the netMap"
+                    title="Drag to resize the panel"
                     onMouseDown={(e) => {
+                      if (panelMax) return;
                       const startY = e.clientY;
-                      const startH = netmapH;
-                      const move = (ev: MouseEvent) => setNetmapH(Math.max(120, Math.min(window.innerHeight - 260, startH - (ev.clientY - startY))));
+                      const startH = panelH;
+                      const move = (ev: MouseEvent) => setPanelH(Math.max(120, Math.min(window.innerHeight - 200, startH - (ev.clientY - startY))));
                       const up = () => {
                         window.removeEventListener("mousemove", move);
                         window.removeEventListener("mouseup", up);
-                        setNetmapH((h) => {
+                        setPanelH((h) => {
                           try {
                             localStorage.setItem("vrift.netmapH", String(h));
                           } catch {
@@ -507,11 +877,12 @@ export default function App() {
                     }}
                   />
                 )}
-                {showNetmap && <NetMap activePath={active} />}
+                {showPanel && panelView}
               </div>
-              <Terminal setTheme={setTheme} themes={allThemes.map((t) => t.name)} />
+              <Terminal setTheme={setTheme} themes={allThemes.map((t) => t.name)} activePath={active} />
             </div>
             {quick && <QuickOpen items={quickItems} onClose={() => setQuick(false)} />}
+            {settings && <SettingsModal tab={settings} onClose={() => setSettings(null)} />}
           </AppContext.Provider>
         )}
       </div>
@@ -540,15 +911,13 @@ export default function App() {
   );
 }
 
-async function openUrl(url: string) {
-  if (isTauri()) {
-    try {
-      const { openUrl: openExternal } = await import("@tauri-apps/plugin-opener");
-      await openExternal(url);
-      return;
-    } catch {
-      /* fall through */
-    }
-  }
-  window.open(url, "_blank");
-}
+const SHORTCUTS = `Ctrl+S            save          Ctrl+Shift+S   save all
+Ctrl+P            quick open    Ctrl+,         display settings
+Ctrl+Tab          next tab      Ctrl+Shift+Tab previous tab
+Ctrl+PageDown/Up  next/previous tab
+Ctrl+1 … 8        go to tab     Ctrl+9         last tab
+Ctrl+W            close tab     Ctrl+Shift+T   reopen closed tab
+Ctrl+Z / Ctrl+Y   undo / redo (outside text boxes)
+Ctrl+= / - / 0    interface bigger / smaller / reset
+Ctrl+Alt+R        reload the current file in the game
+Middle-click a tab to close it; drag tabs to reorder them.`;

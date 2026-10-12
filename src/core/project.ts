@@ -2,9 +2,24 @@
  * The in-memory model of an open extension: every text file, its parsed XML, dirty state,
  * undo history, and a cross-file index of IDs, paths, flags and references.
  */
-import { basename, dirname, FsEntry, normalizeRel, ProjectFs } from "../fs/fs";
+import { basename, dirname, FsEntry, normalizeRel, ProjectFs, TEXT_EXT } from "../fs/fs";
 import { FileKind } from "../templates/templates";
-import { attributesFor, FieldDef, lookupNode, NodeDef, setExtraSchema } from "./schema";
+import { parseJson } from "./json";
+import {
+  BUILTIN_MODULES,
+  CONFIG_FILE,
+  CUSTOM_SCHEMA_FILE,
+  ModuleState,
+  normalizeModule,
+  parseConfig,
+  ProjectConfig,
+  ProviderOutput,
+  resolveModules,
+  runProviders,
+  SchemaModule,
+  serializeConfig,
+} from "./modules";
+import { attributesFor, EnumOption, FieldDef, lookupNode, setModules } from "./schema";
 import {
   elementChildren,
   getAttr,
@@ -12,6 +27,7 @@ import {
   parseXml,
   ParseIssue,
   serializeDoc,
+  textContent,
   trimmedText,
   walkElements,
   XDocument,
@@ -29,9 +45,11 @@ export interface ProjectFile {
   undo: string[];
   redo: string[];
   lastEdit: number;
+  /** Text encoding on disk ("utf-8" unless the file was UTF-16 or ANSI). */
+  encoding?: string;
 }
 
-export type RefKind = "computer" | "file" | "folder" | "faction" | "flag-use" | "flag-set";
+export type RefKind = "computer" | "file" | "folder" | "faction" | "flag-use" | "flag-set" | "name";
 
 export interface Ref {
   kind: RefKind;
@@ -48,6 +66,17 @@ export interface Ref {
   compFilter?: string[];
   /** For file refs: true when a built-in value (theme or song name) is also accepted. */
   allowBuiltin?: string[];
+  /** For name refs: the namespace ("stuxnet.vault"). File-scoped namespaces are suffixed "@<file>". */
+  ns?: string;
+  /** Where the reference is, when it is not an XML attribute (e.g. a key path in a JSON file). */
+  where?: string;
+}
+
+export interface NameDef {
+  value: string;
+  file: string;
+  line: number;
+  elId?: number;
 }
 
 export interface ComputerInfo {
@@ -83,6 +112,8 @@ export interface ProjectIndex {
   refs: Ref[];
   filesByKind: Map<FileKind, string[]>;
   extensionName: string;
+  /** Named values defined in the project, by namespace (see FieldDef.ns). */
+  names: Map<string, Map<string, NameDef[]>>;
 }
 
 /** Computer IDs Hacknet provides even if the extension doesn't define them. */
@@ -131,12 +162,16 @@ export const DAEMON_TAGS = [
 
 export const DELAY_HOST_DAEMONS = ["IRCDaemon", "DHSDaemon", "FastActionHost"];
 
-const TEXT_EXT = /\.(xml|txt|html?|css|md)$/i;
+/** Root tag → file kind, for kinds added by schema modules. */
+let moduleRootKinds = new Map<string, string>();
+for (const m of BUILTIN_MODULES) for (const k of m.fileKinds ?? []) moduleRootKinds.set(k.root.toLowerCase(), k.kind);
 
 export function classify(path: string, doc: XDocument | null): FileKind {
   const lower = path.toLowerCase();
   if (lower === "extensioninfo.xml") return "extensionInfo";
+  if (lower.endsWith(".json")) return "json";
   const rootName = doc?.root?.name.toLowerCase();
+  if (rootName && moduleRootKinds.has(rootName)) return moduleRootKinds.get(rootName)!;
   if (rootName === "hacknetextension") return "extensionInfo";
   if (rootName === "computer") return "computer";
   if (rootName === "mission") return "mission";
@@ -145,8 +180,8 @@ export function classify(path: string, doc: XDocument | null): FileKind {
   if (rootName === "customtheme") return "theme";
   if (rootName === "person") return "people";
   if (lower.endsWith(".txt") && /(^|\/)hackerscripts?\//i.test(path)) return "hackerScript";
-  if (TEXT_EXT.test(lower)) return "text";
-  return "other";
+  // Every file VRift loads is text, whatever its extension.
+  return "text";
 }
 
 type Listener = () => void;
@@ -177,72 +212,124 @@ export class Project {
   async load() {
     this.entries = await this.fs.list();
     this.files.clear();
-    const textFiles = this.entries.filter((e) => !e.isDir && TEXT_EXT.test(e.path) && e.size < 4_000_000);
+    const textFiles = this.entries.filter((e) => !e.isDir && (e.text ?? TEXT_EXT.test(e.path)) && e.size < 4_000_000);
     await Promise.all(
       textFiles.map(async (e) => {
         try {
           const r = await this.fs.readText(e.path);
-          this.addFile(e.path, r.text, r.bom);
+          this.addFile(e.path, r.text, r.bom, r.encoding);
         } catch (err) {
           console.warn("Could not read", e.path, err);
         }
       }),
     );
-    await this.loadCustomSchema();
     this.rebuildIndex();
     this.emit();
   }
 
-  /** Errors from the project's VRift.schema.json, if it has one. */
+  // ---------------------------------------------------------------- modules & settings
+
+  /** VRift.json settings for this extension. */
+  config: ProjectConfig = {};
+  configError: string | null = null;
+  /** Problems with the project's VRift.schema.json, if it has one. */
   customSchemaError: string | null = null;
+  /** Every known module, whether it is active, and why. */
+  modules: ModuleState[] = [];
+  /** Modules currently in effect. */
+  activeModules: SchemaModule[] = [];
+  /** Data read from mod config files (stuxnet_config.json…). */
+  provided: ProviderOutput = { names: [], enumExtras: {}, refs: [] };
 
   /**
-   * Optional project-local schema for tags added by Pathfinder mods.
-   * File: VRift.schema.json in the extension root, shaped like { "nodes": [ NodeDef, ... ] }.
+   * Re-read VRift.json and VRift.schema.json, work out which schema modules apply, and install
+   * them in the schema. Runs before every re-index so edits to these files apply immediately.
    */
-  private async loadCustomSchema() {
+  refreshModules() {
+    const cfgFile = [...this.files.values()].find((f) => f.path.toLowerCase() === CONFIG_FILE.toLowerCase());
+    const { config, error } = parseConfig(cfgFile?.text);
+    this.config = config;
+    this.configError = error;
+
+    let custom: SchemaModule | null = null;
     this.customSchemaError = null;
-    setExtraSchema([]);
-    const entry = this.entries.find((e) => !e.isDir && e.path.toLowerCase() === "vrift.schema.json");
-    if (!entry) return;
-    try {
-      const { text } = await this.fs.readText(entry.path);
-      const data = JSON.parse(text) as { nodes?: NodeDef[] };
-      const nodes = (data.nodes ?? []).map((n) => {
-        const raw = n as Partial<NodeDef> & { paths: string[] };
-        return {
-          ...raw,
-          multi: raw.multi ?? true,
-          desc: raw.desc ?? "",
-          attributes: (raw.attributes ?? []).map((a) => {
-            const f = a as Partial<FieldDef>;
-            return { ...f, required: f.required ?? false, default: f.default ?? "", desc: f.desc ?? "", hint: f.hint ?? "text" };
-          }),
-        };
-      });
-      setExtraSchema(nodes as NodeDef[]);
-    } catch (e) {
-      this.customSchemaError = `VRift.schema.json could not be read: ${e}`;
+    const schemaFile = [...this.files.values()].find((f) => f.path.toLowerCase() === CUSTOM_SCHEMA_FILE.toLowerCase());
+    if (schemaFile) {
+      const p = parseJson(schemaFile.text);
+      const err = p.issues.find((i) => i.severity === "error");
+      if (err) this.customSchemaError = `${CUSTOM_SCHEMA_FILE} line ${err.line}: ${err.message}`;
+      else if (!p.value || typeof p.value !== "object" || Array.isArray(p.value)) this.customSchemaError = `${CUSTOM_SCHEMA_FILE} must contain a JSON object with a "nodes" list.`;
+      else {
+        try {
+          custom = normalizeModule({ name: CUSTOM_SCHEMA_FILE, ...(p.value as object) } as Partial<SchemaModule>, "project");
+          custom.id = "project";
+        } catch (e) {
+          this.customSchemaError = `${CUSTOM_SCHEMA_FILE}: ${e}`;
+        }
+      }
     }
+
+    this.modules = resolveModules(this, config, custom);
+    this.activeModules = this.modules.filter((m) => m.active).map((m) => m.module);
+    this.provided = runProviders(this, this.activeModules);
+
+    const extras: Record<string, EnumOption[]> = {};
+    for (const m of this.activeModules) for (const [k, v] of Object.entries(m.enumExtensions ?? {})) (extras[k] ??= []).push(...v);
+    for (const [k, v] of Object.entries(this.provided.enumExtras)) (extras[k] ??= []).push(...v);
+    for (const [k, v] of Object.entries(config.allowValues ?? {})) (extras[k] ??= []).push(...v.map((value) => ({ value, desc: "Allowed in VRift.json" })));
+    setModules(
+      this.activeModules.map((m) => ({ name: m.name, nodes: m.nodes, rev: m.id === "project" ? schemaFile?.text : undefined })),
+      extras,
+    );
+
+    // File kinds from every module (so a cutscene is recognised even before Stuxnet is enabled).
+    const kinds = new Map<string, string>();
+    for (const m of [...BUILTIN_MODULES, ...(custom ? [custom] : [])]) for (const k of m.fileKinds ?? []) kinds.set(k.root.toLowerCase(), k.kind);
+    moduleRootKinds = kinds;
+    for (const f of this.files.values()) this.classifyFile(f);
   }
 
-  private addFile(path: string, text: string, bom: boolean) {
-    const isXml = /\.xml$/i.test(path);
-    const parsed = isXml ? parseXml(text) : null;
+  /** Change VRift.json (created on first use). */
+  async updateConfig(change: (c: ProjectConfig) => void) {
+    const next: ProjectConfig = JSON.parse(JSON.stringify(this.config));
+    change(next);
+    const text = serializeConfig(next);
+    const existing = [...this.files.values()].find((f) => f.path.toLowerCase() === CONFIG_FILE.toLowerCase());
+    if (existing) {
+      // this.config was parsed from the current (possibly unsaved) text, so nothing is lost
+      this.pushUndo(existing);
+      existing.text = text;
+      this.reparse(existing);
+      await this.save(existing.path);
+    } else {
+      await this.fs.writeText(CONFIG_FILE, text, false);
+      this.addFile(CONFIG_FILE, text, false);
+      this.entries = await this.fs.list();
+    }
+    this.rebuildIndex();
+    this.emit();
+  }
+
+  private classifyFile(f: ProjectFile) {
+    const k = classify(f.path, f.doc);
+    f.kind = k === "text" && /\.txt$/i.test(f.path) && /\$#%#\$/.test(f.text) ? "hackerScript" : k;
+  }
+
+  private addFile(path: string, text: string, bom: boolean, encoding?: string) {
     const f: ProjectFile = {
       path,
       kind: "other",
       text,
       savedText: text,
       bom,
-      doc: parsed?.doc ?? null,
-      parseIssues: parsed?.issues ?? [],
+      doc: null,
+      parseIssues: [],
       undo: [],
       redo: [],
       lastEdit: 0,
+      encoding,
     };
-    f.kind = classify(path, f.doc);
-    if (f.kind === "text" && /\.txt$/i.test(path) && /\$#%#\$/.test(text)) f.kind = "hackerScript";
+    this.reparse(f);
     this.files.set(path, f);
     return f;
   }
@@ -325,9 +412,10 @@ export class Project {
       const p = parseXml(f.text);
       f.doc = p.doc;
       f.parseIssues = p.issues;
+    } else if (/\.json$/i.test(f.path)) {
+      f.parseIssues = parseJson(f.text).issues.map((i) => ({ line: i.line, message: i.message, severity: i.severity }));
     }
-    const k = classify(f.path, f.doc);
-    f.kind = k === "text" && /\.txt$/i.test(f.path) && /\$#%#\$/.test(f.text) ? "hackerScript" : k;
+    this.classifyFile(f);
   }
 
   private afterChange(f: ProjectFile) {
@@ -356,7 +444,7 @@ export class Project {
   async save(path: string) {
     const f = this.files.get(path);
     if (!f) return;
-    await this.fs.writeText(path, f.text, f.bom);
+    await this.fs.writeText(path, f.text, f.bom, f.encoding);
     f.savedText = f.text;
     this.emit();
   }
@@ -373,6 +461,7 @@ export class Project {
     f.text = r.text;
     f.savedText = r.text;
     f.bom = r.bom;
+    f.encoding = r.encoding;
     f.undo = [];
     f.redo = [];
     this.reparse(f);
@@ -524,7 +613,24 @@ export class Project {
   }
 
   rebuildIndex() {
+    this.refreshModules();
     this.index = buildIndex(this);
+  }
+
+  /** Daemon tags known in this project (vanilla + active modules). */
+  daemonTags(): string[] {
+    return [...DAEMON_TAGS, ...this.activeModules.flatMap((m) => m.daemons ?? [])];
+  }
+
+  /** Daemons that can host delayed actions. */
+  delayHostDaemons(): string[] {
+    return [...DELAY_HOST_DAEMONS, ...this.activeModules.flatMap((m) => m.delayHosts ?? [])];
+  }
+
+  /** Files of a kind, including module kinds that alias it (animated themes are themes). */
+  filesOfKind(kind: string): string[] {
+    const kinds = new Set([kind, ...this.activeModules.flatMap((m) => (m.fileKinds ?? []).filter((k) => k.alias === kind).map((k) => k.kind))]);
+    return [...kinds].flatMap((k) => this.index.filesByKind.get(k) ?? []);
   }
 }
 
@@ -544,6 +650,7 @@ function emptyIndex(): ProjectIndex {
     refs: [],
     filesByKind: new Map(),
     extensionName: "",
+    names: new Map(),
   };
 }
 
@@ -575,11 +682,57 @@ const FUNC_REFS: Record<string, RefKind | "flags-set"> = {
 
 export function buildIndex(project: Project): ProjectIndex {
   const idx = emptyIndex();
+  // Every reference is recorded once per (element, attribute/content, kind, value), even when
+  // two code paths (schema hints and special cases) both recognise it.
+  const seen = new Set<string>();
+  const once = (r: Ref) => {
+    const k = `${r.file}\u0000${r.elId}\u0000${r.attr ?? "#"}\u0000${r.kind}\u0000${r.value}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  };
+  const pushRef = (r: Ref) => {
+    if (once(r)) idx.refs.push(r);
+  };
   const addFlag = (flag: string, ref: Ref, set: boolean) => {
+    if (!once(ref)) return;
     const e = idx.flags.get(flag) ?? { set: [], used: [] };
     (set ? e.set : e.used).push(ref);
     idx.flags.set(flag, e);
   };
+  const defineName = (ns: string, d: NameDef) => {
+    const m = idx.names.get(ns) ?? new Map<string, NameDef[]>();
+    const l = m.get(d.value) ?? [];
+    l.push(d);
+    m.set(d.value, l);
+    idx.names.set(ns, m);
+  };
+  const daemonTags = project.daemonTags();
+  const contentRefs = project.activeModules.flatMap((m) =>
+    (m.contentRefs ?? []).flatMap((c) => {
+      try {
+        return [{ re: new RegExp(c.pattern, "g"), kind: c.kind, ns: c.ns }];
+      } catch {
+        return [];
+      }
+    }),
+  );
+  const scanContentRefs = (text: string, base: Omit<Ref, "kind" | "value">) => {
+    for (const c of contentRefs) {
+      c.re.lastIndex = 0;
+      for (let m = c.re.exec(text); m; m = c.re.exec(text)) {
+        const v = (m[1] ?? "").trim();
+        if (!v) continue;
+        if (c.kind === "file") pushRef({ ...base, kind: "file", value: v });
+        else if (c.ns) pushRef({ ...base, kind: "name", value: v, ns: c.ns });
+      }
+    }
+  };
+
+  // names and references that come from mod config files (stuxnet_config.json…)
+  for (const n of project.provided.names) defineName(n.ns, { value: n.value, file: n.file, line: n.line });
+  for (const r of project.provided.refs)
+    pushRef({ kind: r.kind, value: r.value, ns: r.ns, file: r.file, line: r.line, elId: -1, tag: basename(r.file), where: r.where, allowBuiltin: r.allowBuiltin });
 
   for (const f of project.files.values()) {
     const list = idx.filesByKind.get(f.kind) ?? [];
@@ -630,7 +783,7 @@ export function buildIndex(project: Project): ProjectIndex {
             c.eos.push(eos);
             if (eos.id) idx.eos.set(eos.id, { ...eos, parent: c.id, file: f.path });
           }
-          const d = DAEMON_TAGS.find((t) => t.toLowerCase() === k);
+          const d = daemonTags.find((t) => t.toLowerCase() === k);
           if (d) c.daemons.push(d);
         }
         // agents/users inside daemons (IRC users, DHS agents)
@@ -658,11 +811,13 @@ export function buildIndex(project: Project): ProjectIndex {
       const def = lookupNode(path);
       if (!def) return;
       const fields: { f: FieldDef; attr?: string; value: string }[] = [];
+      const doneAttrs = new Set<string>();
       for (const a of attributesFor(def, (n) => getAttrCI(el, n))) {
         if (!a.name) continue;
-        const v = getAttrCI(el, a.name);
-        const realName = el.attrs.find((x) => x.name.toLowerCase() === a.name!.toLowerCase())?.name;
-        if (v !== undefined) fields.push({ f: a, attr: realName, value: v });
+        const real = el.attrs.find((x) => x.name.toLowerCase() === a.name!.toLowerCase());
+        if (!real || doneAttrs.has(real.name)) continue;
+        doneAttrs.add(real.name);
+        fields.push({ f: a, attr: real.name, value: real.value });
       }
       if (def.content && !elementChildren(el).length) fields.push({ f: def.content, value: trimmedText(el) });
 
@@ -673,33 +828,53 @@ export function buildIndex(project: Project): ProjectIndex {
           case "computer":
           case "computeroreos":
             if (!NONE_VALUES.has(v.toLowerCase()) && !v.includes("#"))
-              idx.refs.push({ ...base, kind: "computer", value: v, compFilter: field.compFilter });
+              pushRef({ ...base, kind: "computer", value: v, compFilter: field.compFilter });
             break;
           case "computerlist":
-            for (const id of splitList(v)) idx.refs.push({ ...base, kind: "computer", value: id });
+            for (const id of splitList(v)) pushRef({ ...base, kind: "computer", value: id });
             break;
           case "faction":
-            if (v) idx.refs.push({ ...base, kind: "faction", value: v });
+            if (v) pushRef({ ...base, kind: "faction", value: v });
             break;
           case "folder":
-            if (v) idx.refs.push({ ...base, kind: "folder", value: v });
+            if (v) pushRef({ ...base, kind: "folder", value: v });
             break;
           case "flags":
             for (const fl of v.split(",").map((s) => s.trim()).filter(Boolean)) addFlag(fl, { ...base, kind: "flag-use", value: fl }, false);
             break;
+          case "name": {
+            if (!field.ns) break;
+            const ns = field.scope === "file" ? `${field.ns}@${f.path}` : field.ns;
+            const values = field.list ? v.split(",").map((x) => x.trim()).filter(Boolean) : v ? [v] : [];
+            for (const value of values) {
+              if (field.define) defineName(ns, { value, file: f.path, line: el.line, elId: el.id });
+              else pushRef({ ...base, kind: "name", value, ns });
+            }
+            break;
+          }
           case "step": {
-            collectFunctionRef(v, base, idx, addFlag);
+            collectFunctionRef(v, base, pushRef, addFlag);
             break;
           }
           default:
             if (FILE_HINTS[field.hint] && v && !NONE_VALUES.has(v.toLowerCase())) {
               const builtin = field.enums?.map((e) => e.value);
-              idx.refs.push({ ...base, kind: "file", value: v, allowBuiltin: builtin });
+              pushRef({ ...base, kind: "file", value: v, allowBuiltin: builtin });
             }
         }
       }
       // missionStart / missionEnd content like "addFlags:x"
-      if (/^mission(start|end)$/i.test(el.name)) collectFunctionRef(trimmedText(el), { file: f.path, line: el.line, elId: el.id, tag: el.name }, idx, addFlag);
+      // references hidden in text, e.g. #0DTK_IMAGE:Images/a.png# (from active modules)
+      if (contentRefs.length) {
+        for (const a of el.attrs) if (a.value.length > 3) scanContentRefs(a.value, { file: f.path, line: el.line, elId: el.id, attr: a.name, tag: el.name });
+        if (!elementChildren(el).length) {
+          const t = textContent(el);
+          if (t.length > 3) scanContentRefs(t, { file: f.path, line: el.line, elId: el.id, tag: el.name });
+        }
+      }
+      // (only when the schema didn't already treat it as a step field)
+      if (/^mission(start|end)$/i.test(el.name) && !(def.content && def.content.hint === "step"))
+        collectFunctionRef(trimmedText(el), { file: f.path, line: el.line, elId: el.id, tag: el.name }, pushRef, addFlag);
       // HeartMonitor sets PATIENT:DEAD flags
       if (el.name === "HeartMonitor") {
         const p = getAttr(el, "patient");
@@ -713,7 +888,7 @@ export function buildIndex(project: Project): ProjectIndex {
 function collectFunctionRef(
   v: string,
   base: Omit<Ref, "kind" | "value">,
-  idx: ProjectIndex,
+  pushRef: (r: Ref) => void,
   addFlag: (flag: string, ref: Ref, set: boolean) => void,
 ) {
   const m = /^([A-Za-z]+):(.*)$/.exec(v.trim());
@@ -728,7 +903,7 @@ function collectFunctionRef(
     }
     return;
   }
-  idx.refs.push({ ...base, kind, value: arg });
+  pushRef({ ...base, kind, value: arg });
 }
 
 /** Resolve a computer reference to its definition (or a built-in/eOS description). */

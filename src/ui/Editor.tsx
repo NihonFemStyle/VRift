@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { canHotReload } from "../core/hotreload";
+import { BUILTIN_MODULES } from "../core/modules";
 import { schema } from "../core/schema";
-import { basename } from "../fs/fs";
-import { CodeEditor, LineDiag } from "./CodeEditor";
+import { treeIsReliable } from "../core/xml";
+import { basename, isImagePath } from "../fs/fs";
+import { ActionBuilder } from "./ActionBuilder";
+import { CodeEditor, codeModeFor, LineDiag } from "./CodeEditor";
 import { useApp } from "./context";
 import { FormEditor } from "./FormEditor";
+import { ImageView } from "./ImagePreview";
+import { WebPreview } from "./WebPreview";
 
-export type ViewMode = "form" | "xml";
+export type ViewMode = "form" | "xml" | "builder" | "preview";
 
 const KIND_LABEL: Record<string, string> = {
   extensionInfo: "Extension info",
@@ -16,29 +22,64 @@ const KIND_LABEL: Record<string, string> = {
   theme: "Theme",
   people: "Person",
   hackerScript: "Hacker script",
+  json: "JSON",
   text: "Text",
   other: "File",
 };
+for (const m of BUILTIN_MODULES) for (const k of m.fileKinds ?? []) KIND_LABEL[k.kind] = `${k.label} (${m.name.split(" ")[0]})`;
+
+const ENCODING_LABEL: Record<string, string> = { "utf-16le": "UTF-16 LE", "utf-16be": "UTF-16 BE", "windows-1252": "ANSI (Windows-1252)" };
+
+export interface TabActions {
+  closeTab: (p: string) => void;
+  closeOthers: (p: string) => void;
+  closeRight: (p: string) => void;
+  closeSaved: () => void;
+  moveTab: (from: string, to: string) => void;
+}
 
 export function Editor(props: {
   tabs: string[];
   active: string | null;
   setActive: (p: string) => void;
-  closeTab: (p: string) => void;
+  tabActions: TabActions;
   modes: Record<string, ViewMode>;
   setMode: (p: string, m: ViewMode) => void;
   gotoLine: { path: string; line: number; n: number } | null;
 }) {
-  const { project, diagnostics, toast } = useApp();
+  const { project, diagnostics, toast, game } = useApp();
+  const [tabMenu, setTabMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+  const [dragTab, setDragTab] = useState<string | null>(null);
   const file = props.active ? project.files.get(props.active) : undefined;
+  const isImage = !!props.active && !file && isImagePath(props.active);
   const isXml = !!file && /\.xml$/i.test(file.path);
-  const canForm = isXml && !!file?.doc?.root && file.parseIssues.length === 0;
-  const mode: ViewMode = canForm ? props.modes[file!.path] ?? "form" : "xml";
+  const isHtml = !!file && /\.html?$/i.test(file.path);
+  const canForm = isXml && !!file?.doc?.root && treeIsReliable(file.parseIssues);
+  const canBuilder = canForm && file!.kind === "actions";
+  const requested = file ? props.modes[file.path] : undefined;
+  const mode: ViewMode = !file
+    ? "xml"
+    : isHtml
+      ? requested === "preview"
+        ? "preview"
+        : "xml"
+      : !canForm
+        ? "xml"
+        : requested === "builder" && canBuilder
+          ? "builder"
+          : requested ?? (canBuilder ? "builder" : "form");
 
   const lineDiags: LineDiag[] = useMemo(
-    () => (file ? diagnostics.filter((d) => d.file === file.path && d.line > 0).map((d) => ({ line: d.line, severity: d.severity, message: d.message })) : []),
+    () => (file ? diagnostics.filter((d) => d.file === file.path && d.line > 0 && !d.suppressed).map((d) => ({ line: d.line, severity: d.severity, message: d.message })) : []),
     [diagnostics, file?.path],
   );
+
+  useEffect(() => {
+    if (!tabMenu) return;
+    const close = () => setTabMenu(null);
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [tabMenu]);
 
   const save = async () => {
     if (!file) return;
@@ -50,23 +91,46 @@ export function Editor(props: {
     }
   };
 
+  const issues = file?.parseIssues ?? [];
+  const label = file ? KIND_LABEL[file.kind] ?? "File" : isImage ? "Image" : "";
+
   return (
     <div className="module" style={{ minHeight: 0 }}>
       <div className="module-head">
         <span className="title">Display</span>
-        <span className="meta">{file ? `${KIND_LABEL[file.kind] ?? "File"} · ${file.path}` : "no file open"}</span>
+        <span className="meta">{props.active ? `${label} · ${props.active}` : "no file open"}</span>
       </div>
       {props.tabs.length > 0 && (
         <div className="tabs">
-          {props.tabs.map((t) => (
-            <div key={t} className={"tab" + (t === props.active ? " active" : "")} onClick={() => props.setActive(t)} onAuxClick={(e) => e.button === 1 && props.closeTab(t)} title={t}>
+          {props.tabs.map((t, i) => (
+            <div
+              key={t}
+              className={"tab" + (t === props.active ? " active" : "") + (dragTab && dragTab !== t ? " drop" : "")}
+              onClick={() => props.setActive(t)}
+              onAuxClick={(e) => e.button === 1 && props.tabActions.closeTab(t)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setTabMenu({ path: t, x: e.clientX, y: e.clientY });
+              }}
+              draggable
+              onDragStart={() => setDragTab(t)}
+              onDragEnd={() => setDragTab(null)}
+              onDragOver={(e) => dragTab && e.preventDefault()}
+              onDrop={() => {
+                if (dragTab && dragTab !== t) props.tabActions.moveTab(dragTab, t);
+                setDragTab(null);
+              }}
+              title={`${t}${i < 9 ? `\nCtrl+${i + 1}` : ""}`}
+            >
               {project.isDirty(t) && <span style={{ color: "var(--shell)" }}>●</span>}
+              {isImagePath(t) && !project.files.has(t) && <span className="msg info">▨</span>}
               {basename(t)}
               <span
                 className="x"
+                title="Close (Ctrl+W)"
                 onClick={(e) => {
                   e.stopPropagation();
-                  props.closeTab(t);
+                  props.tabActions.closeTab(t);
                 }}
               >
                 ×
@@ -75,20 +139,75 @@ export function Editor(props: {
           ))}
         </div>
       )}
-      {!file && <EmptyDisplay />}
+      {tabMenu && (
+        <div className="dropdown" style={{ position: "fixed", left: tabMenu.x, top: tabMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
+          {[
+            ["Close", () => props.tabActions.closeTab(tabMenu.path), "Ctrl+W"],
+            ["Close others", () => props.tabActions.closeOthers(tabMenu.path)],
+            ["Close tabs to the right", () => props.tabActions.closeRight(tabMenu.path)],
+            ["Close saved tabs", () => props.tabActions.closeSaved()],
+            ["Copy path", () => navigator.clipboard?.writeText(tabMenu.path)],
+          ].map(([l, fn, k]) => (
+            <div
+              key={l as string}
+              className="di"
+              onClick={() => {
+                (fn as () => void)();
+                setTabMenu(null);
+              }}
+            >
+              <span>{l as string}</span>
+              {k && <span className="k">{k as string}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {!props.active && <EmptyDisplay />}
+      {isImage && props.active && <ImageView project={project} path={props.active} />}
+      {props.active && !file && !isImage && <div className="empty">This file is not text, so VRift cannot show it.</div>}
       {file && (
         <>
           <div className="toolbar">
             <span className="path">{file.path}</span>
+            {file.encoding && file.encoding !== "utf-8" && (
+              <span className="badge kind" title="VRift keeps this encoding when saving">
+                {ENCODING_LABEL[file.encoding] ?? file.encoding}
+              </span>
+            )}
             {isXml && (
               <div className="seg">
-                <button className={mode === "form" ? "on" : ""} disabled={!canForm} title={canForm ? "" : "Fix the XML errors to use the form view"} onClick={() => props.setMode(file.path, "form")}>
+                {canBuilder && (
+                  <button className={mode === "builder" ? "on" : ""} title="Visual action builder" onClick={() => props.setMode(file.path, "builder")}>
+                    BUILDER
+                  </button>
+                )}
+                <button className={mode === "form" ? "on" : ""} disabled={!canForm} title={canForm ? "Edit with forms" : "Fix the structural XML errors to use the form view"} onClick={() => props.setMode(file.path, "form")}>
                   FORM
                 </button>
                 <button className={mode === "xml" ? "on" : ""} onClick={() => props.setMode(file.path, "xml")}>
                   XML
                 </button>
               </div>
+            )}
+            {isHtml && (
+              <div className="seg">
+                <button className={mode === "xml" ? "on" : ""} onClick={() => props.setMode(file.path, "xml")}>
+                  HTML
+                </button>
+                <button className={mode === "preview" ? "on" : ""} onClick={() => props.setMode(file.path, "preview")}>
+                  SPLIT PREVIEW
+                </button>
+              </div>
+            )}
+            {game.available && canHotReload(file.kind) && (
+              <button
+                className={"hn-btn small" + (game.status.online ? "" : " dim")}
+                disabled={!game.status.online}
+                title={game.status.online ? "Reload this file in the running game (Ctrl+Alt+R). Unsaved changes are saved first." : "Start Hacknet with HacknetHotReplace to reload files in the game"}
+                onClick={() => game.reload(file.path).catch((e) => toast(String(e), "error"))}
+              >
+                ⟳ in game
+              </button>
             )}
             <button className="hn-btn small" disabled={!file.undo.length} onClick={() => project.undo(file.path)} title="Undo (Ctrl+Z)">
               undo
@@ -103,24 +222,35 @@ export function Editor(props: {
               save
             </button>
           </div>
-          {isXml && file.parseIssues.length > 0 && (
-            <div style={{ padding: "4px 8px", borderBottom: "1px solid var(--bright-locked)", background: "var(--locked)" }}>
-              {file.parseIssues.slice(0, 3).map((i, k) => (
-                <div key={k} className="msg error">
-                  line {i.line}: {i.message}
-                </div>
-              ))}
+          {issues.length > 0 && (
+            <div className="issue-bar">
+              {[...issues]
+                .sort((a, b) => Number(!!b.structural) - Number(!!a.structural))
+                .slice(0, 3)
+                .map((i, k) => (
+                  <div key={k} className={"msg " + (i.severity ?? "error")}>
+                    line {i.line}: {i.message}
+                  </div>
+                ))}
+              {issues.length > 3 && <div className="msg info">…and {issues.length - 3} more (see diagnostics)</div>}
             </div>
           )}
-          {mode === "form" && canForm ? (
+          {mode === "builder" && canBuilder ? (
+            <ActionBuilder key={file.path} file={file} />
+          ) : mode === "form" && canForm ? (
             <FormEditor key={file.path} file={file} />
           ) : file.kind === "hackerScript" ? (
             <HackerScriptView path={file.path} gotoLine={props.gotoLine} diags={lineDiags} />
+          ) : mode === "preview" && isHtml ? (
+            <div className="split-preview">
+              <CodeEditor key={file.path} value={file.text} mode="html" diagnostics={lineDiags} gotoLine={null} onChange={(v) => project.setText(file.path, v, "raw")} />
+              <WebPreview project={project} html={file.text} />
+            </div>
           ) : (
             <CodeEditor
               key={file.path}
               value={file.text}
-              mode={isXml ? "xml" : "text"}
+              mode={codeModeFor(file.path, file.kind)}
               diagnostics={lineDiags}
               gotoLine={props.gotoLine?.path === file.path ? props.gotoLine : null}
               onChange={(v) => project.setText(file.path, v, "raw")}
@@ -141,7 +271,7 @@ function HackerScriptView({ path, gotoLine, diags }: { path: string; gotoLine: {
       <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
         <CodeEditor key={path} value={file.text} mode="hackerscript" diagnostics={diags} gotoLine={gotoLine?.path === path ? gotoLine : null} onChange={(v) => project.setText(path, v, "raw")} />
       </div>
-      {showRef && (
+      {showRef ? (
         <div style={{ borderLeft: "1px solid rgba(var(--module-rgb),0.6)", overflow: "auto", padding: "6px 10px" }}>
           <div className="section-title" style={{ marginTop: 4 }}>
             COMMANDS <span className="grow" />
@@ -168,6 +298,10 @@ function HackerScriptView({ path, gotoLine, diags }: { path: string; gotoLine: {
             </div>
           ))}
         </div>
+      ) : (
+        <button className="icon-btn show-ref" onClick={() => setShowRef(true)}>
+          commands
+        </button>
       )}
     </div>
   );
@@ -184,8 +318,11 @@ function EmptyDisplay() {
       <div style={{ fontFamily: "var(--font-ui)", fontSize: 18, color: "var(--term)" }}>
         Select a file or a node on the netMap{tick % 2 ? "_" : " "}
       </div>
-      <div style={{ marginTop: 10 }}>
-        <b style={{ color: "var(--shell)" }}>Ctrl+P</b> quick open · <b style={{ color: "var(--shell)" }}>Ctrl+S</b> save · type <b style={{ color: "var(--shell)" }}>help</b> in the terminal
+      <div style={{ marginTop: 10, lineHeight: 1.8 }}>
+        <b style={{ color: "var(--shell)" }}>Ctrl+P</b> quick open · <b style={{ color: "var(--shell)" }}>Ctrl+S</b> save · <b style={{ color: "var(--shell)" }}>Ctrl+Tab</b> next tab ·{" "}
+        <b style={{ color: "var(--shell)" }}>Ctrl+W</b> close tab · <b style={{ color: "var(--shell)" }}>Ctrl +/-</b> scale
+        <br />
+        type <b style={{ color: "var(--shell)" }}>help</b> in the terminal
       </div>
     </div>
   );

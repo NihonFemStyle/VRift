@@ -48,11 +48,12 @@ src/
   core/__tests__ Core round-trip, indexing, rename, and validation tests
   fs/            ProjectFs plus Tauri and in-memory implementations
   schema/        Generated Hacknet node/field definitions
+  schema/mods/   Generated schema modules (Stuxnet, ZeroDayToolKit)
   templates/     New extension/file templates and browser demo
   ui/            React components and schema-driven controls
   styles/        Application CSS and layout
 src-tauri/
-  src/           Native commands and Steam extension discovery
+  src/           Native commands, text encodings, Steam discovery, hot reload client
   capabilities/  Tauri window/plugin permissions
   icons/         Application bundle icons
 docs/             User and contributor documentation
@@ -95,9 +96,13 @@ For UI or model changes, verify:
 3. introduce and fix an XML error;
 4. save and confirm comments/formatting remain intact;
 5. rename an indexed ID or path and inspect updated references;
-6. run and click a diagnostic;
-7. try quick open, netMap, and a terminal search; and
-8. close with unsaved work and confirm the warning.
+6. run and click a diagnostic, then ignore it and un-ignore it;
+7. try quick open, the netMap/story/flags/people panels, and a terminal search;
+8. open an extension that uses Stuxnet or 0DTK and check **Project → Mods…**;
+9. try the tab shortcuts and **Ctrl+= / Ctrl+-**; and
+10. close with unsaved work and confirm the warning.
+
+With Hacknet + Pathfinder + HacknetHotReplace installed, also check that the **GAME** indicator turns on and that **Game → Reload current file** works.
 
 ## Adding editor support
 

@@ -1,0 +1,5061 @@
+{
+ "id": "stuxnet",
+ "name": "Stuxnet",
+ "version": "2.x",
+ "url": "https://github.com/AutumnRivers/StuxnetHN",
+ "description": "Autumn Rivers' all-in-one extension mod: RadioV3, SMS, quests, cutscenes, vaults, BYOD daemons, persistence and more.",
+ "detect": {
+  "files": [
+   "stuxnet_config.json"
+  ],
+  "plugins": "stuxnet",
+  "roots": [
+   "StuxnetCutscene",
+   "StuxnetAnimatedTheme"
+  ]
+ },
+ "daemons": [
+  "CodeRedemptionDaemon",
+  "DebugDaemon",
+  "VaultDaemon",
+  "BYODDaemon"
+ ],
+ "executables": [
+  {
+   "value": "#RADIO_V3#",
+   "desc": "RadioV3 (Stuxnet)"
+  },
+  {
+   "value": "#WIRESHARK_EXE#",
+   "desc": "Wireshark (Stuxnet)"
+  }
+ ],
+ "fileKinds": [
+  {
+   "root": "StuxnetCutscene",
+   "kind": "stuxnetCutscene",
+   "label": "Cutscene",
+   "folder": "Cutscenes",
+   "icon": "▶"
+  },
+  {
+   "root": "StuxnetAnimatedTheme",
+   "kind": "stuxnetAnimatedTheme",
+   "label": "Animated theme",
+   "folder": "Themes",
+   "icon": "◑",
+   "alias": "theme"
+  }
+ ],
+ "enumExtensions": {
+  "Computer@icon": [
+   {
+    "value": "sec0",
+    "desc": "Security 0 computer (Stuxnet)"
+   },
+   {
+    "value": "sec1",
+    "desc": "Security 1 computer (Stuxnet)"
+   },
+   {
+    "value": "sec2",
+    "desc": "Security 2 computer (Stuxnet)"
+   },
+   {
+    "value": "computer",
+    "desc": "Computer (Stuxnet)"
+   },
+   {
+    "value": "oldServer",
+    "desc": "Old server (Stuxnet)"
+   }
+  ],
+  "ConditionalActions.*.SetLock@Module": [
+   {
+    "value": "sms",
+    "desc": "Stuxnet SMS module"
+   }
+  ]
+ },
+ "names": {
+  "stuxnet.song": {
+   "label": "RadioV3 song",
+   "severity": "error",
+   "source": "stuxnet_config.json → audio.songs"
+  },
+  "stuxnet.sequencer": {
+   "label": "sequencer preset",
+   "severity": "error",
+   "source": "stuxnet_config.json → sequencers"
+  },
+  "stuxnet.achievement": {
+   "label": "achievement",
+   "severity": "error",
+   "source": "stuxnet_config.json → achievements"
+  },
+  "stuxnet.vault": {
+   "label": "vault key",
+   "severity": "warning",
+   "source": "a VaultDaemon's KeyName"
+  },
+  "stuxnet.wildcard": {
+   "label": "custom wildcard",
+   "severity": "none"
+  },
+  "stuxnet.sms": {
+   "label": "SMS channel",
+   "severity": "info",
+   "source": "SendSMSMessage"
+  },
+  "stuxnet.smsmsg": {
+   "label": "queued SMS message",
+   "severity": "warning",
+   "source": "SendSMSMessage MessageID"
+  },
+  "stuxnet.quest": {
+   "label": "side quest",
+   "severity": "info",
+   "source": "LoadSideQuest ID (or the mission's id)"
+  },
+  "stuxnet.pflag": {
+   "label": "persistent flag",
+   "severity": "info",
+   "source": "AddPersistentFlag"
+  },
+  "stuxnet.anim": {
+   "label": "animation element",
+   "severity": "error",
+   "source": "an element ID in this file"
+  }
+ },
+ "provider": "stuxnetConfig",
+ "templates": [
+  {
+   "kind": "stuxnetCutscene",
+   "label": "Stuxnet cutscene",
+   "folder": "Cutscenes",
+   "ext": ".xml",
+   "body": "<StuxnetCutscene>\n  <Elements>\n    <Rectangle ID=\"bg\" Position=\"0,0\" Size=\"1,1\" Color=\"0,0,0\" />\n    <Text ID=\"title\" Position=\"0.1,0.45\" Size=\"0.8,0.1\" StartingValue=\"\" FontScale=\"1.5\" Color=\"255,255,255\" />\n  </Elements>\n  <Instructions>\n    <Fade ElementID=\"bg\" Duration=\"1\" Delay=\"0\" FadeIn=\"true\" />\n    <Typewriter ElementID=\"title\" Duration=\"2\" Delay=\"1\" Text=\"{{id}}\" />\n    <DelayEnd Delay=\"5\" />\n  </Instructions>\n</StuxnetCutscene>\n"
+  },
+  {
+   "kind": "stuxnetAnimatedTheme",
+   "label": "Stuxnet animated theme",
+   "folder": "Themes",
+   "ext": ".xml",
+   "body": "<StuxnetAnimatedTheme>\n  <BaseTheme>Themes/ExampleTheme.xml</BaseTheme>\n  <Elements>\n    <GridFX ID=\"grid\" Position=\"0,0\" Size=\"1,1\" Color=\"40,80,120\" />\n  </Elements>\n  <Instructions>\n    <ToggleVisibility ElementID=\"grid\" Duration=\"0\" Delay=\"0\" Visible=\"true\" />\n  </Instructions>\n</StuxnetAnimatedTheme>\n"
+  },
+  {
+   "kind": "json",
+   "label": "Stuxnet config (stuxnet_config.json)",
+   "folder": "",
+   "ext": ".json",
+   "fixedPath": "stuxnet_config.json",
+   "body": "{\n  \"showDebugText\": true,\n  \"enableMessageBoardFix\": true,\n  \"customCompIcons\": {},\n  \"audio\": {\n    \"replaceMusicManager\": true,\n    \"offsetLoopPoints\": true,\n    \"songs\": {}\n  },\n  \"quests\": {\n    \"replaceLoadMissionAction\": false,\n    \"ignoreXMODMissions\": false\n  },\n  \"sms\": {\n    \"authorColors\": {}\n  },\n  \"gamemode\": {\n    \"gamemodes\": [],\n    \"selectPathText\": \"\",\n    \"requirePersistentFlag\": \"\"\n  },\n  \"codeRedemption\": {\n    \"codes\": {},\n    \"customSplashText\": []\n  },\n  \"sequencers\": {},\n  \"achievements\": []\n}\n"
+  }
+ ],
+ "nodes": [
+  {
+   "paths": [
+    "ConditionalActions.*.AddCustomWildcard",
+    "CustomFaction.Action.AddCustomWildcard"
+   ],
+   "multi": true,
+   "desc": "Define a #WILDCARD# with a fixed value",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "",
+     "desc": "Wildcard name; Test_Wildcard becomes #TEST_WILDCARD#",
+     "hint": "name",
+     "ns": "stuxnet.wildcard",
+     "define": true
+    },
+    {
+     "name": "Value",
+     "required": true,
+     "default": "",
+     "desc": "Value of the wildcard",
+     "hint": "text"
+    }
+   ],
+   "group": "Stuxnet · Wildcards"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddNodeAdminWildcard",
+    "CustomFaction.Action.AddNodeAdminWildcard"
+   ],
+   "multi": true,
+   "desc": "Define #NAME_PASS# as a node's admin password",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "",
+     "desc": "Wildcard name; BitComp becomes #BITCOMP_PASS#",
+     "hint": "name",
+     "ns": "stuxnet.wildcard",
+     "define": true
+    },
+    {
+     "name": "CompID",
+     "required": true,
+     "default": "",
+     "desc": "Computer whose admin password to use",
+     "hint": "computer"
+    }
+   ],
+   "group": "Stuxnet · Wildcards"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddNodeIPWildcard",
+    "CustomFaction.Action.AddNodeIPWildcard"
+   ],
+   "multi": true,
+   "desc": "Define #NAME_IP# as a node's IP",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "",
+     "desc": "Wildcard name; BitComp becomes #BITCOMP_IP#",
+     "hint": "name",
+     "ns": "stuxnet.wildcard",
+     "define": true
+    },
+    {
+     "name": "CompID",
+     "required": true,
+     "default": "",
+     "desc": "Computer whose IP to use",
+     "hint": "computer"
+    }
+   ],
+   "group": "Stuxnet · Wildcards"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddPersistentFlag",
+    "CustomFaction.Action.AddPersistentFlag"
+   ],
+   "multi": true,
+   "desc": "Add a flag kept across save files",
+   "attributes": [
+    {
+     "name": "Flag",
+     "required": true,
+     "default": "",
+     "desc": "Persistent flag",
+     "hint": "name",
+     "ns": "stuxnet.pflag",
+     "define": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddSongToRadio",
+    "CustomFaction.Action.AddSongToRadio"
+   ],
+   "multi": true,
+   "desc": "Give the player RadioV3 song(s)",
+   "attributes": [
+    {
+     "name": "SongID",
+     "required": true,
+     "default": "",
+     "desc": "Song ID(s) from stuxnet_config.json, comma separated",
+     "hint": "name",
+     "ns": "stuxnet.song",
+     "list": true
+    }
+   ],
+   "group": "Stuxnet · Radio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AddVaultKey",
+    "CustomFaction.Action.AddVaultKey"
+   ],
+   "multi": true,
+   "desc": "Give the player a key for a VaultDaemon",
+   "attributes": [
+    {
+     "name": "KeyName",
+     "required": true,
+     "default": "",
+     "desc": "KeyName of the vault",
+     "hint": "name",
+     "ns": "stuxnet.vault"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Vault"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AllowRadioAccess",
+    "CustomFaction.Action.AllowRadioAccess"
+   ],
+   "multi": true,
+   "desc": "Allow RadioV3 access again",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Radio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.AllowSaves",
+    "CustomFaction.Action.AllowSaves"
+   ],
+   "multi": true,
+   "desc": "Let the player save again",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Saves"
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon"
+   ],
+   "multi": true,
+   "desc": "Build Your Own Daemon: a static screen drawn from XML",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "",
+     "desc": "Daemon name",
+     "hint": "text"
+    },
+    {
+     "name": "IncludeExitButton",
+     "required": false,
+     "default": "",
+     "desc": "Add an exit button (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ],
+   "container": true
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.CancelSMSMessage",
+    "CustomFaction.Action.CancelSMSMessage"
+   ],
+   "multi": true,
+   "desc": "Cancel a queued SMS message",
+   "attributes": [
+    {
+     "name": "MessageID",
+     "required": true,
+     "default": "",
+     "desc": "MessageID of the queued message",
+     "hint": "name",
+     "ns": "stuxnet.smsmsg"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ChangeSequencerFromID",
+    "CustomFaction.Action.ChangeSequencerFromID"
+   ],
+   "multi": true,
+   "desc": "Apply a sequencer preset from stuxnet_config.json",
+   "attributes": [
+    {
+     "name": "SequencerID",
+     "required": true,
+     "default": "",
+     "desc": "Preset ID from stuxnet_config.json → sequencers",
+     "hint": "name",
+     "ns": "stuxnet.sequencer"
+    }
+   ],
+   "group": "Stuxnet · Sequencer"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ChangeSequencerManually",
+    "CustomFaction.Action.ChangeSequencerManually"
+   ],
+   "multi": true,
+   "desc": "Change the ESequencer target and actions",
+   "attributes": [
+    {
+     "name": "RequiredFlag",
+     "required": false,
+     "default": "",
+     "desc": "Flag needed to start the sequencer",
+     "hint": "flags"
+    },
+    {
+     "name": "TargetID",
+     "required": false,
+     "default": "",
+     "desc": "Computer the sequencer targets",
+     "hint": "computer"
+    },
+    {
+     "name": "SpinUpTime",
+     "required": false,
+     "default": "",
+     "desc": "Spin-up time in seconds",
+     "hint": "text"
+    },
+    {
+     "name": "ActionsToRun",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run when the sequencer starts",
+     "hint": "actionfile"
+    }
+   ],
+   "group": "Stuxnet · Sequencer"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ClearCustomSequencer",
+    "CustomFaction.Action.ClearCustomSequencer"
+   ],
+   "multi": true,
+   "desc": "Go back to the sequencer settings in ExtensionInfo.xml",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Sequencer"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ClearPersistentFlags",
+    "CustomFaction.Action.ClearPersistentFlags"
+   ],
+   "multi": true,
+   "desc": "Remove all persistent flags",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "Computer.CodeRedemptionDaemon"
+   ],
+   "multi": false,
+   "desc": "Lets the player enter codes from stuxnet_config.json",
+   "attributes": [
+    {
+     "name": "CodePrefix",
+     "required": false,
+     "default": "",
+     "desc": "Prefix shown before the typed code",
+     "hint": "text"
+    },
+    {
+     "name": "Message",
+     "required": false,
+     "default": "",
+     "desc": "Server message",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.CollectAchievement",
+    "CustomFaction.Action.CollectAchievement"
+   ],
+   "multi": true,
+   "desc": "Unlock an achievement from stuxnet_config.json",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "",
+     "desc": "Achievement name (case-sensitive)",
+     "hint": "name",
+     "ns": "stuxnet.achievement"
+    },
+    {
+     "name": "Quietly",
+     "required": false,
+     "default": "",
+     "desc": "Don't show the pop-up",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "Computer.DebugDaemon"
+   ],
+   "multi": false,
+   "desc": "Only reachable with debug commands enabled",
+   "attributes": [
+    {
+     "name": "RequiredPassword",
+     "required": false,
+     "default": "",
+     "desc": "Save-file password also required (optional)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.DenySaves",
+    "CustomFaction.Action.DenySaves"
+   ],
+   "multi": true,
+   "desc": "Stop the player from saving",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Saves"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.DisableAlertsIcon",
+    "CustomFaction.Action.DisableAlertsIcon"
+   ],
+   "multi": true,
+   "desc": "Hide the mail/IRC alerts icon completely",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.DoesNotHaveFlagsStx"
+   ],
+   "multi": true,
+   "desc": "Like DoesNotHaveFlags, with CheckOnce",
+   "attributes": [
+    {
+     "name": "CheckOnce",
+     "required": false,
+     "default": "",
+     "desc": "Check once, then remove this condition",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Flags",
+     "required": true,
+     "default": "",
+     "desc": "Comma separated flags the player must NOT have",
+     "hint": "flags"
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.DoesNotHavePersistentFlags"
+   ],
+   "multi": true,
+   "desc": "Runs if persistent data lacks these flags",
+   "attributes": [
+    {
+     "name": "CheckOnce",
+     "required": false,
+     "default": "",
+     "desc": "Check once, then remove this condition",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Flags",
+     "required": true,
+     "default": "",
+     "desc": "Comma separated persistent flags",
+     "hint": "name",
+     "ns": "stuxnet.pflag",
+     "list": true
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.EnableAlertsIcon",
+    "CustomFaction.Action.EnableAlertsIcon"
+   ],
+   "multi": true,
+   "desc": "Show the alerts icon again",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ForbidSMS",
+    "CustomFaction.Action.ForbidSMS"
+   ],
+   "multi": true,
+   "desc": "Forbid (or allow) opening SMS with the messenger command",
+   "attributes": [
+    {
+     "name": "AllowSMS",
+     "required": false,
+     "default": "",
+     "desc": "true: allow SMS again",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ForceCloseGame",
+    "CustomFaction.Action.ForceCloseGame"
+   ],
+   "multi": true,
+   "desc": "Close the game immediately. Use sparingly!",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ForceCloseSMS",
+    "CustomFaction.Action.ForceCloseSMS"
+   ],
+   "multi": true,
+   "desc": "Close the SMS module",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ForceConnectPlayer",
+    "CustomFaction.Action.ForceConnectPlayer"
+   ],
+   "multi": true,
+   "desc": "Force the player to connect to a computer",
+   "attributes": [
+    {
+     "name": "TargetCompID",
+     "required": true,
+     "default": "",
+     "desc": "Computer to connect to",
+     "hint": "computer"
+    },
+    {
+     "name": "LikeReallyForce",
+     "required": false,
+     "default": "",
+     "desc": "Keep forcing the connection (rarely needed)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Intense",
+     "required": false,
+     "default": "",
+     "desc": "Stronger visual effect while forcing",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Nodes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ForceOpenSMSChannel",
+    "CustomFaction.Action.ForceOpenSMSChannel"
+   ],
+   "multi": true,
+   "desc": "Open an SMS channel, even if SMS is forbidden",
+   "attributes": [
+    {
+     "name": "ChannelName",
+     "required": true,
+     "default": "",
+     "desc": "Channel",
+     "hint": "name",
+     "ns": "stuxnet.sms"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.HasFlagsStx"
+   ],
+   "multi": true,
+   "desc": "Like HasFlags, with CheckOnce",
+   "attributes": [
+    {
+     "name": "CheckOnce",
+     "required": false,
+     "default": "",
+     "desc": "Check once, then remove this condition",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "requiredFlags",
+     "required": true,
+     "default": "",
+     "desc": "Comma separated flags the player must have",
+     "hint": "flags"
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.HasPersistentFlags"
+   ],
+   "multi": true,
+   "desc": "Runs if persistent data has these flags",
+   "attributes": [
+    {
+     "name": "CheckOnce",
+     "required": false,
+     "default": "",
+     "desc": "Check once, then remove this condition",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Flags",
+     "required": true,
+     "default": "",
+     "desc": "Comma separated persistent flags",
+     "hint": "name",
+     "ns": "stuxnet.pflag",
+     "list": true
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.HideChapterTitle",
+    "CustomFaction.Action.HideChapterTitle"
+   ],
+   "multi": true,
+   "desc": "Hide the chapter title",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Dialogue"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.HideFullscreenCredits",
+    "CustomFaction.Action.HideFullscreenCredits"
+   ],
+   "multi": true,
+   "desc": "Hide the full-screen credits",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Dialogue"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.LoadNetMap",
+    "CustomFaction.Action.LoadNetMap"
+   ],
+   "multi": true,
+   "desc": "Restore the netMap saved with SaveNetMap (run SaveNetMap first!)",
+   "attributes": [
+    {
+     "name": "Append",
+     "required": false,
+     "default": "",
+     "desc": "Add the cached nodes instead of replacing",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Nodes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.LoadSideQuest",
+    "CustomFaction.Action.LoadSideQuest"
+   ],
+   "multi": true,
+   "desc": "Load a mission as a side quest (no email is sent)",
+   "attributes": [
+    {
+     "name": "MissionName",
+     "required": true,
+     "default": "",
+     "desc": "Mission file",
+     "hint": "missionfile"
+    },
+    {
+     "name": "ID",
+     "required": false,
+     "default": "",
+     "desc": "Quest ID (default: the mission's id)",
+     "hint": "name",
+     "ns": "stuxnet.quest",
+     "define": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Quests"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.LogMessage",
+    "CustomFaction.Action.LogMessage"
+   ],
+   "multi": true,
+   "desc": "Write to the BepInEx log (debugging)",
+   "attributes": [
+    {
+     "name": "LogType",
+     "required": false,
+     "default": "",
+     "desc": "Log level",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "debug",
+       "desc": ""
+      },
+      {
+       "value": "info",
+       "desc": ""
+      },
+      {
+       "value": "warning",
+       "desc": ""
+      },
+      {
+       "value": "error",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Message",
+    "hint": "text"
+   }
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnCutsceneEnd"
+   ],
+   "multi": true,
+   "desc": "Runs when the current cutscene ends",
+   "attributes": [],
+   "container": true,
+   "group": "Stuxnet · Cutscenes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnExtSequencerKill"
+   ],
+   "multi": true,
+   "desc": "Runs when no extension sequencer is running any more",
+   "attributes": [],
+   "container": true,
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnForkbombComplete"
+   ],
+   "multi": true,
+   "desc": "Runs when a forkbomb completes on the player's PC",
+   "attributes": [
+    {
+     "name": "PreventCrash",
+     "required": false,
+     "default": "",
+     "desc": "Kill the forkbomb instead of crashing the PC",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DiscardOnKilled",
+     "required": false,
+     "default": "",
+     "desc": "Discard these actions if the player kills a forkbomb",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnFullscreenCreditsEnd"
+   ],
+   "multi": true,
+   "desc": "Runs when the full-screen credits end",
+   "attributes": [
+    {
+     "name": "CheckOnce",
+     "required": false,
+     "default": "",
+     "desc": "Remove this condition after it fires once",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet"
+  },
+  {
+   "paths": [
+    "ConditionalActions.OnSongInCache"
+   ],
+   "multi": true,
+   "desc": "Runs once a song is cached",
+   "attributes": [
+    {
+     "name": "SongFile",
+     "required": true,
+     "default": "",
+     "desc": "Song .ogg file",
+     "hint": "path",
+     "pattern": "**/*.ogg"
+    },
+    {
+     "name": "CacheIfNotExists",
+     "required": false,
+     "default": "",
+     "desc": "Start caching the song if needed",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ],
+   "container": true,
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PlaceNodeOnNetMap",
+    "CustomFaction.Action.PlaceNodeOnNetMap"
+   ],
+   "multi": true,
+   "desc": "Place a node at a position on the netMap",
+   "attributes": [
+    {
+     "name": "TargetCompID",
+     "required": true,
+     "default": "",
+     "desc": "Computer to place",
+     "hint": "computer"
+    },
+    {
+     "name": "Offset",
+     "required": true,
+     "default": "",
+     "desc": "Position as x,y fractions of the netMap, e.g. 0.5,0.25",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*,\\s*-?\\d*\\.?\\d+\\s*$"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Nodes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PlayCustomSong",
+    "CustomFaction.Action.PlayCustomSong"
+   ],
+   "multi": true,
+   "desc": "Play a song, optionally with loop points",
+   "attributes": [
+    {
+     "name": "SongFile",
+     "required": true,
+     "default": "",
+     "desc": "Song .ogg file",
+     "hint": "path",
+     "pattern": "**/*.ogg"
+    },
+    {
+     "name": "Immediately",
+     "required": false,
+     "default": "",
+     "desc": "Switch without fading",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "BeginLoop",
+     "required": false,
+     "default": "",
+     "desc": "Loop start in ms (-1: none)",
+     "hint": "text"
+    },
+    {
+     "name": "EndLoop",
+     "required": false,
+     "default": "",
+     "desc": "Loop end in ms (-1: none)",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PlayCustomSound",
+    "CustomFaction.Action.PlayCustomSound"
+   ],
+   "multi": true,
+   "desc": "Play an .ogg (or .wav) sound effect",
+   "attributes": [
+    {
+     "name": "SoundFile",
+     "required": true,
+     "default": "",
+     "desc": "Sound file",
+     "hint": "path",
+     "pattern": "**/*.{ogg,wav}"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PlaySound",
+    "CustomFaction.Action.PlaySound"
+   ],
+   "multi": true,
+   "desc": "Play a built-in sound effect",
+   "attributes": [
+    {
+     "name": "SoundID",
+     "required": true,
+     "default": "",
+     "desc": "Sound",
+     "hint": "enum",
+     "ignoreCase": true,
+     "diag": "W",
+     "enums": [
+      {
+       "value": "beep",
+       "desc": "Beep (write/writel)"
+      },
+      {
+       "value": "crash",
+       "desc": "HackerScript stopMusic stinger"
+      },
+      {
+       "value": "connect",
+       "desc": "Bip (adding a node)"
+      },
+      {
+       "value": "mail",
+       "desc": "You've got mail"
+      },
+      {
+       "value": "etasspindown",
+       "desc": "ETAS spin-down"
+      },
+      {
+       "value": "etasspinup",
+       "desc": "ETAS spin-up"
+      },
+      {
+       "value": "etasimpact",
+       "desc": "ETAS impact"
+      },
+      {
+       "value": "bang",
+       "desc": "Gunshot"
+      },
+      {
+       "value": "irc",
+       "desc": "IRC notification"
+      },
+      {
+       "value": "warning",
+       "desc": "= beep"
+      },
+      {
+       "value": "harsh",
+       "desc": "= crash"
+      },
+      {
+       "value": "stinger",
+       "desc": "= crash"
+      },
+      {
+       "value": "melt",
+       "desc": "= crash"
+      },
+      {
+       "value": "meltimpact",
+       "desc": "= crash"
+      },
+      {
+       "value": "addnode",
+       "desc": "= connect"
+      },
+      {
+       "value": "bip",
+       "desc": "= connect"
+      },
+      {
+       "value": "newmail",
+       "desc": "= mail"
+      },
+      {
+       "value": "spindown",
+       "desc": "= etasspindown"
+      },
+      {
+       "value": "etas1",
+       "desc": "= etasspindown"
+      },
+      {
+       "value": "spinup",
+       "desc": "= etasspinup"
+      },
+      {
+       "value": "etas2",
+       "desc": "= etasspinup"
+      },
+      {
+       "value": "impact",
+       "desc": "= etasimpact"
+      },
+      {
+       "value": "etas3",
+       "desc": "= etasimpact"
+      },
+      {
+       "value": "gunshot",
+       "desc": "= bang"
+      },
+      {
+       "value": "notification",
+       "desc": "= irc"
+      },
+      {
+       "value": "1",
+       "desc": ""
+      },
+      {
+       "value": "2",
+       "desc": ""
+      },
+      {
+       "value": "3",
+       "desc": ""
+      },
+      {
+       "value": "4",
+       "desc": ""
+      },
+      {
+       "value": "5",
+       "desc": ""
+      },
+      {
+       "value": "6",
+       "desc": ""
+      },
+      {
+       "value": "7",
+       "desc": ""
+      },
+      {
+       "value": "8",
+       "desc": ""
+      },
+      {
+       "value": "9",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PreloadCutscene",
+    "CustomFaction.Action.PreloadCutscene"
+   ],
+   "multi": true,
+   "desc": "Load a cutscene file into memory",
+   "attributes": [
+    {
+     "name": "FilePath",
+     "required": true,
+     "default": "",
+     "desc": "Cutscene XML",
+     "hint": "path",
+     "pattern": "**/*.xml",
+     "kinds": [
+      "stuxnetCutscene"
+     ]
+    }
+   ],
+   "group": "Stuxnet · Cutscenes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PreloadSong",
+    "CustomFaction.Action.PreloadSong"
+   ],
+   "multi": true,
+   "desc": "Load a song into the music cache",
+   "attributes": [
+    {
+     "name": "SongFile",
+     "required": true,
+     "default": "",
+     "desc": "Song .ogg file",
+     "hint": "path",
+     "pattern": "**/*.ogg"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.PreventRadioAccess",
+    "CustomFaction.Action.PreventRadioAccess"
+   ],
+   "multi": true,
+   "desc": "Deny RadioV3 access (cutscenes, sequencers…)",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Radio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RemovePersistentFlag",
+    "CustomFaction.Action.RemovePersistentFlag"
+   ],
+   "multi": true,
+   "desc": "Remove a persistent flag",
+   "attributes": [
+    {
+     "name": "Flag",
+     "required": true,
+     "default": "",
+     "desc": "Persistent flag",
+     "hint": "name",
+     "ns": "stuxnet.pflag"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Persistence"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RemoveSongFromRadio",
+    "CustomFaction.Action.RemoveSongFromRadio"
+   ],
+   "multi": true,
+   "desc": "Remove a song from RadioV3",
+   "attributes": [
+    {
+     "name": "SongID",
+     "required": true,
+     "default": "",
+     "desc": "Song ID from stuxnet_config.json",
+     "hint": "name",
+     "ns": "stuxnet.song"
+    }
+   ],
+   "group": "Stuxnet · Radio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RemoveVaultKey",
+    "CustomFaction.Action.RemoveVaultKey"
+   ],
+   "multi": true,
+   "desc": "Take a vault key away",
+   "attributes": [
+    {
+     "name": "KeyName",
+     "required": true,
+     "default": "",
+     "desc": "KeyName of the vault",
+     "hint": "name",
+     "ns": "stuxnet.vault"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Vault"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ReplaceMainMission",
+    "CustomFaction.Action.ReplaceMainMission"
+   ],
+   "multi": true,
+   "desc": "Replace the current main mission (needs replaceLoadMissionAction)",
+   "attributes": [
+    {
+     "name": "MissionName",
+     "required": true,
+     "default": "",
+     "desc": "Mission file",
+     "hint": "missionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Quests"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.RequireFlagForSaves",
+    "CustomFaction.Action.RequireFlagForSaves"
+   ],
+   "multi": true,
+   "desc": "Only allow saving with (or without) a flag",
+   "attributes": [
+    {
+     "name": "Flag",
+     "required": false,
+     "default": "",
+     "desc": "Flag required to save (empty: no requirement)",
+     "hint": "flags"
+    },
+    {
+     "name": "AvoidFlag",
+     "required": false,
+     "default": "",
+     "desc": "true: saving is blocked while the player HAS the flag",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Saves"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSAddUser",
+    "CustomFaction.Action.SMSAddUser"
+   ],
+   "multi": true,
+   "desc": "Show a 'user added' system message (cosmetic)",
+   "attributes": [
+    {
+     "name": "UserBeingAdded",
+     "required": true,
+     "default": "",
+     "desc": "Author being added",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "UserAdding",
+     "required": false,
+     "default": "",
+     "desc": "Author adding them",
+     "hint": "text"
+    },
+    {
+     "name": "ChannelName",
+     "required": false,
+     "default": "",
+     "desc": "Channel",
+     "hint": "name",
+     "ns": "stuxnet.sms"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSBlockUser",
+    "CustomFaction.Action.SMSBlockUser"
+   ],
+   "multi": true,
+   "desc": "Show a 'blocked' system message (cosmetic)",
+   "attributes": [
+    {
+     "name": "UserBeingBlocked",
+     "required": true,
+     "default": "",
+     "desc": "Author being blocked",
+     "hint": "text"
+    },
+    {
+     "name": "BlockingUser",
+     "required": false,
+     "default": "",
+     "desc": "Author doing the blocking (default: the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSFailSendMessage",
+    "CustomFaction.Action.SMSFailSendMessage"
+   ],
+   "multi": true,
+   "desc": "Show 'Message failed to send'",
+   "attributes": [
+    {
+     "name": "ChannelName",
+     "required": true,
+     "default": "",
+     "desc": "Channel",
+     "hint": "name",
+     "ns": "stuxnet.sms"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSGoOffline",
+    "CustomFaction.Action.SMSGoOffline"
+   ],
+   "multi": true,
+   "desc": "Show an 'offline' system message (cosmetic)",
+   "attributes": [
+    {
+     "name": "User",
+     "required": true,
+     "default": "",
+     "desc": "Author going offline",
+     "hint": "text"
+    },
+    {
+     "name": "ChannelName",
+     "required": false,
+     "default": "",
+     "desc": "Channel",
+     "hint": "name",
+     "ns": "stuxnet.sms"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSHideChoices",
+    "CustomFaction.Action.SMSHideChoices"
+   ],
+   "multi": true,
+   "desc": "Hide the choices; runs actions if any were showing",
+   "attributes": [
+    {
+     "name": "OnSuccessActions",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run if choices were hidden",
+     "hint": "actionfile"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSShowChoices",
+    "CustomFaction.Action.SMSShowChoices"
+   ],
+   "multi": true,
+   "desc": "Show up to three reply choices",
+   "attributes": [
+    {
+     "name": "ChannelName",
+     "required": true,
+     "default": "",
+     "desc": "Channel",
+     "hint": "name",
+     "ns": "stuxnet.sms"
+    },
+    {
+     "name": "Timer",
+     "required": false,
+     "default": "",
+     "desc": "Seconds before the choices disappear (0: no limit)",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SaveNetMap",
+    "CustomFaction.Action.SaveNetMap"
+   ],
+   "multi": true,
+   "desc": "Save the visible netMap nodes to a cache",
+   "attributes": [
+    {
+     "name": "Overwrite",
+     "required": false,
+     "default": "",
+     "desc": "Overwrite the existing cache",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "AutoClear",
+     "required": false,
+     "default": "",
+     "desc": "Clear the visible nodes after saving",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Nodes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendSMSMessage",
+    "CustomFaction.Action.SendSMSMessage"
+   ],
+   "multi": true,
+   "desc": "Send a message in the SMS messenger",
+   "attributes": [
+    {
+     "name": "Author",
+     "required": true,
+     "default": "",
+     "desc": "Author (#PLAYERNAME# for the player)",
+     "hint": "text",
+     "wildcards": true
+    },
+    {
+     "name": "ChannelName",
+     "required": false,
+     "default": "",
+     "desc": "Channel (defaults to the author)",
+     "hint": "name",
+     "ns": "stuxnet.sms",
+     "define": true
+    },
+    {
+     "name": "OnReadActions",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run when the message is first read",
+     "hint": "actionfile"
+    },
+    {
+     "name": "MessageID",
+     "required": false,
+     "default": "",
+     "desc": "ID for cancelling a queued message",
+     "hint": "name",
+     "ns": "stuxnet.smsmsg",
+     "define": true
+    },
+    {
+     "name": "MessageDelay",
+     "required": false,
+     "default": "",
+     "desc": "Queue the message for this many seconds",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · SMS"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ShowAutoDialogue",
+    "CustomFaction.Action.ShowAutoDialogue"
+   ],
+   "multi": true,
+   "desc": "Visual-novel dialogue that continues by itself",
+   "attributes": [
+    {
+     "name": "TextColor",
+     "required": false,
+     "default": "",
+     "desc": "Text colour, r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "TextSpeed",
+     "required": false,
+     "default": "",
+     "desc": "Text speed multiplier (1 = 10 chars/s)",
+     "hint": "text"
+    },
+    {
+     "name": "ContinueDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait after the text finishes",
+     "hint": "text"
+    },
+    {
+     "name": "EndDialogueActions",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run when the dialogue ends",
+     "hint": "actionfile"
+    },
+    {
+     "name": "HideTopBar",
+     "required": false,
+     "default": "",
+     "desc": "Hide the top bar (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "BackingOpacity",
+     "required": false,
+     "default": "",
+     "desc": "Opacity of the dimmed background (0-1)",
+     "hint": "text"
+    }
+   ],
+   "group": "Stuxnet · Dialogue",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Dialogue text",
+    "hint": "text"
+   }
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ShowCTCDialogue",
+    "CustomFaction.Action.ShowCTCDialogue"
+   ],
+   "multi": true,
+   "desc": "Visual-novel dialogue; the player clicks to continue",
+   "attributes": [
+    {
+     "name": "EndDialogueActions",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run after the player clicks",
+     "hint": "actionfile"
+    },
+    {
+     "name": "TextColor",
+     "required": false,
+     "default": "",
+     "desc": "Text colour, r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "TextSpeed",
+     "required": false,
+     "default": "",
+     "desc": "Text speed multiplier (1 = 10 chars/s)",
+     "hint": "text"
+    },
+    {
+     "name": "HideTopBar",
+     "required": false,
+     "default": "",
+     "desc": "Hide the top bar (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "BackingOpacity",
+     "required": false,
+     "default": "",
+     "desc": "Opacity of the dimmed background (0-1)",
+     "hint": "text"
+    }
+   ],
+   "group": "Stuxnet · Dialogue",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Dialogue text",
+    "hint": "text"
+   }
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ShowChapterTitle",
+    "CustomFaction.Action.ShowChapterTitle"
+   ],
+   "multi": true,
+   "desc": "Show a full-screen chapter title",
+   "attributes": [
+    {
+     "name": "ChapterTitle",
+     "required": true,
+     "default": "",
+     "desc": "Big title, e.g. \"Chapter 1\"",
+     "hint": "text"
+    },
+    {
+     "name": "ChapterSubTitle",
+     "required": false,
+     "default": "",
+     "desc": "The chapter's name",
+     "hint": "text"
+    },
+    {
+     "name": "HideTopBar",
+     "required": false,
+     "default": "",
+     "desc": "Hide the top bar (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "BackingOpacity",
+     "required": false,
+     "default": "",
+     "desc": "Opacity of the dimmed background (0-1)",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Dialogue"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ShowFullscreenCredits",
+    "CustomFaction.Action.ShowFullscreenCredits"
+   ],
+   "multi": true,
+   "desc": "Show full-screen credits",
+   "attributes": [
+    {
+     "name": "CreditsPath",
+     "required": true,
+     "default": "",
+     "desc": "Credits .txt file (same format as vanilla credits)",
+     "hint": "path",
+     "pattern": "**/*.txt"
+    },
+    {
+     "name": "ShowButtonDelay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds before the exit button appears (-1: default)",
+     "hint": "text"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Dialogue"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.StopMusic",
+    "CustomFaction.Action.StopMusic"
+   ],
+   "multi": true,
+   "desc": "Stop the music",
+   "attributes": [
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Audio"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.ToggleQuestsButton",
+    "CustomFaction.Action.ToggleQuestsButton"
+   ],
+   "multi": true,
+   "desc": "Enable or disable the Quests system",
+   "attributes": [
+    {
+     "name": "Enable",
+     "required": false,
+     "default": "",
+     "desc": "true: enable quests",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Quests"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.TriggerCutscene",
+    "CustomFaction.Action.TriggerCutscene"
+   ],
+   "multi": true,
+   "desc": "Play a preloaded cutscene",
+   "attributes": [
+    {
+     "name": "FilePath",
+     "required": true,
+     "default": "",
+     "desc": "Cutscene XML (preload it first)",
+     "hint": "path",
+     "pattern": "**/*.xml",
+     "kinds": [
+      "stuxnetCutscene"
+     ]
+    }
+   ],
+   "group": "Stuxnet · Cutscenes"
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.UnloadSideQuest",
+    "CustomFaction.Action.UnloadSideQuest"
+   ],
+   "multi": true,
+   "desc": "Remove a side quest without running its end actions",
+   "attributes": [
+    {
+     "name": "QuestID",
+     "required": true,
+     "default": "",
+     "desc": "Quest ID",
+     "hint": "name",
+     "ns": "stuxnet.quest"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet · Quests"
+  },
+  {
+   "paths": [
+    "Computer.VaultDaemon"
+   ],
+   "multi": false,
+   "desc": "A vault that opens once the player has enough keys",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": false,
+     "default": "",
+     "desc": "Vault name shown on screen",
+     "hint": "text"
+    },
+    {
+     "name": "KeyName",
+     "required": true,
+     "default": "",
+     "desc": "Key name used by AddVaultKey (keep it unique)",
+     "hint": "name",
+     "ns": "stuxnet.vault",
+     "define": true
+    },
+    {
+     "name": "SecretCode",
+     "required": false,
+     "default": "",
+     "desc": "Code shown when opened; also becomes the admin password (random if empty)",
+     "hint": "text"
+    },
+    {
+     "name": "MaximumKeys",
+     "required": false,
+     "default": "",
+     "desc": "Keys needed, 1-10 (default 5)",
+     "hint": "text"
+    },
+    {
+     "name": "Message",
+     "required": false,
+     "default": "",
+     "desc": "Message at the bottom",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.WriteToTerminal",
+    "CustomFaction.Action.WriteToTerminal"
+   ],
+   "multi": true,
+   "desc": "Print text to the player's terminal",
+   "attributes": [
+    {
+     "name": "Quietly",
+     "required": false,
+     "default": "",
+     "desc": "Don't play the beep (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "DelayHost",
+     "required": false,
+     "default": "",
+     "desc": "Computer that waits out the delay (needs IRCDaemon, DHSDaemon or FastActionHost)",
+     "hint": "computer",
+     "compFilter": [
+      "IRCDaemon",
+      "DHSDaemon",
+      "FastActionHost"
+     ],
+     "diag": "E"
+    },
+    {
+     "name": "Delay",
+     "required": false,
+     "default": "",
+     "desc": "Seconds to wait before running (needs DelayHost)",
+     "hint": "text",
+     "regex": "^\\d+(\\.\\d+)?$"
+    }
+   ],
+   "group": "Stuxnet",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Text to print",
+    "hint": "text"
+   }
+  },
+  {
+   "paths": [
+    "StuxnetCutscene"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Stuxnet cutscene (play with PreloadCutscene + TriggerCutscene)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.DelayEnd"
+   ],
+   "multi": false,
+   "desc": "Delay the end of the cutscene (put last)",
+   "attributes": [
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Stuxnet animated theme (use like a theme file)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.BaseTheme"
+   ],
+   "multi": false,
+   "desc": "Underlying vanilla theme",
+   "attributes": [],
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Theme file path",
+    "hint": "themefile"
+   }
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Elements (drawn in order)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Timed instructions",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements.Rectangle"
+   ],
+   "multi": true,
+   "desc": "Solid rectangle",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y (values under 1 are fractions)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h (values under 1 are fractions)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Color",
+     "required": true,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "Rotation",
+     "required": false,
+     "default": "",
+     "desc": "Degrees",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements.Image"
+   ],
+   "multi": true,
+   "desc": "Image",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "FilePath",
+     "required": true,
+     "default": "",
+     "desc": "Image file",
+     "hint": "path",
+     "pattern": "**/*.{png,jpg,jpeg}"
+    },
+    {
+     "name": "Rotation",
+     "required": false,
+     "default": "",
+     "desc": "Degrees",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements.Text"
+   ],
+   "multi": true,
+   "desc": "Text (wraps at Size width)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w (h is ignored)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "StartingValue",
+     "required": true,
+     "default": "",
+     "desc": "Text",
+     "hint": "text"
+    },
+    {
+     "name": "FontScale",
+     "required": false,
+     "default": "",
+     "desc": "Font scale",
+     "hint": "text"
+    },
+    {
+     "name": "Color",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements.RaindropsFX"
+   ],
+   "multi": true,
+   "desc": "Raindrops effect (RadioV3 style)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "FallRate",
+     "required": true,
+     "default": "",
+     "desc": "Fall speed (0.5 is a good start)",
+     "hint": "text"
+    },
+    {
+     "name": "MaxDropsRadius",
+     "required": true,
+     "default": "",
+     "desc": "Puddle size",
+     "hint": "text"
+    },
+    {
+     "name": "DropsPerSecond",
+     "required": true,
+     "default": "",
+     "desc": "Drops per second",
+     "hint": "text"
+    },
+    {
+     "name": "DropsColor",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Elements.GridFX"
+   ],
+   "multi": true,
+   "desc": "Shifting grid effect (MemForensics style)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Color",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b (avoid pure white/black)",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.Translate"
+   ],
+   "multi": true,
+   "desc": "Move an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetPosition",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.Resize"
+   ],
+   "multi": true,
+   "desc": "Resize an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetSize",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.Rotate"
+   ],
+   "multi": true,
+   "desc": "Rotate to an angle, or spin forever",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": false,
+     "default": "",
+     "desc": "Seconds (timed rotation)",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetAngle",
+     "required": false,
+     "default": "",
+     "desc": "Degrees (timed rotation)",
+     "hint": "text"
+    },
+    {
+     "name": "Indefinitely",
+     "required": false,
+     "default": "",
+     "desc": "Spin forever (false stops spinning)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Speed",
+     "required": false,
+     "default": "",
+     "desc": "Degrees per second (with Indefinitely)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.Fade"
+   ],
+   "multi": true,
+   "desc": "Fade an element in or out",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "FadeIn",
+     "required": true,
+     "default": "",
+     "desc": "true: start invisible and fade in",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.ToggleVisibility"
+   ],
+   "multi": true,
+   "desc": "Show or hide an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": true,
+     "default": "",
+     "desc": "Visible?",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.Typewriter"
+   ],
+   "multi": true,
+   "desc": "Type text out (Text elements only); empty Text erases",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "Text",
+     "required": false,
+     "default": "",
+     "desc": "Text to type",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetCutscene.Instructions.ChangeFontScale"
+   ],
+   "multi": true,
+   "desc": "Change a Text element's font scale",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetScale",
+     "required": true,
+     "default": "",
+     "desc": "New scale",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Elements (drawn in order)",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Timed instructions",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements.Rectangle"
+   ],
+   "multi": true,
+   "desc": "Solid rectangle",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y (values under 1 are fractions)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h (values under 1 are fractions)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Color",
+     "required": true,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "Rotation",
+     "required": false,
+     "default": "",
+     "desc": "Degrees",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements.Image"
+   ],
+   "multi": true,
+   "desc": "Image",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "FilePath",
+     "required": true,
+     "default": "",
+     "desc": "Image file",
+     "hint": "path",
+     "pattern": "**/*.{png,jpg,jpeg}"
+    },
+    {
+     "name": "Rotation",
+     "required": false,
+     "default": "",
+     "desc": "Degrees",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements.Text"
+   ],
+   "multi": true,
+   "desc": "Text (wraps at Size width)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w (h is ignored)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "StartingValue",
+     "required": true,
+     "default": "",
+     "desc": "Text",
+     "hint": "text"
+    },
+    {
+     "name": "FontScale",
+     "required": false,
+     "default": "",
+     "desc": "Font scale",
+     "hint": "text"
+    },
+    {
+     "name": "Color",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "Visible",
+     "required": false,
+     "default": "",
+     "desc": "Start visible",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Opacity",
+     "required": false,
+     "default": "",
+     "desc": "Starting opacity 0-1",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements.RaindropsFX"
+   ],
+   "multi": true,
+   "desc": "Raindrops effect (RadioV3 style)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "FallRate",
+     "required": true,
+     "default": "",
+     "desc": "Fall speed (0.5 is a good start)",
+     "hint": "text"
+    },
+    {
+     "name": "MaxDropsRadius",
+     "required": true,
+     "default": "",
+     "desc": "Puddle size",
+     "hint": "text"
+    },
+    {
+     "name": "DropsPerSecond",
+     "required": true,
+     "default": "",
+     "desc": "Drops per second",
+     "hint": "text"
+    },
+    {
+     "name": "DropsColor",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Elements.GridFX"
+   ],
+   "multi": true,
+   "desc": "Shifting grid effect (MemForensics style)",
+   "attributes": [
+    {
+     "name": "ID",
+     "required": true,
+     "default": "",
+     "desc": "Element ID used by instructions",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "define": true,
+     "scope": "file"
+    },
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Color",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b (avoid pure white/black)",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.Translate"
+   ],
+   "multi": true,
+   "desc": "Move an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetPosition",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.Resize"
+   ],
+   "multi": true,
+   "desc": "Resize an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetSize",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.Rotate"
+   ],
+   "multi": true,
+   "desc": "Rotate to an angle, or spin forever",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": false,
+     "default": "",
+     "desc": "Seconds (timed rotation)",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetAngle",
+     "required": false,
+     "default": "",
+     "desc": "Degrees (timed rotation)",
+     "hint": "text"
+    },
+    {
+     "name": "Indefinitely",
+     "required": false,
+     "default": "",
+     "desc": "Spin forever (false stops spinning)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    },
+    {
+     "name": "Speed",
+     "required": false,
+     "default": "",
+     "desc": "Degrees per second (with Indefinitely)",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.Fade"
+   ],
+   "multi": true,
+   "desc": "Fade an element in or out",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "FadeIn",
+     "required": true,
+     "default": "",
+     "desc": "true: start invisible and fade in",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.ToggleVisibility"
+   ],
+   "multi": true,
+   "desc": "Show or hide an element",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": false,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "Visible",
+     "required": true,
+     "default": "",
+     "desc": "Visible?",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.Typewriter"
+   ],
+   "multi": true,
+   "desc": "Type text out (Text elements only); empty Text erases",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "Text",
+     "required": false,
+     "default": "",
+     "desc": "Text to type",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "StuxnetAnimatedTheme.Instructions.ChangeFontScale"
+   ],
+   "multi": true,
+   "desc": "Change a Text element's font scale",
+   "attributes": [
+    {
+     "name": "ElementID",
+     "required": true,
+     "default": "",
+     "desc": "ID of the element to animate",
+     "hint": "name",
+     "ns": "stuxnet.anim",
+     "scope": "file"
+    },
+    {
+     "name": "Duration",
+     "required": true,
+     "default": "",
+     "desc": "Seconds",
+     "hint": "text"
+    },
+    {
+     "name": "Delay",
+     "required": true,
+     "default": "",
+     "desc": "Seconds after the start of the animation",
+     "hint": "text"
+    },
+    {
+     "name": "TargetScale",
+     "required": true,
+     "default": "",
+     "desc": "New scale",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon.Rectangle"
+   ],
+   "multi": true,
+   "desc": "Solid rectangle",
+   "attributes": [
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y (values 0-1 are fractions)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h (negative h: square)",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Color",
+     "required": true,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon.Image"
+   ],
+   "multi": true,
+   "desc": "Image",
+   "attributes": [
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Path",
+     "required": true,
+     "default": "",
+     "desc": "Image file",
+     "hint": "path",
+     "pattern": "**/*.{png,jpg,jpeg}"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon.Label"
+   ],
+   "multi": true,
+   "desc": "Text label",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Label text",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "FontType",
+     "required": false,
+     "default": "",
+     "desc": "Font",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "normal",
+       "desc": ""
+      },
+      {
+       "value": "title",
+       "desc": ""
+      },
+      {
+       "value": "small",
+       "desc": ""
+      },
+      {
+       "value": "tiny",
+       "desc": ""
+      }
+     ],
+     "diag": "W"
+    },
+    {
+     "name": "FontSize",
+     "required": false,
+     "default": "",
+     "desc": "Size multiplier",
+     "hint": "text"
+    },
+    {
+     "name": "TextColor",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon.Button"
+   ],
+   "multi": true,
+   "desc": "Button that runs actions",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Button text",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "OnPressedActions",
+     "required": false,
+     "default": "",
+     "desc": "Actions to run",
+     "hint": "actionfile"
+    },
+    {
+     "name": "Color",
+     "required": false,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "IsExitButton",
+     "required": false,
+     "default": "",
+     "desc": "Leave the daemon when pressed (default true)",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.BYODDaemon.WarningTape"
+   ],
+   "multi": true,
+   "desc": "Warning tape (like proxies/firewalls)",
+   "attributes": [
+    {
+     "name": "Position",
+     "required": true,
+     "default": "",
+     "desc": "x,y",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "Size",
+     "required": true,
+     "default": "",
+     "desc": "w,h",
+     "hint": "text",
+     "regex": "^\\s*-?\\d*\\.?\\d+\\s*(,\\s*-?\\d*\\.?\\d+\\s*)?$"
+    },
+    {
+     "name": "PrimaryColor",
+     "required": true,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    },
+    {
+     "name": "SecondaryColor",
+     "required": true,
+     "default": "",
+     "desc": "r,g,b",
+     "hint": "color"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.wiresharkCapture"
+   ],
+   "multi": true,
+   "container": true,
+   "desc": "A Wireshark .pcap file the player can open",
+   "attributes": [
+    {
+     "name": "path",
+     "required": true,
+     "default": "",
+     "desc": "Folder on the computer",
+     "hint": "text"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "default": "",
+     "desc": "File name",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.WiresharkEntries"
+   ],
+   "multi": false,
+   "container": true,
+   "desc": "Packets captured with Wireshark --capture",
+   "attributes": []
+  },
+  {
+   "paths": [
+    "Computer.wiresharkCapture.pcap"
+   ],
+   "multi": true,
+   "desc": "Captured packet",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Packet data",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "id",
+     "required": false,
+     "default": "",
+     "desc": "Packet number",
+     "hint": "text"
+    },
+    {
+     "name": "from",
+     "required": false,
+     "default": "",
+     "desc": "Source IP",
+     "hint": "ip"
+    },
+    {
+     "name": "to",
+     "required": false,
+     "default": "",
+     "desc": "Destination IP",
+     "hint": "ip"
+    },
+    {
+     "name": "method",
+     "required": false,
+     "default": "",
+     "desc": "HTTP method",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "GET",
+       "desc": ""
+      },
+      {
+       "value": "POST",
+       "desc": ""
+      },
+      {
+       "value": "PUT",
+       "desc": ""
+      },
+      {
+       "value": "DELETE",
+       "desc": ""
+      },
+      {
+       "value": "HEAD",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "protocol",
+     "required": false,
+     "default": "",
+     "desc": "Protocol",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "TCP",
+       "desc": ""
+      },
+      {
+       "value": "UDP",
+       "desc": ""
+      },
+      {
+       "value": "DNS",
+       "desc": ""
+      },
+      {
+       "value": "SSL",
+       "desc": ""
+      },
+      {
+       "value": "HTTP",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "secure",
+     "required": false,
+     "default": "",
+     "desc": "Needs admin on the source computer to read",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "Computer.WiresharkEntries.pcap"
+   ],
+   "multi": true,
+   "desc": "Captured packet",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Packet data",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "id",
+     "required": false,
+     "default": "",
+     "desc": "Packet number",
+     "hint": "text"
+    },
+    {
+     "name": "from",
+     "required": false,
+     "default": "",
+     "desc": "Source IP",
+     "hint": "ip"
+    },
+    {
+     "name": "to",
+     "required": false,
+     "default": "",
+     "desc": "Destination IP",
+     "hint": "ip"
+    },
+    {
+     "name": "method",
+     "required": false,
+     "default": "",
+     "desc": "HTTP method",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "GET",
+       "desc": ""
+      },
+      {
+       "value": "POST",
+       "desc": ""
+      },
+      {
+       "value": "PUT",
+       "desc": ""
+      },
+      {
+       "value": "DELETE",
+       "desc": ""
+      },
+      {
+       "value": "HEAD",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "protocol",
+     "required": false,
+     "default": "",
+     "desc": "Protocol",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "TCP",
+       "desc": ""
+      },
+      {
+       "value": "UDP",
+       "desc": ""
+      },
+      {
+       "value": "DNS",
+       "desc": ""
+      },
+      {
+       "value": "SSL",
+       "desc": ""
+      },
+      {
+       "value": "HTTP",
+       "desc": ""
+      }
+     ]
+    },
+    {
+     "name": "secure",
+     "required": false,
+     "default": "",
+     "desc": "Needs admin on the source computer to read",
+     "hint": "bool",
+     "enums": [
+      {
+       "value": "true",
+       "desc": ""
+      },
+      {
+       "value": "false",
+       "desc": ""
+      }
+     ],
+     "ignoreCase": true,
+     "diag": "W"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendSMSMessage.Message",
+    "CustomFaction.Action.SendSMSMessage.Message"
+   ],
+   "multi": false,
+   "desc": "Message text",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Message",
+    "hint": "text",
+    "wildcards": true
+   },
+   "attributes": []
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendSMSMessage.UserNote",
+    "CustomFaction.Action.SendSMSMessage.UserNote"
+   ],
+   "multi": true,
+   "desc": "Attachment: a note for notes.exe",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Note text",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "DisplayName",
+     "required": true,
+     "default": "",
+     "desc": "Name shown on the attachment",
+     "hint": "text"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendSMSMessage.NodeAttachment",
+    "CustomFaction.Action.SendSMSMessage.NodeAttachment"
+   ],
+   "multi": true,
+   "desc": "Attachment: link to a node",
+   "attributes": [
+    {
+     "name": "DisplayName",
+     "required": false,
+     "default": "",
+     "desc": "Name shown on the attachment",
+     "hint": "text"
+    },
+    {
+     "name": "NodeID",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SendSMSMessage.NodeAccount",
+    "CustomFaction.Action.SendSMSMessage.NodeAccount"
+   ],
+   "multi": true,
+   "desc": "Attachment: account on a node",
+   "attributes": [
+    {
+     "name": "DisplayName",
+     "required": false,
+     "default": "",
+     "desc": "Name shown on the attachment",
+     "hint": "text"
+    },
+    {
+     "name": "NodeID",
+     "required": true,
+     "default": "",
+     "desc": "Computer",
+     "hint": "computer"
+    },
+    {
+     "name": "AccountUsername",
+     "required": true,
+     "default": "",
+     "desc": "Account username",
+     "hint": "compchild",
+     "from": "NodeID",
+     "child": [
+      "account"
+     ],
+     "childAttr": "username"
+    }
+   ]
+  },
+  {
+   "paths": [
+    "ConditionalActions.*.SMSShowChoices.Choice",
+    "CustomFaction.Action.SMSShowChoices.Choice"
+   ],
+   "multi": true,
+   "desc": "A choice",
+   "content": {
+    "required": false,
+    "default": "",
+    "desc": "Choice text",
+    "hint": "text"
+   },
+   "attributes": [
+    {
+     "name": "OnChosenActions",
+     "required": true,
+     "default": "",
+     "desc": "Actions to run when chosen",
+     "hint": "actionfile"
+    }
+   ]
+  }
+ ]
+}

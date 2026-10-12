@@ -61,6 +61,13 @@ export interface XDocument {
 export interface ParseIssue {
   line: number;
   message: string;
+  /**
+   * "error": Hacknet cannot load the file. "warning": loads, but probably not as intended.
+   * Defaults to "error".
+   */
+  severity?: "error" | "warning";
+  /** True when the element tree itself is unreliable (unclosed tags etc.), so form editing is unsafe. */
+  structural?: boolean;
 }
 
 let nextId = 1;
@@ -70,15 +77,37 @@ export function newId() {
 
 const ENTITY: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 
+function validCodePoint(code: number): boolean {
+  return Number.isInteger(code) && code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff);
+}
+
 export function decodeEntities(s: string): string {
   if (s.indexOf("&") < 0) return s;
   return s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, e: string) => {
     if (e[0] === "#") {
       const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+      return validCodePoint(code) ? String.fromCodePoint(code) : m;
     }
     return ENTITY[e] ?? m;
   });
+}
+
+/**
+ * Find '&' sequences that .NET's XmlReader (which Hacknet uses) rejects:
+ * a bare '&', an unknown named entity such as &nbsp;, or an out-of-range character reference.
+ */
+export function badEntity(raw: string): string | null {
+  let k = raw.indexOf("&");
+  while (k >= 0) {
+    const m = /^&(#x([0-9a-fA-F]+)|#([0-9]+)|([A-Za-z_][\w.-]*));/.exec(raw.slice(k, k + 40));
+    if (!m) return raw.slice(k, k + 12).split(/\s/)[0] || "&";
+    if (m[2] !== undefined || m[3] !== undefined) {
+      const code = m[2] !== undefined ? parseInt(m[2], 16) : parseInt(m[3], 10);
+      if (!validCodePoint(code)) return m[0];
+    } else if (!(m[4] in ENTITY)) return m[0];
+    k = raw.indexOf("&", k + m[0].length);
+  }
+  return null;
 }
 
 export function escapeText(s: string): string {
@@ -112,6 +141,10 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
     if (lt < 0 || lt > i) {
       const end = lt < 0 ? n : lt;
       const raw = src.slice(i, end);
+      const bad = badEntity(raw);
+      if (bad) issues.push({ line: line + countNewlines(src, i, i + Math.max(0, raw.indexOf(bad))), message: entityMessage(bad) });
+      if (stack.length === 1 && raw.trim() && raw.trim() !== "\uFEFF")
+        issues.push({ line, message: "Text outside the root element. Hacknet's XML reader stops with \"Data at the root level is invalid\".", severity: "warning" });
       top().children.push({ type: "text", value: decodeEntities(raw), raw });
       advanceTo(end);
       continue;
@@ -120,7 +153,7 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
     if (src.startsWith("<!--", i)) {
       const end = src.indexOf("-->", i + 4);
       const stop = end < 0 ? n : end + 3;
-      if (end < 0) issues.push({ line, message: "Comment is never closed (missing -->)" });
+      if (end < 0) issues.push({ line, message: "Comment is never closed (missing -->)", structural: true });
       top().children.push({ type: "comment", value: src.slice(i + 4, end < 0 ? n : end) });
       advanceTo(stop);
       continue;
@@ -129,14 +162,45 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
       const end = src.indexOf("]]>", i + 9);
       const stop = end < 0 ? n : end + 3;
       const value = src.slice(i + 9, end < 0 ? n : end);
+      if (end < 0) issues.push({ line, message: "CDATA section is never closed (missing ]]>)", structural: true });
       top().children.push({ type: "text", value, raw: src.slice(i, stop), cdata: true });
       advanceTo(stop);
       continue;
     }
-    if (src.startsWith("<?", i) || src.startsWith("<!", i)) {
-      const close = src.startsWith("<?", i) ? "?>" : ">";
-      const end = src.indexOf(close, i + 2);
-      const stop = end < 0 ? n : end + close.length;
+    if (src.startsWith("<?", i)) {
+      const end = src.indexOf("?>", i + 2);
+      const stop = end < 0 ? n : end + 2;
+      if (end < 0) issues.push({ line, message: "Processing instruction is never closed (missing ?>)", structural: true });
+      if (/^<\?xml[\s?]/i.test(src.slice(i, i + 6))) {
+        const before = src.slice(0, i).replace(/^\uFEFF/, "");
+        if (before.length > 0)
+          issues.push({
+            line,
+            message: before.trim()
+              ? "The <?xml ...?> declaration must be the first thing in the file."
+              : "Nothing may come before <?xml ...?>, not even a blank line or space. Hacknet's XML reader refuses the file.",
+          });
+      }
+      top().children.push({ type: "raw", value: src.slice(i, stop) });
+      advanceTo(stop);
+      continue;
+    }
+    if (src.startsWith("<!", i)) {
+      // <!DOCTYPE name [ internal subset ]> may contain '>' inside the brackets.
+      let k = i + 2;
+      let depth = 0;
+      let quote = "";
+      for (; k < n; k++) {
+        const c = src[k];
+        if (quote) {
+          if (c === quote) quote = "";
+        } else if (c === '"' || c === "'") quote = c;
+        else if (c === "[") depth++;
+        else if (c === "]") depth--;
+        else if (c === ">" && depth <= 0) break;
+      }
+      const stop = k < n ? k + 1 : n;
+      if (k >= n) issues.push({ line, message: "Declaration is never closed (missing >)", structural: true });
       top().children.push({ type: "raw", value: src.slice(i, stop) });
       advanceTo(stop);
       continue;
@@ -151,11 +215,18 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
       let k = stack.length - 1;
       while (k > 0 && stack[k].el!.name !== name) k--;
       if (k === 0) {
-        issues.push({ line: startLine, message: `Closing tag </${name}> has no matching opening tag` });
+        const ci = stack.slice(1).find((x) => x.el!.name.toLowerCase() === name.toLowerCase());
+        issues.push({
+          line: startLine,
+          message: ci
+            ? `Closing tag </${name}> does not match <${ci.el!.name}>. Tag names are case-sensitive.`
+            : `Closing tag </${name}> has no matching opening tag`,
+          structural: true,
+        });
         continue;
       }
       for (let m = stack.length - 1; m > k; m--) {
-        issues.push({ line: stack[m].el!.line, message: `<${stack[m].el!.name}> is never closed` });
+        issues.push({ line: stack[m].el!.line, message: `<${stack[m].el!.name}> is never closed`, structural: true });
       }
       stack.length = k;
       continue;
@@ -166,7 +237,7 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
     const m = NAME_RE.exec(src);
     if (!m) {
       // stray '<' -> treat as text
-      issues.push({ line, message: "Stray '<' character (write &lt; in text)" });
+      issues.push({ line, message: "Stray '<' character (write &lt; in text)", structural: true });
       top().children.push({ type: "text", value: "<", raw: "<" });
       advanceTo(i + 1);
       continue;
@@ -204,7 +275,7 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
       NAME_RE.lastIndex = j;
       const an = NAME_RE.exec(src);
       if (!an) {
-        issues.push({ line: startLine, message: `Unexpected character '${src[j] ?? "EOF"}' in <${el.name}>` });
+        issues.push({ line: startLine, message: `Unexpected character '${src[j] ?? "EOF"}' in <${el.name}>`, structural: true });
         // skip to next '>' to recover
         const gt = src.indexOf(">", j);
         j = gt < 0 ? n : gt + 1;
@@ -234,28 +305,47 @@ export function parseXml(src: string): { doc: XDocument; issues: ParseIssue[] } 
       }
       const qe = src.indexOf(q, k2 + 1);
       if (qe < 0) {
-        issues.push({ line: startLine, message: `Attribute "${an[0]}" on <${el.name}> is missing its closing quote` });
+        issues.push({ line: startLine, message: `Attribute "${an[0]}" on <${el.name}> is missing its closing quote`, structural: true });
         j = n;
         break;
       }
       const raw = src.slice(k2 + 1, qe);
+      const bad = badEntity(raw);
+      if (bad) issues.push({ line: startLine, message: `Attribute "${an[0]}" on <${el.name}>: ${entityMessage(bad)}` });
+      if (raw.includes("<")) issues.push({ line: startLine, message: `Attribute "${an[0]}" on <${el.name}> contains '<'. Write &lt; instead; Hacknet's XML reader refuses a raw '<' in attributes.` });
       if (el.attrs.some((a) => a.name === an[0])) {
         issues.push({ line: startLine, message: `Attribute "${an[0]}" appears twice on <${el.name}>` });
       }
       el.attrs.push({ name: an[0], value: decodeEntities(raw), raw, quote: q as '"' | "'", pre: ws });
       j = qe + 1;
     }
-    if (!closed) issues.push({ line: startLine, message: `<${el.name}> tag is not closed with '>'` });
+    if (!closed) issues.push({ line: startLine, message: `<${el.name}> tag is not closed with '>'`, structural: true });
     advanceTo(Math.min(j, n));
     top().children.push(el);
     if (!el.selfClosing) stack.push({ el, children: el.children });
   }
   for (let m = stack.length - 1; m > 0; m--) {
-    issues.push({ line: stack[m].el!.line, message: `<${stack[m].el!.name}> is never closed` });
+    issues.push({ line: stack[m].el!.line, message: `<${stack[m].el!.name}> is never closed`, structural: true });
   }
   const roots = docChildren.filter((c): c is XElement => c.type === "element");
   if (roots.length > 1) issues.push({ line: roots[1].line, message: "A file can only have one root element" });
   return { doc: { children: docChildren, root: roots[0] ?? null }, issues };
+}
+
+function countNewlines(s: string, from: number, to: number): number {
+  let c = 0;
+  for (let k = from; k < to; k++) if (s.charCodeAt(k) === 10) c++;
+  return c;
+}
+
+function entityMessage(bad: string): string {
+  if (bad === "&" || !bad.endsWith(";")) return `"${bad}" has a bare '&'. Write &amp; instead; Hacknet's XML reader refuses the file otherwise.`;
+  return `"${bad}" is not an XML entity Hacknet understands. Use &amp; &lt; &gt; &quot; &apos; or a character code like &#233;.`;
+}
+
+/** True when the parse problems leave the element tree intact, so forms can still edit it safely. */
+export function treeIsReliable(issues: ParseIssue[]): boolean {
+  return !issues.some((i) => i.structural);
 }
 
 function serializeAttr(a: XAttr): string {
@@ -533,4 +623,32 @@ export function findById(doc: XDocument, id: number): { el: XElement; parent: XE
     if (!out && el.id === id) out = { el, parent, path };
   });
   return out;
+}
+
+/** Position of an element as child-element indexes from the root (stable across re-parsing). */
+export function indexPathOf(doc: XDocument, id: number): number[] | null {
+  if (!doc.root) return null;
+  if (doc.root.id === id) return [];
+  const visit = (el: XElement, acc: number[]): number[] | null => {
+    const kids = elementChildren(el);
+    for (let k = 0; k < kids.length; k++) {
+      if (kids[k].id === id) return [...acc, k];
+      const r = visit(kids[k], [...acc, k]);
+      if (r) return r;
+    }
+    return null;
+  };
+  return visit(doc.root, []);
+}
+
+/** The element at an index path, or the deepest existing ancestor of it. */
+export function elementAtIndexPath(doc: XDocument, path: number[]): XElement | null {
+  if (!doc.root) return null;
+  let el: XElement = doc.root;
+  for (const k of path) {
+    const next: XElement | undefined = elementChildren(el)[k];
+    if (!next) break;
+    el = next;
+  }
+  return el;
 }
