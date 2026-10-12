@@ -1,5 +1,6 @@
 # Builds VRift for Windows, Linux and macOS and publishes a GitHub release whenever the
-# VERSION file changes on main. The release is tagged v<VERSION> (for example v1.0.0).
+# VERSION file changes on main. The release is tagged v<VERSION> (for example v1.0.0) and
+# contains one zip per platform with the ready-to-run program (no installers).
 #
 # To release: edit VERSION (e.g. 1.0.0 -> 1.1.0), run `npm run version:sync`, commit, push.
 # You can also start it by hand from the Actions tab ("Run workflow").
@@ -80,12 +81,15 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            args: ""
+            name: windows-x64
           - platform: ubuntu-22.04
-            args: ""
+            name: linux-x64
           - platform: macos-latest
-            args: "--target universal-apple-darwin"
+            name: macos-universal
     runs-on: ${{ matrix.platform }}
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,20 +107,69 @@ jobs:
           workspaces: src-tauri
 
       - name: Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - run: npm ci
 
-      - name: Build and upload installers
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          releaseId: ${{ needs.prepare.outputs.release_id }}
-          args: ${{ matrix.args }}
+      # --- build (no installers) -------------------------------------------------
+
+      - name: Build (Windows / Linux)
+        if: runner.os != 'macOS'
+        run: npm run tauri build -- --no-bundle
+
+      # On macOS the ready-to-run form of an app is the VRift.app folder (not an installer).
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: npm run tauri build -- --target universal-apple-darwin --bundles app
+
+      # --- zip ------------------------------------------------------------------
+
+      - name: Zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dir = "VRift-$env:VERSION-${{ matrix.name }}"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $exe = @("src-tauri/target/release/vrift.exe", "src-tauri/target/release/VRift.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $exe) { throw "Built VRift executable not found in src-tauri/target/release" }
+          Copy-Item $exe "$dir/VRift.exe"
+          Copy-Item LICENSE "$dir/LICENSE.txt"
+          Copy-Item scripts/release/README-windows.txt "$dir/README.txt"
+          Compress-Archive -Path $dir -DestinationPath "$dir.zip" -CompressionLevel Optimal
+          "ZIP=$dir.zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Zip (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          dir="VRift-$VERSION-${{ matrix.name }}"
+          mkdir -p "$dir"
+          bin=""
+          for c in src-tauri/target/release/vrift src-tauri/target/release/VRift; do [ -f "$c" ] && bin="$c" && break; done
+          [ -n "$bin" ] || { echo "::error::Built VRift binary not found"; exit 1; }
+          cp "$bin" "$dir/vrift"
+          chmod +x "$dir/vrift"
+          cp LICENSE "$dir/LICENSE.txt"
+          cp scripts/release/README-linux.txt "$dir/README.txt"
+          zip -r -9 "$dir.zip" "$dir"
+          echo "ZIP=$dir.zip" >> "$GITHUB_ENV"
+
+      - name: Zip (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          dir="VRift-$VERSION-${{ matrix.name }}"
+          mkdir -p "$dir"
+          cp -R src-tauri/target/universal-apple-darwin/release/bundle/macos/VRift.app "$dir/"
+          cp LICENSE "$dir/LICENSE.txt"
+          cp scripts/release/README-macos.txt "$dir/README.txt"
+          ditto -c -k --keepParent "$dir" "$dir.zip"
+          echo "ZIP=$dir.zip" >> "$GITHUB_ENV"
+
+      - name: Upload to release
+        shell: bash
+        run: gh release upload "v$VERSION" "$ZIP" --clobber --repo "$GITHUB_REPOSITORY"
 
   publish:
     needs: [prepare, build]

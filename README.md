@@ -55,10 +55,11 @@ Then, in this folder:
 ```powershell
 npm install          # first time only
 npm run app:dev      # run VRift with hot reload while developing
-npm run app:build    # build an installer
+npm run app:build    # build installers
+npm run app:portable # build just VRift.exe (no installer)
 ```
 
-The installer ends up in `src-tauri\target\release\bundle\nsis\` (`VRift_x.y.z_x64-setup.exe`). A standalone `vrift.exe` is in `src-tauri\target\release\`.
+`npm run app:build` also makes installers in `src-tauri\target\release\bundle\`. If you only want the program, run `npm run app:portable`, which gives you a standalone `vrift.exe` in `src-tauri\target\release\` (this is what the GitHub releases ship).
 
 > The first build compiles the Rust side from scratch and takes a few minutes. Later builds are much faster.
 
@@ -86,14 +87,17 @@ When `VERSION` changes on `main`, [`release.yml`](.github/workflows/release.yml)
 
 - Checks that the version files agree with `VERSION`.
 - Creates a draft release `v1.1.0` with notes generated from the merged commits and PRs.
-- Builds on Windows (NSIS `.exe` + `.msi`), Linux (`.AppImage`, `.deb`, `.rpm`) and macOS (universal `.dmg`), and attaches the installers to the release.
+- Builds VRift on each platform **without installers** and attaches one zip per platform:
+  - `VRift-1.1.0-windows-x64.zip`: `VRift.exe`, run it straight from the folder
+  - `VRift-1.1.0-linux-x64.zip`: the `vrift` executable (needs the system WebKitGTK library, see the included README)
+  - `VRift-1.1.0-macos-universal.zip`: `VRift.app` for Intel and Apple Silicon
 - Publishes the release once every build has succeeded. If a build fails, the draft and tag are deleted so you can fix the problem and push again.
 
 If the version already has a release, the workflow does nothing, so remember to bump `VERSION`. You can also start a release by hand from **Actions → release → Run workflow**.
 
 [`ci.yml`](.github/workflows/ci.yml) runs the tests on every push and pull request.
 
-> The installers are not code-signed, so Windows SmartScreen will warn on first launch ("More info → Run anyway").
+> The builds are not code-signed, so Windows SmartScreen will warn on first launch ("More info → Run anyway"), and on macOS you need to right-click → Open the first time.
 
 ## Tests
 

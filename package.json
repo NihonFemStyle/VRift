@@ -14,7 +14,8 @@
     "app:dev": "tauri dev",
     "app:build": "tauri build",
     "version:sync": "node scripts/sync-version.mjs",
-    "version:check": "node scripts/sync-version.mjs --check"
+    "version:check": "node scripts/sync-version.mjs --check",
+    "app:portable": "tauri build --no-bundle"
   },
   "dependencies": {
     "@codemirror/lang-xml": "^6.1.0",
