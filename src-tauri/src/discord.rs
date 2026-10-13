@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 const APP_ID: &str = "1019288566280503376";
 const DEFAULT_IMAGE: &str = "icon";
-const BUTTONS: [(&str, &str); 2] = [("VRift Website", "https://vrift.trigon.technology"), ("Developer's Portfolio", "https://trigon.technology")];
+const BUTTONS: [(&str, &str); 2] = [("VRift Website", "https://vrift.xerafang.solutions"), ("Developer's Portfolio", "https://trigon.technology")];
 const RETRY: Duration = Duration::from_secs(15);
 
 #[derive(Deserialize, Clone, Debug, PartialEq)]

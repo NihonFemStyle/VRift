@@ -147,7 +147,7 @@ export function DocsModal({ initial, onClose }: { initial?: string; onClose: () 
     if (!file) return go(page.path, anchor);
     const target = resolve(page.path, file);
     if (DOC_PAGES.some((p) => p.path === target)) return go(target, anchor);
-    openUrl(`https://github.com/NihonFemStyle/VRift/blob/main/${target}`);
+    openUrl(`https://github.com/XeraFang-Solutoins/VRift/blob/main/${target}`);
   };
 
   return (

@@ -279,7 +279,7 @@ export function parseConfig(text: string | undefined): { config: ProjectConfig; 
 
 export function serializeConfig(c: ProjectConfig): string {
   const out: Record<string, unknown> = {
-    $comment: "VRift settings for this extension. Hacknet ignores this file. See https://github.com/NihonFemStyle/VRift/blob/main/docs/user-guide.md",
+    $comment: "VRift settings for this extension. Hacknet ignores this file. See https://github.com/XeraFang-Solutoins/VRift/blob/main/docs/user-guide.md",
   };
   if (c.modules && Object.keys(c.modules).length) out.modules = c.modules;
   if (c.allowValues && Object.keys(c.allowValues).length) out.allowValues = c.allowValues;

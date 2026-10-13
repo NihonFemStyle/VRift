@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- **DOMAIN CHANGE** This project has been moved to XeraFang.Solutions
+
 ## 2.0.0
 
 ### Visual editors

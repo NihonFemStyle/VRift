@@ -43,7 +43,7 @@ import { enterStep, LoadingState, LoadStepId, newLoadingState, ProjectLoading } 
 import { boot } from "./ui/boot";
 
 const THEME_KEY = "vrift.theme";
-const DOCS = "https://github.com/NihonFemStyle/VRift/tree/main/docs";
+const DOCS = "https://github.com/XeraFang-Solutoins/VRift/tree/main/docs";
 
 type Selection = { elId: number; ip: number[] | null };
 
