@@ -39,7 +39,7 @@ export interface ProjectFs {
 }
 
 /** Extensions that are always text (the desktop backend also sniffs unknown extensions). */
-export const TEXT_EXT = /\.(xml|txt|html?|css|md|json|js|ts|cs|ini|cfg|conf|ya?ml|csv|tsv|log|toml|sh|bat|ps1|py|lua|nfo|pcap)$/i;
+export const TEXT_EXT = /\.(xml|txt|html?|css|md|json|js|ts|cs|ini|cfg|conf|ya?ml|csv|tsv|log|toml|sh|bat|ps1|py|lua|nfo|pcap|frag|vert|glsl|fx)$/i;
 const BINARY_EXT = /\.(png|jpe?g|gif|bmp|ico|webp|tga|dds|psd|ogg|wav|mp3|flac|wma|m4a|mp4|webm|avi|mov|dll|exe|pdb|so|dylib|xnb|zip|7z|rar|gz|tar|ttf|otf|woff2?|spritefont|bin|dat|db|sqlite|pdf|blend|fbx)$/i;
 
 /** Decide whether bytes are text: known extensions first, then a look at the content. */
@@ -59,6 +59,10 @@ export function looksLikeText(path: string, head: Uint8Array): boolean {
 
 export function isImagePath(path: string): boolean {
   return /\.(png|jpe?g|gif|bmp|webp|ico)$/i.test(path);
+}
+
+export function isAudioPath(path: string): boolean {
+  return /\.(ogg|wav|mp3|flac|m4a|wma)$/i.test(path);
 }
 
 export function joinPath(root: string, rel: string): string {

@@ -1,6 +1,6 @@
 # Architecture
 
-VRift is a local-first Tauri 2 desktop application with a React 19 and TypeScript frontend. The frontend contains nearly all editor behavior; the Rust backend exposes native filesystem and game-install operations.
+VRift is a local-first Tauri 2 desktop application with a React 19 and TypeScript frontend. The frontend contains nearly all editor behavior; the Rust backend exposes native filesystem and game-install operations plus a few native services: backups, launching the game for Debug Mode, git, and Discord Rich Presence.
 
 ## System overview
 
@@ -14,6 +14,13 @@ Project model + index + validator (src/core)
 ProjectFs interface (src/fs/fs.ts)
         ├── TauriFs ── invoke ── Rust commands ── native filesystem
         └── MemoryFs ──────────── browser/demo in-memory files
+
+Native services (invoked directly, desktop only)
+  backup.rs   snapshots in VRift's data folder
+  debug.rs    launch Hacknet, stream its output, collect crash reports
+  git.rs      the system git program
+  discord.rs  Rich Presence over Discord's local IPC
+  hotreload.rs  HacknetHotReplace over local UDP
 ```
 
 `src/schema/hacknet.schema.json` drives form fields, legal children, descriptions, autocomplete hints, and validation. **Schema modules** are layered over it: the built-in Stuxnet and ZeroDayToolKit modules (`src/schema/mods/*.json`) when an extension uses those mods, and the project's own `VRift.schema.json`.
@@ -26,7 +33,22 @@ src/core
   modules.ts   module format, detection, VRift.json, mod config providers
   project.ts   files, undo, save, refresh modules, cross-file index
   validate.ts  diagnostics + suppression
+  values.ts    float / vector2 / color3 value checks
   story.ts     story graph and flag timeline
+  eventGraph.ts   node graph of an action file (stacks, flag and file wires)
+  actionDelays.ts action delays as gaps to the previous action, ripple edits
+  animation.ts    Stuxnet animated themes/cutscenes: timeline, frame state, keyframes
+  hacknetTheme.ts CustomTheme colour slots, defaults and layouts
+  shader.ts       Stuxnet.OpenGL shader inputs and WebGL translation
+  messageBoard.ts message board threads, parsed like the game does
+  backups.ts      backup API (native, or in memory in the browser)
+  diff.ts         line diff and hunks for backup comparison
+  sorter.ts       project sorter: plan moves and reference rewrites, then apply
+  modSource.ts    schema modules generated from a mod's C# source
+  crash.ts        crash report / error_report.txt analysis
+  debugSession.ts Debug Mode console state
+  git.ts          git status parsing and commands
+  discord.ts      Rich Presence payloads
   hotreload.ts HacknetHotReplace client (via Rust)
 ```
 
@@ -115,13 +137,35 @@ Every diagnostic has a stable `key` (independent of its line). `applySuppression
 
 `src-tauri/src/hotreload.rs` finds HacknetHotReplace's UDP port and heartbeat (Windows registry, `~/.HacknetHotReplace`, or a Proton prefix's `user.reg`) and sends XML commands over UDP on 127.0.0.1, matching replies by GUID. `src/core/hotreload.ts` builds the payloads (with Wine `Z:` path mapping) and the app polls status every 4 s while a project is open.
 
+## Event graph and timelines
+
+`eventGraph.ts` turns a conditional actions file into stacks (one per trigger) and wires: flags an action sets to the triggers that check them, and action files or missions an action loads. Edits are XML tree operations, so the file still round-trips. Stack positions are UI state kept in local storage, not in the file.
+
+`animation.ts` reads Stuxnet animations into elements and instruction bars and computes each element's state at any time by replaying instructions in order, following Stuxnet's documented rules (invisible until first touched, linear moves, themes loop). Keyframe edits split or retarget Translate/Resize instructions. The TIMING view of action files (`ui/ActionTiming.tsx`) uses each action's `Delay` the same way.
+
+Songs on those timelines (`ui/audioTrack.ts`) are read as raw bytes, decoded once with Web Audio into min/max peaks, and drawn for any time range. Playback uses an `HTMLAudioElement` whose clock drives the playhead while it plays, so what you hear and what you see agree. Song choices are local storage, never written to the extension.
+
+## Debug Mode and crash analysis
+
+`debug.rs` starts Hacknet (through Pathfinder's launcher when present) with stdout/stderr piped and emits each line as an event, tails `BepInEx/LogOutput.log`, and lists recent `CrashReport_*.txt` files (Documents/My Games/Hacknet/Reports on Windows, the game folder elsewhere) and an extension's `error_report.txt`. `crash.ts` parses those reports, classifies the cause (missing file, bad XML, unknown computer, bad number…), and maps it back to project files and matching validator diagnostics.
+
+## Git
+
+`git.rs` runs the user's git program with terminal prompts disabled (`GIT_TERMINAL_PROMPT=0`), so any host and git's own credential helpers work. Status uses `--porcelain=v2`; paths are made relative to the extension with `rev-parse --show-prefix`, so an extension inside a bigger repository works. `git_run` accepts only a fixed set of subcommands.
+
+## Schemas from mod source
+
+`read_source_tree` returns a mod's `.cs` files; `modSource.ts` finds Pathfinder registrations (`[Action]`/`ActionManager.Register…`, conditions, `DaemonManager.RegisterDaemon`, goals, executables, `BepInPlugin`) and their `[XMLStorage]` fields, and writes a module in the `VRift.schema.json` format. Shared modules live in local storage (`vrift.sharedModules`) and switch on when the mod's DLL is in `Plugins/`.
+
 ## Filesystem boundary
 
 `ProjectFs` normalizes list, text/binary I/O, directory creation, rename, remove, and existence checks. Project-relative paths use forward slashes.
 
-`TauriFs` resolves paths under a native root and invokes commands in `src-tauri/src/lib.rs`. The Rust walker skips `.git`, `node_modules`, `.vs`, `.vscode`, and `.idea` and flags text files (`textio::looks_like_text`); `read_text`/`write_text` detect and preserve BOMs and encodings (`textio.rs`); writes create parent directories; renames reject collisions; and deletion goes to the OS trash.
+`TauriFs` resolves paths under a native root and invokes commands in `src-tauri/src/lib.rs`. The Rust walker skips `.git`, `node_modules`, `.vs`, `.vscode`, and `.idea` and flags text files (`textio::looks_like_text`); `read_text`/`write_text` detect and preserve BOMs and encodings (`textio.rs`); `read_binary` returns raw bytes (a Tauri binary response, not a JSON number array, so large sounds stay fast); writes create parent directories; renames reject collisions; and deletion goes to the OS trash.
 
 `MemoryFs` implements the same contract for the demo, browser folder import, and filesystem-independent work.
+
+Backups are written by `backup.rs` outside the extension, under VRift's app data folder: file contents are stored once by SHA-1 and each snapshot is a manifest of path → hash, so frequent snapshots are cheap. Restores write the stored bytes back exactly.
 
 The Tauri command surface accepts absolute paths constructed by the frontend. VRift is a trusted local editor, and its content security policy is currently disabled. Any future remote-content or plugin execution feature must revisit this trust boundary.
 
@@ -138,11 +182,17 @@ Workshop copying is recursive and fails if the destination already exists. Libra
 - `Editor`: tabs (shortcuts, drag, context menu), modes, file actions, and specialized editors.
 - `FormEditor`: schema-driven elements and fields; exports `Inspector`.
 - `ActionBuilder`: card/row view of conditional actions with a grouped palette.
+- `EventGraph`: node graph of an action file. `ActionTiming`: action Delays on a time ruler with a song lane.
+- `Timeline`: Stuxnet animation preview, tracks and keyframes. `SongLane` + `audioTrack.ts`: waveform rows and synced playback.
+- `ThemeDesigner`, `ThemePreview`: CustomTheme editor and desktop preview. `ShaderView` + `shaderRenderer.ts`: live GLSL preview.
+- `MediaViews`: waveform audio player and message board thread preview.
 - `CodeEditor`: CodeMirror for XML, JSON, HTML, text and hacker scripts.
 - `ImagePreview`, `WebPreview`: image tabs/thumbnails and the HTML preview.
 - `NetMap`, `StoryView`, `FlagsView`, `PeopleView`: bottom-panel views (`PanelTabs`).
 - `Terminal` and `DiagActions`: diagnostics, ignore/allow/enable actions, query commands.
-- `SettingsModal`: mods, ignored warnings, interface scale, hot reload.
+- `DebugPanel`, `GitPanel`: bottom-panel tabs for Debug Mode and git.
+- `BackupsModal`, `SorterModal`, `SchemaGenerator`, `DocsModal`, `ThemePicker`: backups and diffs, project sorter, schema generator, F1 docs, editor themes.
+- `SettingsModal`: mods, ignored warnings, interface (scale, Discord), files (backups, open-with), game and hot reload.
 - `fields.tsx` and `suggest.ts`: reusable inputs, validation, and completion.
 - `themes.ts`: Hacknet values mapped to CSS properties. `prefs.ts`: per-user preferences.
 
@@ -160,5 +210,6 @@ CI runs version checks, the TypeScript/Vite build, Vitest, and Rust tests. Relea
 2. Core logic must work with both filesystem implementations.
 3. Unknown modded content must remain editable and preserved.
 4. Cross-file features use normalized project-relative paths.
-5. Destructive desktop operations should remain recoverable.
-6. New reference hints should participate consistently in indexing, suggestions, validation, and rename behavior.
+5. Destructive desktop operations should remain recoverable (trash, and a backup before bulk changes).
+6. Editor-only state (graph positions, song choices, shared modules) stays out of the extension.
+7. New reference hints should participate consistently in indexing, suggestions, validation, and rename behavior.

@@ -1,5 +1,7 @@
+import { isTauri } from "../fs/fs";
 import { useEffect, useState } from "react";
-import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, ModuleMode } from "../core/modules";
+import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, deleteSharedModule, ModuleMode } from "../core/modules";
+import { SchemaGenerator } from "./SchemaGenerator";
 import { ruleMatches } from "../core/validate";
 import { openUrl } from "./openUrl";
 import { useApp, type SettingsTab } from "./context";
@@ -11,6 +13,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "mods", label: "Mods" },
   { id: "ignored", label: "Ignored warnings" },
   { id: "interface", label: "Interface" },
+  { id: "files", label: "Files" },
   { id: "game", label: "Game" },
 ];
 
@@ -32,6 +35,7 @@ export function SettingsModal({ tab: initial, onClose }: { tab: SettingsTab; onC
           {tab === "mods" && <ModsTab />}
           {tab === "ignored" && <IgnoredTab />}
           {tab === "interface" && <InterfaceTab />}
+          {tab === "files" && <FilesTab />}
           {tab === "game" && <GameTab />}
           <div className="modal-actions">
             <button className="hn-btn primary" onClick={onClose}>
@@ -45,19 +49,27 @@ export function SettingsModal({ tab: initial, onClose }: { tab: SettingsTab; onC
 }
 
 function ModsTab() {
-  const { project, setModuleMode, toast, open } = useApp();
+  const { project, setModuleMode, toast, open, confirm } = useApp();
   const mods = project.modules;
   const custom = mods.find((m) => m.module.id === "project");
   const set = (id: string, mode: ModuleMode) => setModuleMode(id, mode).catch((e) => toast(String(e), "error"));
   const hasSchema = project.fileExists(CUSTOM_SCHEMA_FILE);
+  const [gen, setGen] = useState(false);
   return (
     <>
       <p>
         Schema modules teach VRift the tags, files and values that Pathfinder mods add. <b>Auto</b> turns a module on when this extension looks like it uses the mod. Choices are saved in{" "}
         <code>{CONFIG_FILE}</code> in the extension folder (Hacknet ignores it).
       </p>
+      <div className="gen-row">
+        <button className="hn-btn small" onClick={() => setGen(true)}>
+          generate from mod source…
+        </button>
+        <span className="msg info">Make a module for any Pathfinder mod from its C# source, for this extension or for all of them.</span>
+      </div>
+      {gen && <SchemaGenerator onClose={() => setGen(false)} />}
       {mods
-        .filter((m) => m.module.builtin)
+        .filter((m) => m.module.builtin || m.module.shared)
         .map((m) => {
           const tags = new Set(m.module.nodes.flatMap((n) => n.paths.map((p) => p.split(".").pop()))).size;
           return (
@@ -69,7 +81,13 @@ function ModsTab() {
                   {m.module.version ? `v${m.module.version} · ` : ""}
                   {tags} tags
                 </span>
+                {m.module.shared && <span className="badge kind">shared</span>}
                 <span className="grow" />
+                {m.module.shared && (
+                  <button className="icon-btn danger" title="Remove this shared module from VRift" onClick={async () => (await confirm("Remove module", `Remove the shared module "${m.module.name}" from VRift? Extensions keep their ${CONFIG_FILE} settings.`, "Remove")) && deleteSharedModule(m.module.id)}>
+                    ✕
+                  </button>
+                )}
                 <div className="seg">
                   {(["auto", "on", "off"] as ModuleMode[]).map((mode) => (
                     <button key={mode} className={m.mode === mode ? "on" : ""} onClick={() => set(m.module.id, mode)}>
@@ -238,6 +256,102 @@ function InterfaceTab() {
           </div>
         </div>
         <div className="help">Whether "info" diagnostics (hints such as unknown attributes) are listed by default.</div>
+      </div>
+      <div className="field">
+        <label>Discord Rich Presence</label>
+        <div className="row">
+          <Toggle on={prefs.discord} set={(v) => setPrefs({ discord: v })} yes="SHOW" no="HIDE" />
+        </div>
+        <div className="help">Shows the extension you are editing (and whether it uses Pathfinder mods) on your Discord profile. Workshop extensions show their Workshop image. Desktop app only; needs the Discord app running.</div>
+      </div>
+    </>
+  );
+}
+
+function Toggle({ on, set, yes = "ON", no = "OFF" }: { on: boolean; set: (v: boolean) => void; yes?: string; no?: string }) {
+  return (
+    <div className="toggle">
+      <button className={"t" + (on ? " on" : "")} onClick={() => set(true)}>
+        {yes}
+      </button>
+      <button className={"f" + (!on ? " on" : "")} onClick={() => set(false)}>
+        {no}
+      </button>
+    </div>
+  );
+}
+
+function FilesTab() {
+  const { prefs, setPrefs, toast } = useApp();
+  const b = prefs.backups;
+  const setB = (x: Partial<typeof b>) => setPrefs({ backups: { ...b, ...x } });
+  const [ext, setExt] = useState("");
+  const desktop = isTauri();
+  const pickApp = async (forExt: string) => {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const app = await open({ multiple: false, directory: false, title: `Program for .${forExt} files` });
+    if (typeof app === "string") setPrefs({ openWith: { ...prefs.openWith, [forExt]: app } });
+  };
+  const rows = Object.entries(prefs.openWith).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <>
+      <h3 className="settings-h">Automatic backups</h3>
+      <p>
+        VRift copies the extension's text files when you open it, as you save (at most once per interval, and always the last save), and before renames, deletes and restores. Backups live in VRift's own data folder,
+        never in the extension, so they are not uploaded to the Workshop. Open them from <b>Project → Backups</b>.
+      </p>
+      <div className="field">
+        <label>Backups</label>
+        <div className="row">
+          <Toggle on={b.enabled} set={(v) => setB({ enabled: v })} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Save backup interval</label>
+        <div className="row">
+          <input className="hn-input" type="number" min={0.25} max={240} step={0.25} value={b.intervalMinutes} onChange={(e) => setB({ intervalMinutes: Math.min(240, Math.max(0.25, Number(e.target.value) || 5)) })} style={{ width: 90 }} />
+          <span className="msg info">minutes: after a save, at most one backup per interval (the last save is always kept)</span>
+        </div>
+      </div>
+      <div className="field">
+        <label>Keep the newest</label>
+        <div className="row">
+          <input className="hn-input" type="number" min={5} max={5000} step={5} value={b.keep} onChange={(e) => setB({ keep: Math.round(Math.min(5000, Math.max(5, Number(e.target.value) || 100))) })} style={{ width: 90 }} />
+          <span className="msg info">snapshots per extension (unchanged files are stored once, so this stays small)</span>
+        </div>
+      </div>
+
+      <h3 className="settings-h">Open with</h3>
+      <p>
+        Files VRift does not edit (sounds, fonts, archives, project files of other tools…) open in the program your system uses for them. Pick a different program per file type here, or with right-click → <b>Open with…</b> in the file list.
+        {!desktop && " Desktop app only."}
+      </p>
+      {rows.length === 0 && <div className="msg info">No overrides: every file type opens with the system default.</div>}
+      {rows.map(([e, app]) => (
+        <div key={e} className="row open-with-row">
+          <code style={{ width: 70 }}>.{e}</code>
+          <span className="ow-app" title={app}>
+            {app}
+          </span>
+          <button className="hn-btn small" disabled={!desktop} onClick={() => pickApp(e).catch((x) => toast(String(x), "error"))}>
+            change
+          </button>
+          <button
+            className="hn-btn small dim"
+            onClick={() => {
+              const { [e]: _, ...rest } = prefs.openWith;
+              setPrefs({ openWith: rest });
+            }}
+          >
+            default
+          </button>
+        </div>
+      ))}
+      <div className="row open-with-row">
+        <input className="hn-input" placeholder="extension, e.g. png" value={ext} onChange={(e) => setExt(e.target.value.replace(/^\./, "").trim().toLowerCase())} style={{ width: 160 }} spellCheck={false} />
+        <button className="hn-btn small" disabled={!desktop || !/^[a-z0-9_+-]{1,16}$/.test(ext)} onClick={() => pickApp(ext).then(() => setExt("")).catch((x) => toast(String(x), "error"))}>
+          choose program…
+        </button>
       </div>
     </>
   );

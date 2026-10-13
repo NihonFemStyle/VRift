@@ -4,9 +4,141 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VRift</title>
+    <style>
+      /* Start-up screen. Plain HTML so it shows before any of VRift's code has loaded. */
+      html, body { margin: 0; background: #080808; }
+      #boot { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: var(--boot-bg, #080808); color: var(--boot-term, rgb(213, 245, 255)); font: 13px/1.5 Consolas, "Courier New", monospace; transition: opacity 0.18s; }
+      #boot.gone { opacity: 0; pointer-events: none; }
+      #boot .win { width: min(440px, calc(100vw - 32px)); border: 1px solid var(--boot-module, rgb(50, 59, 90)); background: rgba(0, 0, 0, 0.35); }
+      #boot .bar { background: var(--boot-module, rgb(50, 59, 90)); color: #fff; padding: 3px 8px; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+      #boot .body { padding: 12px 14px 10px; }
+      #boot h1 { margin: 0 0 10px; font-size: 26px; font-weight: normal; letter-spacing: 6px; color: var(--boot-hl, rgb(0, 139, 199)); }
+      #boot ol { list-style: none; margin: 0; padding: 0; }
+      #boot li { display: flex; gap: 8px; color: rgb(110, 110, 110); }
+      #boot li .mark { width: 1.2em; text-align: center; }
+      #boot li .label { flex: 1; }
+      #boot li .ms { opacity: 0.7; }
+      #boot li.active { color: inherit; }
+      #boot li.active .mark { color: var(--boot-hl, rgb(0, 139, 199)); animation: boot-blink 0.8s steps(2) infinite; }
+      #boot li.done { color: inherit; opacity: 0.75; }
+      #boot li.done .mark { color: rgb(95, 220, 83); }
+      #boot li.failed, #boot li.failed .mark { color: rgb(230, 60, 60); }
+      #boot .note { margin-top: 10px; color: rgb(130, 130, 130); min-height: 1.5em; white-space: pre-wrap; word-break: break-word; }
+      #boot .note.err { color: rgb(230, 60, 60); max-height: 40vh; overflow: auto; }
+      #boot button { margin-top: 8px; font: inherit; color: #fff; background: var(--boot-module, rgb(50, 59, 90)); border: 1px solid var(--boot-hl, rgb(0, 139, 199)); padding: 3px 12px; cursor: pointer; }
+      @keyframes boot-blink { 50% { opacity: 0.25; } }
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="win">
+        <div class="bar"><span>VRift</span><span id="boot-clock">0.0 s</span></div>
+        <div class="body">
+          <h1>VRIFT</h1>
+          <ol id="boot-steps"></ol>
+          <div class="note" id="boot-note"></div>
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      // Each step is ticked off by the code that actually does it (main.tsx, App.tsx), so the list
+      // shows what VRift is really doing. Errors before the editor appears are shown here.
+      (function () {
+        var t0 = performance.now();
+        try {
+          var c = JSON.parse(localStorage.getItem("vrift.bootColors") || "null");
+          if (c) for (var k in c) document.documentElement.style.setProperty("--boot-" + k, c[k]);
+        } catch (e) {}
+        var steps = [
+          ["code", "Loading VRift's code"],
+          ["fonts", "Loading fonts"],
+          ["ui", "Starting the editor"],
+        ];
+        var list = document.getElementById("boot-steps");
+        var note = document.getElementById("boot-note");
+        var clock = document.getElementById("boot-clock");
+        var state = {};
+        var finished = false;
+        steps.forEach(function (s) {
+          var li = document.createElement("li");
+          li.innerHTML = '<span class="mark">·</span><span class="label"></span><span class="ms"></span>';
+          li.querySelector(".label").textContent = s[1];
+          list.appendChild(li);
+          state[s[0]] = { li: li, start: null };
+        });
+        function begin(id) {
+          var s = state[id];
+          if (!s || s.start !== null) return;
+          s.start = performance.now();
+          s.li.className = "active";
+          s.li.querySelector(".mark").textContent = "▸";
+        }
+        function done(id) {
+          var s = state[id];
+          if (!s) return;
+          if (s.start === null) s.start = performance.now();
+          s.li.className = "done";
+          s.li.querySelector(".mark").textContent = "✓";
+          s.li.querySelector(".ms").textContent = Math.round(performance.now() - s.start) + " ms";
+          var i = steps.findIndex(function (x) { return x[0] === id; });
+          if (steps[i + 1]) begin(steps[i + 1][0]);
+        }
+        function fail(message) {
+          if (finished) return;
+          finished = true;
+          clock.textContent = ((performance.now() - t0) / 1000).toFixed(1) + " s";
+          for (var i = 0; i < steps.length; i++) {
+            var s = state[steps[i][0]];
+            if (s.li.className === "active") {
+              s.li.className = "failed";
+              s.li.querySelector(".mark").textContent = "✕";
+            }
+          }
+          note.className = "note err";
+          note.textContent = "VRift could not start:\n" + message;
+          var b = document.createElement("button");
+          b.textContent = "try again";
+          b.onclick = function () { location.reload(); };
+          note.parentNode.appendChild(b);
+        }
+        var tick = setInterval(function () {
+          if (finished) return clearInterval(tick);
+          var secs = (performance.now() - t0) / 1000;
+          clock.textContent = secs.toFixed(1) + " s";
+          if (secs > 15 && !note.textContent) note.textContent = "This is taking longer than usual. VRift is still working.";
+        }, 100);
+        window.addEventListener("error", function (e) {
+          fail(e.error && e.error.stack ? String(e.error.stack) : e.message || "A script failed to load.");
+        });
+        // a script or stylesheet that cannot be fetched only reports on its own tag
+        window.addEventListener(
+          "error",
+          function (e) {
+            var t = e.target;
+            if (t && (t.tagName === "SCRIPT" || (t.tagName === "LINK" && t.rel === "stylesheet"))) fail("Could not load " + (t.src || t.href) + ".");
+          },
+          true,
+        );
+        window.addEventListener("unhandledrejection", function (e) {
+          fail(e.reason && e.reason.stack ? String(e.reason.stack) : String(e.reason));
+        });
+        window.__vriftBoot = {
+          begin: begin,
+          done: done,
+          fail: function (e) { fail(e && e.stack ? String(e.stack) : String(e)); },
+          finish: function () {
+            if (finished) return;
+            steps.forEach(function (s) { if (state[s[0]].li.className !== "done") done(s[0]); });
+            finished = true;
+            var el = document.getElementById("boot");
+            el.className = "gone";
+            setTimeout(function () { el.remove(); }, 250);
+          },
+        };
+        begin("code");
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

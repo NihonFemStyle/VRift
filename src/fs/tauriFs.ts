@@ -32,8 +32,8 @@ export class TauriFs implements ProjectFs {
     return this.abs(rel);
   }
   async readBinary(rel: string) {
-    const data = await invoke<number[]>("read_binary", { path: this.abs(rel) });
-    return new Uint8Array(data);
+    const data = await invoke<ArrayBuffer | number[]>("read_binary", { path: this.abs(rel) });
+    return data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data);
   }
   writeBinary(rel: string, data: Uint8Array) {
     return invoke<void>("write_binary", { path: this.abs(rel), data: Array.from(data) });

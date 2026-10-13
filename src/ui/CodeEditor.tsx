@@ -30,6 +30,15 @@ const hacknetTheme = EditorView.theme(
     ".cm-wildcard": { color: "var(--shell)", fontWeight: "bold" },
     ".cm-hs-sep": { color: "var(--hl)", opacity: "0.8" },
     ".cm-hs-cmd": { color: "var(--shell)" },
+    ".cm-gl-com": { color: "rgb(100,120,100)", fontStyle: "italic" },
+    ".cm-gl-pre": { color: "rgb(200,120,220)" },
+    ".cm-gl-kw": { color: "var(--hl)", filter: "brightness(1.35)" },
+    ".cm-gl-type": { color: "var(--shell)" },
+    ".cm-gl-fn": { color: "rgb(150,220,150)" },
+    ".cm-gl-num": { color: "rgb(230,190,120)" },
+    ".cm-mb-sep": { color: "var(--hl)", filter: "brightness(1.3)" },
+    ".cm-mb-img": { color: "var(--shell)", fontWeight: "bold" },
+    ".cm-mb-imp": { color: "rgb(56,184,131)" },
     ".cm-panels": { backgroundColor: "rgb(10,10,12)", color: "var(--term)" },
     ".cm-searchMatch": { backgroundColor: "rgba(222,201,24,0.3)" },
   },
@@ -50,11 +59,13 @@ const highlight = HighlightStyle.define([
   { tag: t.keyword, color: "var(--hl)" },
 ]);
 
-export type CodeMode = "xml" | "hackerscript" | "text" | "json" | "html";
+export type CodeMode = "xml" | "hackerscript" | "text" | "json" | "html" | "thread" | "glsl";
 
 /** Pick the editor mode for a file. */
 export function codeModeFor(path: string, kind: string): CodeMode {
   if (kind === "hackerScript") return "hackerscript";
+  if (kind === "messageBoardThread") return "thread";
+  if (kind === "shader") return "glsl";
   if (/\.xml$/i.test(path)) return "xml";
   if (/\.json$/i.test(path)) return "json";
   if (/\.html?$/i.test(path)) return "html";
@@ -97,6 +108,42 @@ const hackerScript = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
+/** Message board threads: the 42-dash post separators, #Image lines and >implication lines. */
+const threadMatcher = new MatchDecorator({
+  regexp: /^-{42}$|^#(?:None|Circle|Academic|Sun|Snake|Duck|Page|Speech|Mod|Chip)\s*$|^>.*$/gm,
+  decoration: (m) => Decoration.mark({ class: m[0].startsWith("-") ? "cm-mb-sep" : m[0].startsWith("#") ? "cm-mb-img" : "cm-mb-imp" }),
+});
+const threadSyntax = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = threadMatcher.createDeco(view);
+    }
+    update(u: ViewUpdate) {
+      this.decorations = threadMatcher.updateDeco(u, this.decorations);
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
+/** GLSL: comments, preprocessor lines, keywords, types, built-in functions, numbers. */
+const glslMatcher = new MatchDecorator({
+  regexp: /(\/\/.*$)|(^\s*#.*$)|\b(if|else|for|while|do|return|break|continue|discard|struct|uniform|in|out|inout|const|layout|precision|highp|mediump|lowp|flat|smooth|location)\b|\b(void|bool|int|uint|float|double|[biud]?vec[234]|mat[234](x[234])?|sampler[123]D|samplerCube)\b|\b(sin|cos|tan|asin|acos|atan|pow|exp|log|exp2|log2|sqrt|inversesqrt|abs|sign|floor|ceil|fract|mod|min|max|clamp|mix|step|smoothstep|length|distance|dot|cross|normalize|reflect|refract|texture|texelFetch|dFdx|dFdy|fwidth|gl_Position|gl_FragCoord)\b|(\b\d+\.?\d*([eE][-+]?\d+)?f?\b|\.\d+\b)/gm,
+  decoration: (m) => Decoration.mark({ class: m[1] ? "cm-gl-com" : m[2] ? "cm-gl-pre" : m[3] ? "cm-gl-kw" : m[4] ? "cm-gl-type" : m[6] ? "cm-gl-fn" : "cm-gl-num" }),
+});
+const glslSyntax = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = glslMatcher.createDeco(view);
+    }
+    update(u: ViewUpdate) {
+      this.decorations = glslMatcher.updateDeco(u, this.decorations);
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
 export function CodeEditor(props: {
   value: string;
   onChange: (v: string) => void;
@@ -114,6 +161,8 @@ export function CodeEditor(props: {
     if (props.mode === "json") ext.push(json());
     if (props.mode === "html") ext.push(html());
     if (props.mode === "hackerscript") ext.push(hackerScript);
+    if (props.mode === "thread") ext.push(threadSyntax);
+    if (props.mode === "glsl") ext.push(glslSyntax);
     ext.push(
       linter(
         (view) => {

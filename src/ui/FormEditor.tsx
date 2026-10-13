@@ -1,3 +1,5 @@
+import { ActionWhen } from "./ActionWhen";
+import { acceptsDelay, inheritDelay } from "../core/actionDelays";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ProjectFile } from "../core/project";
 import { attributesFor, childOptions, FieldDef, initialValue, lookupNode, NodeDef } from "../core/schema";
@@ -172,6 +174,7 @@ export function Inspector({ file, el, parent, path }: { file: ProjectFile; el: X
     const child = createElement(name, attrs, hasContent ? (childDef?.content ? initialValue(childDef.content) : "") : undefined);
     if (childDef?.container && !childDef.content) child.children = [];
     insertChild(doc, el, child);
+    if (isTrigger) inheritDelay(el, child, acceptsDelay(childDef));
     commit();
     selectElement(file.path, child.id);
   };
@@ -294,6 +297,8 @@ export function Inspector({ file, el, parent, path }: { file: ProjectFile; el: X
           </button>
         )}
       </div>
+
+      {isAction && parent && (getAttr(el, "Delay") !== undefined || fields.some((f) => f.name?.toLowerCase() === "delay")) && <ActionWhen trigger={parent} el={el} commit={() => commit()} />}
 
       {isTheme && <ThemePreview root={el} />}
       {isTheme && (

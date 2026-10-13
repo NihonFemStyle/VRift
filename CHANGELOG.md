@@ -1,5 +1,48 @@
 # Changelog
 
+## 2.0.0
+
+### Visual editors
+
+- **Delays relative to the previous action** (suggested by a user): the inspector's WHEN box edits an action's time as seconds after the trigger or seconds after the previous action, and can move every later action along so their gaps stay the same (TIMING drags too; Alt does the opposite). Rows show the gap (`⏱ +2s · 7s`), and a new action starts where the previous one fires, with its DelayHost. The file still gets the plain `Delay` Hacknet reads.
+- **Node graph for action files** (GRAPH, next to BUILDER): every trigger is a stack of its actions on a canvas. Drag stacks around, drag actions between triggers, drag new triggers and actions in from a searchable palette. Wires show flags an action sets that a trigger waits for (flags nothing sets are red) and the action files and missions an action loads; click a flag to see everywhere it is set or checked.
+- **Timeline for Stuxnet animated themes and cutscenes** (TIMELINE): a live preview with the game's windows on top in the base theme's layout, tracks of instruction bars you drag and stretch, and keyframes: drag an element in the preview to move or resize it at the playhead.
+- **Timing against music**: action files get a **TIMING** view with every action at its Delay on a time ruler, and both timelines take a song: pick an `.ogg` from the extension, see its waveform under the tracks and press Space to play it in time with the playhead. Drag an action to change its Delay or press K to put it at the playhead. The sequencer's action file shows the beat drop (SequencerSpinUpTime).
+- **Background slideshow** for animated themes: images that take turns behind the base theme's colours, each for a set time, looping forever or N times and then holding the last image.
+- **Theme editor** (DESIGN, the default for theme files): every colour slot with a picker, alpha slider and Hacknet's default, layout and background settings, and a full live preview of the game's desktop with the module positions of each layout. Hover a slot to see what it paints, or hover the preview to see which slot painted it. Apply the theme to VRift while editing, start from a built-in palette, or save it to **My themes**.
+- **Shader editor** for Stuxnet.OpenGL: `.frag`/`.vert` files get highlighting and a live WebGL preview with the plugin's inputs (`time`, `resolution`, `playback_frame`, `screen_texture`); compile errors land on the right lines. Animated themes with a shader background show it in their timeline. `<BackgroundSource>` is in the Stuxnet schema, with checks for the shader paths and the plugin DLLs.
+
+### Running and debugging
+
+- **Debug Mode** (Game menu, or the debug panel): starts Hacknet (through Pathfinder when installed) with its console and BepInEx log captured, picks up `CrashReport_*.txt` and the extension's `error_report.txt`, and explains the likely cause: the file that is missing and what refers to it, invalid XML, a bad logo, a missing computer ID, a wrongly written value, an empty message board thread, a broken Stuxnet animation, together with the VRift errors that fit. Crash reports can also be pasted in.
+- **Discord Rich Presence**: shows the extension you are editing, and whether it uses Pathfinder mods or is vanilla. Workshop extensions show their Workshop image. Can be turned off in Settings → Interface.
+
+### Files and projects
+
+- **Automatic backups** in VRift's own data folder (never inside the extension): when an extension is opened, after saves, and before renames, deletes, restores and sorting. **Project → Backups** lists them with a diff against the current files and restores one file or all.
+- **Project sorter** (Project → Sort project files): moves files into Hacknet's usual folders and rewrites every reference. Shows each move and every changed reference before anything happens, and backs up first.
+- **Git** panel, using the git installed on your computer, so it works with any host: changes with diffs, stage and commit, push, pull and fetch, add remotes, history, and change marks in the file list.
+- **Schema from mod source**: Settings → Mods → generate a module from any Pathfinder mod's C# source (actions, conditions, daemons, goals, executables and the attributes they read). Save it into one extension's `VRift.schema.json` or as a shared module for every extension.
+- **Docs folder** in the file list, with sub-folders labelled as message boards, articles or text. **Message board threads** get their own highlighting, checks (separator length, image names, empty threads) and a live preview of how the thread looks in game.
+- **Audio** group with a waveform player (seek by clicking, loop, volume) and a list of what uses each sound.
+- Files VRift does not edit open in their own program; choose a program per file type in Settings → Files or with right-click → Open with.
+
+### Fixes
+
+- TIMING and TIMELINE: the playhead (and the beat-drop line) now reaches the bottom of a list longer than the screen, and the song's waveform stays pinned under the ruler while the tracks scroll.
+- Long lists no longer squash their rows together: the GRAPH palette with Stuxnet and 0DTK on was unreadable, and the backups, docs, git, debug and slideshow lists would have done the same once long enough. Trigger names in the palette are readable in every theme, and mod badges no longer cover the names.
+- New computers no longer get `ip=""`: Hacknet only picks a random IP when the `ip` attribute is missing, so an empty one left the computer with no IP. New computers get a random address, the field description says how it works, and `ip=""` in existing files is reported (reported by a user).
+- Dropdowns follow the theme (their open lists were unreadable on Windows).
+- Previewing a large sound file no longer blanks the window: files reach the interface as raw bytes instead of a huge list of numbers.
+
+### Interface
+
+- **Loading screens** with real progress: start-up ticks off each step as it finishes (and shows the error if VRift fails to start, instead of a blank window), and opening an extension counts files and bytes as they are read, then indexing and checking, with how long each step took.
+- **Documentation inside VRift** (F1): the user guide, custom schemas, troubleshooting and changelog, searchable and offline.
+- Documentation updated for 2.0: every new view and panel in the user guide, new troubleshooting entries (empty IPs, audio, shaders, git, Debug Mode, Discord), the schema generator in the custom schema guide, and the architecture and development guides.
+- **Theme picker** (View → Choose theme): one scrollable list with folders as sub-lists, colour swatches and live preview on hover.
+- MOGGERS.
+
 ## 1.1.2
 
 - **Hacknet from GOG and itch.io.** VRift used to find the game only through Steam.

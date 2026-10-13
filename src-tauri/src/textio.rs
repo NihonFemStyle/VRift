@@ -175,7 +175,7 @@ const BINARY_EXT: &[&str] = &[
 /// Extensions that are always treated as text without looking inside.
 const TEXT_EXT: &[&str] = &[
     "xml", "txt", "html", "htm", "css", "md", "json", "js", "ts", "cs", "ini", "cfg", "conf", "yml", "yaml", "csv",
-    "tsv", "log", "toml", "sh", "bat", "ps1", "py", "lua", "nfo", "readme", "pcap",
+    "tsv", "log", "toml", "sh", "bat", "ps1", "py", "lua", "nfo", "readme", "pcap", "frag", "vert", "glsl", "fx",
 ];
 
 /// Some(true) for extensions that are always text, Some(false) for ones that never are,

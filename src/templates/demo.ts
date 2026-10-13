@@ -9,7 +9,7 @@ export function demoExtensionFiles(): Record<string, string | Uint8Array> {
     .replace("  <StartsWithTutorial>", "  <Faction>Factions/Rift.xml</Faction>\n  <StartsWithTutorial>");
 
   files["Nodes/Gateway.xml"] = `<?xml version="1.0" encoding="UTF-8" ?>
-<Computer id="exGateway" name="Rift Gateway" ip="" security="2" allowsDefaultBootModule="false" icon="chip" type="3">
+<Computer id="exGateway" name="Rift Gateway" ip="104.84.21.7" security="2" allowsDefaultBootModule="false" icon="chip" type="3">
   <adminPass pass="gateway" />
   <ports>21, 22, 80</ports>
   <portsForCrack val="2" />
@@ -21,7 +21,7 @@ export function demoExtensionFiles(): Record<string, string | Uint8Array> {
 </Computer>
 `;
   files["Nodes/IRC.xml"] = `<?xml version="1.0" encoding="UTF-8" ?>
-<Computer id="exIRC" name="Rift IRC" ip="" security="1" allowsDefaultBootModule="true" type="3">
+<Computer id="exIRC" name="Rift IRC" ip="66.191.12.40" security="1" allowsDefaultBootModule="true" type="3">
   <positionNear target="exGateway" position="0" total="3" extraDistance="0.1" />
   <IRCDaemon themeColor="67,204,148" name="#rift" needsLogin="false">
     <user name="Vex" color="0,209,232"/>
@@ -31,7 +31,7 @@ export function demoExtensionFiles(): Record<string, string | Uint8Array> {
 </Computer>
 `;
   files["Nodes/Vault.xml"] = `<?xml version="1.0" encoding="UTF-8" ?>
-<Computer id="exVault" name="Cold Vault" ip="" security="3" allowsDefaultBootModule="false" icon="laptop" type="1">
+<Computer id="exVault" name="Cold Vault" ip="212.9.88.153" security="3" allowsDefaultBootModule="false" icon="laptop" type="1">
   <positionNear target="exGateway" position="1" total="3" extraDistance="0.1" />
   <adminPass pass="frost" />
   <ports>21, 22, 25, 80</ports>

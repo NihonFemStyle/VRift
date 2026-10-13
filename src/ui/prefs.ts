@@ -1,6 +1,7 @@
 /**
  * Per-user VRift preferences (stored in this browser/webview only; not shared with the extension).
  */
+import { BackupPrefs, DEFAULT_BACKUP_PREFS } from "../core/backups";
 import { isTauri } from "../fs/fs";
 
 export interface Prefs {
@@ -14,9 +15,15 @@ export interface Prefs {
   clearOldActions: boolean;
   /** Show "info" diagnostics by default. */
   showInfo: boolean;
+  /** Automatic backups. */
+  backups: BackupPrefs;
+  /** Programs to open file types with, by lower-case extension without the dot ("png" -> "C:/…/paint.net.exe"). Empty = system default. */
+  openWith: Record<string, string>;
+  /** Show what you are working on in Discord (Rich Presence). */
+  discord: boolean;
 }
 
-export const DEFAULT_PREFS: Prefs = { uiScale: 1, codeFontSize: 12.5, autoReload: false, clearOldActions: true, showInfo: false };
+export const DEFAULT_PREFS: Prefs = { uiScale: 1, codeFontSize: 12.5, autoReload: false, clearOldActions: true, showInfo: false, backups: DEFAULT_BACKUP_PREFS, openWith: {}, discord: true };
 
 export const UI_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.25, 1.4, 1.5, 1.75, 2];
 
@@ -28,6 +35,10 @@ export function loadPrefs(): Prefs {
     const p = { ...DEFAULT_PREFS, ...raw };
     p.uiScale = clamp(Number(p.uiScale) || 1, 0.6, 2);
     p.codeFontSize = clamp(Number(p.codeFontSize) || 12.5, 9, 24);
+    p.backups = { ...DEFAULT_BACKUP_PREFS, ...(typeof raw.backups === "object" ? raw.backups : {}) };
+    p.backups.intervalMinutes = clamp(Number(p.backups.intervalMinutes) || 5, 0.25, 240);
+    p.backups.keep = Math.round(clamp(Number(p.backups.keep) || 100, 5, 5000));
+    p.openWith = p.openWith && typeof p.openWith === "object" ? p.openWith : {};
     return p;
   } catch {
     return { ...DEFAULT_PREFS };

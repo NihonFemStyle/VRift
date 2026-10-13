@@ -1,7 +1,7 @@
 {
   "name": "vrift",
   "private": true,
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "VRift - a visual editor for Hacknet extensions",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -32,6 +32,7 @@
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-opener": "^2.7.1",
     "@uiw/react-codemirror": "^4.25.0",
+    "marked": "^15.0.12",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

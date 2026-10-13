@@ -38,7 +38,7 @@ export const NEW_FILE_TEMPLATES: NewFileTemplate[] = [
     folder: "Nodes",
     ext: ".xml",
     body: `<?xml version="1.0" encoding="UTF-8" ?>
-<Computer id="{{id}}" name="{{id}}" ip="" security="2" allowsDefaultBootModule="false" icon="" type="1">
+<Computer id="{{id}}" name="{{id}}" ip="{{ip}}" security="2" allowsDefaultBootModule="false" icon="" type="1">
   <adminPass pass="password" />
   <ports>21, 22</ports>
   <portsForCrack val="2" />

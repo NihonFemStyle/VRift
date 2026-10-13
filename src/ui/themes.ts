@@ -3,6 +3,7 @@
  * (values taken from the game's ThemeManager), and can also borrow a custom theme file from
  * the open extension so you can see your own theme while you work.
  */
+import { rememberBootColors } from "./boot";
 
 export type RGBA = [number, number, number, number];
 
@@ -213,6 +214,7 @@ export function applyTheme(t: UiTheme) {
   s.setProperty("--warning", solid(t.warning));
   s.setProperty("--connected", solid(t.connectedNode));
   s.setProperty("--bg-image", t.backgroundImage ? `url("${t.backgroundImage}")` : "none");
+  rememberBootColors((n) => s.getPropertyValue(n));
 }
 
 function lift(c: RGBA): RGBA {

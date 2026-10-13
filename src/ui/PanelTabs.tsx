@@ -5,6 +5,8 @@ const PANELS: { id: PanelId; label: string; title: string }[] = [
   { id: "story", label: "story", title: "Mission flow: how missions and action files lead to each other" },
   { id: "flags", label: "flags", title: "Where every flag is set and checked, in story order" },
   { id: "people", label: "people", title: "People and factions" },
+  { id: "git", label: "git", title: "Git: changes, commits, push and pull" },
+  { id: "debug", label: "debug", title: "Debug Mode: run Hacknet, watch its console and read crash reports" },
 ];
 
 /** Buttons in a bottom-panel header for switching between the panel views. */

@@ -257,7 +257,7 @@ export function FieldEditor(p: FieldProps) {
   );
 }
 
-function randomIp() {
+export function randomIp() {
   const n = () => Math.floor(Math.random() * 254) + 1;
   return `${n()}.${n()}.${n()}.${n()}`;
 }

@@ -12,6 +12,8 @@ Place a file named `VRift.schema.json` in the extension root, beside `ExtensionI
 
 > **Stuxnet and ZeroDayToolKit are built in.** Since VRift 1.1, support for those two mods ships as *schema modules* that switch on automatically when an extension uses them (see [Built-in modules](#built-in-modules)). You only need a custom schema for other mods or your own plugin. Your `VRift.schema.json` is loaded as one more module, so everything the built-in modules can do, it can do too.
 
+> **Start from the mod's source.** Since VRift 2.0, **Project → Mods… → generate from mod source…** reads a Pathfinder mod's C# source and writes a module for you: every action, condition, daemon, mission goal and executable it registers, with the `[XMLStorage]` attributes each reads and types guessed from the C# fields. Save it into this extension's `VRift.schema.json`, or as a **shared module** for all your extensions (kept in VRift's settings and switched on when the mod's DLL is in `Plugins/`). The generator cannot know descriptions, references or allowed values, so treat its output as a starting point and refine it with the rest of this page. Running it again after a mod update lists what is new, changed or gone.
+
 ## A complete first example
 
 Suppose a mod adds this daemon:

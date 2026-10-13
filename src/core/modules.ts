@@ -81,6 +81,8 @@ export interface SchemaModule {
   templates?: ModuleTemplate[];
   /** Set by VRift: shipped with the app (vs. the project's VRift.schema.json). */
   builtin?: boolean;
+  /** Set by VRift: a module the user keeps for all extensions (Settings → Mods → shared). */
+  shared?: boolean;
 }
 
 export type ModuleMode = "on" | "off" | "auto";
@@ -193,9 +195,46 @@ export interface ModuleState {
   active: boolean;
 }
 
+// ---------------------------------------------------------------- shared (user) modules
+
+const SHARED_KEY = "vrift.sharedModules";
+export const SHARED_MODULES_EVENT = "vrift-shared-modules";
+
+/** Modules the user generated or imported for every extension, stored with VRift's preferences. */
+export function loadSharedModules(): SchemaModule[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SHARED_KEY) ?? "[]");
+    return Array.isArray(raw) ? raw.map((m) => ({ ...normalizeModule(m, m.id ?? "shared"), shared: true })) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSharedModule(m: SchemaModule) {
+  const list = loadSharedModules().filter((x) => x.id !== m.id);
+  const { builtin: _b, shared: _s, ...plain } = m;
+  list.push({ ...plain, shared: true } as SchemaModule);
+  try {
+    localStorage.setItem(SHARED_KEY, JSON.stringify(list.map(({ shared: _x, ...rest }) => rest)));
+  } catch {
+    /* storage unavailable */
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SHARED_MODULES_EVENT));
+}
+
+export function deleteSharedModule(id: string) {
+  try {
+    localStorage.setItem(SHARED_KEY, JSON.stringify(loadSharedModules().filter((x) => x.id !== id).map(({ shared: _x, ...rest }) => rest)));
+  } catch {
+    /* storage unavailable */
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SHARED_MODULES_EVENT));
+}
+
 export function resolveModules(host: ModuleHost, config: ProjectConfig, custom: SchemaModule | null): ModuleState[] {
   const out: ModuleState[] = [];
-  for (const m of BUILTIN_MODULES) {
+  const shared = typeof localStorage !== "undefined" ? loadSharedModules().filter((m) => !BUILTIN_MODULES.some((b) => b.id === m.id)) : [];
+  for (const m of [...BUILTIN_MODULES, ...shared]) {
     const mode = config.modules?.[m.id] ?? "auto";
     const detected = mode === "auto" || mode === "on" ? detectModule(m, host) : null;
     out.push({ module: m, mode, detected, active: mode === "on" || (mode === "auto" && !!detected) });
@@ -240,7 +279,7 @@ export function parseConfig(text: string | undefined): { config: ProjectConfig; 
 
 export function serializeConfig(c: ProjectConfig): string {
   const out: Record<string, unknown> = {
-    $comment: "VRift settings for this extension. Hacknet ignores this file. See https://github.com/NihonFemStyle/HackNet-Extension-Editor/blob/main/docs/user-guide.md",
+    $comment: "VRift settings for this extension. Hacknet ignores this file. See https://github.com/NihonFemStyle/VRift/blob/main/docs/user-guide.md",
   };
   if (c.modules && Object.keys(c.modules).length) out.modules = c.modules;
   if (c.allowValues && Object.keys(c.allowValues).length) out.allowValues = c.allowValues;

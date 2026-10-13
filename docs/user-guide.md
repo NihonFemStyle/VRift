@@ -56,6 +56,10 @@ VRift opens every text file in the extension, whatever its extension (`.xml`, `.
 
 Images (`.png`, `.jpg`, `.gif`…) open in an image tab showing their size and how many references use them. Image paths in forms show a thumbnail.
 
+Sounds (`.ogg`, `.wav`, `.mp3`) are listed in their own **Audio** group and open in a waveform player with the list of files that use them: click or drag on the waveform to jump, Space plays and pauses, ← → skip, and loop and volume sit beside the play button. (macOS cannot decode Ogg Vorbis, so `.ogg` files show no waveform there.) Other files VRift does not edit (fonts, archives, project files of other tools) open in the program your system uses for them; choose a different program per file type in **Settings → Files** or with right-click → **Open with…**. Right-click also offers **Open externally** and **Show in folder** for any file.
+
+Files under `Docs/` get their own group, with sub-folders labelled by what they hold (message boards, articles, text). **Message board threads** (the `.txt` files a MessageBoard daemon lists) are highlighted and checked: the post separator must be exactly 42 dashes, `#Image` lines must use one of Hacknet's image names (None, Circle, Academic, Sun, Snake, Duck, Page, Speech, Mod, Chip, case-sensitive), and a thread needs at least one post. **SPLIT PREVIEW** shows the thread the way the game draws it; click a post to jump to it.
+
 HTML pages have a **SPLIT PREVIEW** mode. Hacknet copies a page to `Web/Cache/` before showing it, so relative image paths are resolved from `Web/Cache/` in the preview too, exactly as in the game. Missing images are listed above the preview.
 
 VRift keeps each file's encoding. Files saved as UTF-16 ("Unicode" in Notepad) or in the Windows ANSI code page are read correctly and written back the same way; the toolbar shows the encoding when it is not UTF-8.
@@ -79,10 +83,52 @@ Conditional action files open in **BUILDER** view. Each trigger (`Instantly`, `O
 - Click a card or row to edit it in the inspector on the right.
 - Drag rows to reorder them or to move them to another trigger; ↑ ↓ ⧉ ✕ move, duplicate and delete.
 - **+ action** and **+ trigger** open a searchable palette grouped by purpose (Story, Chat, Files, Nodes, Effects) and by mod.
-- Delays show as ⏱; ⚠ means the action has a delay but no `DelayHost`, so the game ignores the delay.
+- Delays show as ⏱ with the gap to the previous action first (`⏱ +2s · 7s`: 2 s after the action above, 7 s after the trigger); ⚠ means the action has a delay but no `DelayHost`, so the game ignores the delay.
 - With the game connected (see [Hot reload](#hot-reload-in-a-running-game)), **▶** runs an action or a whole trigger's actions in the game immediately.
 
 **FORM** and **XML** stay available for the same file.
+
+### Delays relative to the previous action
+
+Hacknet counts every action's `Delay` from the moment its trigger fires, so a sequence of messages normally means adding up the gaps by hand. Select an action in BUILDER, GRAPH or TIMING and the inspector's **WHEN** box shows both numbers: **s after the trigger** (the `Delay` the game reads) and **s after the previous action**. Edit either one; VRift works out the other and writes the plain `Delay`.
+
+With **move the actions after it too** ticked (the default), changing an action's time moves every later action in the same trigger that has a Delay by the same amount, so the gaps after it stay the same. Inserting a 2-second pause in the middle of a conversation is one edit. Actions without a Delay run at once whatever their position, so they are never moved. In TIMING, dragging follows the same setting and **Alt** while dragging does the opposite.
+
+A new action added after a delayed one starts where that one fires (`+0`), taking its `Delay` and `DelayHost` (or the IRC computer of an AddIRCMessage), instead of jumping back to 0 s. If an action ends up earlier than the one above it, the WHEN box says so: Hacknet runs actions by their Delay, not by their order in the file.
+
+### Timing actions to music
+
+**TIMING** shows the file's actions on a time ruler, each at its `Delay`. Pick a song in the ♫ row (any `.ogg` in the extension; shift its start with **at … s**) and press ▶ or Space: the song plays in time with the playhead while its waveform scrolls by, so you can hear where each action lands. Drag an action to change its Delay (Shift for free movement; later actions move along unless you hold Alt, see [Delays relative to the previous action](#delays-relative-to-the-previous-action)), or select one and press **K** to put it at the playhead. Each marker shows its time and the gap to the action above it. Actions with a Delay but no `DelayHost` are marked ⚠, because Hacknet ignores their delay. In the file named by `ActionsToRunOnSequencerStart`, a line marks the beat drop: the sequencer goes active `SequencerSpinUpTime` seconds after activation. The song choice is remembered per file and is not written to the extension.
+
+### Node graph
+
+**GRAPH** shows the same file as a canvas. Each trigger is a stack of its actions; drag a stack by its header to place it, drag an action to another position or another trigger, and drag new triggers and actions in from the palette on the left. Delete removes the selected node.
+
+Wires connect the stacks to the rest of the story: a dashed yellow wire runs from an action that sets a flag to the flag, and on to the triggers that wait for it (a red flag is never set anywhere). Green boxes are the action files and missions an action loads; click one to open it. Click a flag to list every place in the extension that sets or checks it. Stack positions are remembered per file; **auto-layout** forgets them. VRift opens action files in the view you used last.
+
+## Animated themes and cutscenes (Stuxnet)
+
+Stuxnet's animated themes and cutscenes open in **TIMELINE**:
+
+- The preview shows the animation at the playhead on a chosen screen size, behind an outline of the game's windows in the base theme's layout (**OS on top**). Space plays and pauses.
+- Click an element to select it, drag it to move it and drag its corner to resize it. At 0 s this changes where the element starts; anywhere else it makes a **keyframe**: a Translate or Resize that ends at the playhead, or a split of one that is running.
+- Below, every element has a track of instruction bars. Drag a bar to change its `Delay`, drag its right edge to change its `Duration` (snaps to 0.05 s, hold Shift for free movement). Ctrl+wheel zooms.
+- **+ element** and **+ instruction** add to the file; the inspector on the right edits the selection.
+- The ♫ row takes a song from the extension: its waveform lines up with the tracks and it plays in time with the preview, for timing an animation to music.
+
+The preview follows Stuxnet's documented behaviour: elements are invisible until an instruction starts on them, moves are linear, and animated themes start over when the last instruction ends.
+
+**Background slideshow…** (animated themes) writes full-screen images that take turns behind the base theme's colours, each for a set time, looping forever or a set number of times and then staying on the last image. Running it again replaces the earlier slideshow and leaves other elements alone.
+
+### Shader backgrounds (Stuxnet.OpenGL)
+
+With the Stuxnet.OpenGL plugin, an animated theme can draw a GLSL shader behind its elements: `<BackgroundSource Name="opengl" FragmentPath="Shaders/bg.frag" VertexPath="Shaders/bg.vert" />`. The timeline shows it, and `.frag`/`.vert` files open with a **LIVE PREVIEW** that gets the same inputs as in the game (`time`, `resolution`, `playback_frame`, and `screen_texture`, here a Hacknet desktop drawn with the theme's colours). Compile errors are marked on their lines. The preview uses WebGL, which is stricter than desktop OpenGL about mixing `int` and `float`; VRift says so when that is the likely cause.
+
+## Theme editor
+
+Theme files open in **DESIGN**: every colour slot with a colour picker, an alpha slider (255 is solid, lower blends, 0 adds light like the game does) and Hacknet's default when the theme leaves it out; the layout; and the background image. The preview on the right is the game's desktop with the module positions of the chosen layout. Hover a slot to outline what it paints, hover the preview to see which slot painted something, and click to jump to it.
+
+**apply to VRift** skins the editor with the theme while you work, **start from a built-in** fills in a known palette, and **save as my theme** keeps the palette as an editor theme for every extension (View → Choose theme → My themes).
 
 ### Round-trip behavior
 
@@ -106,6 +152,20 @@ Renaming a computer ID updates indexed computer references. Renaming or moving a
 
 Desktop deletions use the operating system recycle bin or trash. In a browser in-memory project, deletion affects only that temporary session.
 
+### Sorting a project
+
+**Project → Sort project files…** moves files into Hacknet's usual folders (`Nodes/`, `Missions/`, `Actions/`, `Factions/`, `Themes/`, `People/`, `HackerScripts/`, `Docs/MessageBoardThreads/`, and optionally `Music/` and `Images/`) and rewrites every reference to them. Nothing happens until you apply: the list shows each move and every reference that will change, and you can untick moves. ExtensionInfo.xml, the logo, `Plugins/` and config files stay put; sub-folders are kept; folders left empty go to the recycle bin. VRift takes a backup first.
+
+## Backups
+
+VRift backs up the extension's text files on its own: when you open it, as you save (at most once per interval, always including the last save), and before renames, deletes, restores and sorting. Backups live in VRift's data folder, never inside the extension, so they are not uploaded to the Workshop. Unchanged files are stored once, so keeping many is cheap. Set the interval and how many to keep in **Settings → Files**.
+
+**Project → Backups…** lists the snapshots. Pick one to see which files differ from now and a line-by-line diff (red goes away, green comes back), then restore one file or all of them. A restore is itself preceded by a backup, so it can be undone the same way.
+
+## Git
+
+The **git** panel works with the git program installed on your computer, so any host works: GitHub, GitLab, Codeberg, Gitea, your own server, or a folder. It shows changed files with their diffs, stages and commits (Ctrl+Enter), pushes (the first push sets the upstream), pulls and fetches, manages remotes, and lists the history. Changed files are marked in the file list. Logging in to a remote uses git's own credentials (Git Credential Manager on Windows, or an SSH key). **create repository** sets up a new one with a `.gitignore` for Hacknet's error reports.
+
 ## Mods (Stuxnet, ZeroDayToolKit and others)
 
 VRift understands two popular Pathfinder mods out of the box. Their *schema modules* switch on automatically when VRift sees the mod in use, for example `stuxnet_config.json` or `Plugins/Stuxnet.dll` for Stuxnet, and a `Networks/` folder or a TraceV2 file for 0DTK. A message tells you which modules are on when you open the extension.
@@ -114,13 +174,17 @@ With a module on, its tags get forms, descriptions and checks; its daemons appea
 
 **Project → Mods…** shows every module, why it is on, and lets you force it **On** or **Off**. For any other mod, describe its tags in `VRift.schema.json` ([Custom schemas](custom-schema.md)).
 
+**generate from mod source…** builds a module from a Pathfinder mod's C# source: every action, condition, daemon, mission goal and executable it registers, with the attributes each reads (`[XMLStorage]` fields) and value types guessed from the C# types and names. Save it into this extension's `VRift.schema.json`, or for **all extensions** as a shared module that switches on when the mod's DLL is in `Plugins/`. Running it again after a mod update shows which tags are new, changed or gone.
+
 ## Diagnostics
 
 Validation runs after project load and shortly after edits. Open **diagnostics** in Terminal to filter errors, warnings, and information; click an item to jump to its source.
 
-Checks include XML and custom-schema errors; missing extension metadata; duplicate or broken IDs; missing files, folders, factions, and computers; path capitalization; schema requirements and enum values; delayed-action hosts; unset flags; mission structure/order/case; and extension name requirements.
+Checks include XML and custom-schema errors; missing extension metadata; duplicate or broken IDs; missing files, folders, factions, and computers; path capitalization; schema requirements and enum values; delayed-action hosts; computers with an empty `ip`; unset flags; mission structure/order/case; and extension name requirements.
 
 Errors normally represent broken game behavior, warnings are likely mistakes or portability problems, and information can be intentional—especially with scripts, built-in values, or Pathfinder mods.
+
+About computer IPs: Hacknet gives a computer a random IP only when the `ip` attribute is **left out** (or set to `#RANDOM_IP#`). `ip=""` gives it an empty IP, so VRift warns about it. New computers made from the **New** menu get a random address written in.
 
 When a warning points at a tag from a mod that is switched off, the message says so and offers **use Stuxnet** (or the relevant mod) to turn its module on.
 
@@ -178,6 +242,16 @@ VRift can update a running game through [HacknetHotReplace](https://github.com/f
 
 You can also **▶ run** an action (or a trigger's actions) from the inspector or the action builder, and **connect in game** to a computer from its form or the netMap. VRift finds the plugin through the Windows registry, `~/.HacknetHotReplace` (native Linux/macOS game) or the Proton prefix (Linux with Proton), and converts paths for Wine automatically.
 
+## Debug Mode
+
+**Game → Launch Hacknet with console & crash capture** (or **launch Hacknet** in the **debug** panel) starts the game, through Pathfinder's launcher when it is installed, and shows everything it prints, BepInEx's log included. Errors and warnings are coloured and counted, and **problems only** filters them.
+
+When the game crashes, VRift picks up the crash report (`Documents/My Games/Hacknet/Reports/CrashReport_….txt` on Windows, the game folder elsewhere) and an extension's `error_report.txt`, and explains the likely cause in the extension: a missing file and what refers to it, invalid XML with its line, an unreadable logo, a computer ID that does not exist, a value in the wrong format, an empty message board thread, a broken Stuxnet animation or shader, with the VRift errors that fit and links to the files. **find recent reports** picks up reports from a game you started yourself, and **analyse text…** reads a pasted report or error box.
+
+## Discord
+
+While VRift runs, Discord shows the extension you are editing and whether it uses Pathfinder mods. Extensions published on the Workshop show their Workshop image. Turn it off in **Settings → Interface**.
+
 ## Quick open and terminal
 
 Press **Ctrl/Cmd+P** to search for any editable file or computer ID.
@@ -203,7 +277,9 @@ Results are interactive where applicable: click a file, reference, flag, node, o
 
 ## Themes and preferences
 
-Choose a built-in theme under **View → Editor theme** or select a custom theme loaded from the extension.
+**View → Choose theme…** lists every editor theme in one scrollable menu: the built-in ones, **My themes** saved from the theme editor, and the extension's own themes, with folders as sub-lists. Hovering previews a theme, Enter or a click chooses it, Escape goes back.
+
+Press **F1** (or use the Help menu) for this documentation inside VRift; it is searchable and works offline.
 
 ### Interface scale
 
@@ -220,6 +296,6 @@ F5 and Ctrl+R are blocked so the window can't be reloaded by accident and lose u
 3. Use forms for discoverability and XML for exact control.
 4. Use autocomplete and definition links instead of copying IDs manually.
 5. Run `refs` before a rename and `find` plus diagnostics afterward.
-6. Save all files, test inside Hacknet, and keep the project in version control.
+6. Save all files, test inside Hacknet with Debug Mode, and keep the project in version control (the git panel).
 
-VRift validates known static rules, but it does not run Hacknet or guarantee narrative/gameplay correctness. Testing in the game remains the final check.
+VRift validates known static rules but cannot guarantee narrative or gameplay correctness. Testing in the game remains the final check.

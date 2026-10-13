@@ -1,6 +1,10 @@
 //! VRift backend: a small set of filesystem commands the editor UI uses.
 //! Everything is plain std::fs so it behaves the same on Windows, Linux and macOS.
 
+mod backup;
+mod debug;
+mod git;
+mod discord;
 mod hotreload;
 mod library;
 mod textio;
@@ -9,6 +13,7 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
+use tauri::Manager;
 
 const SKIP_DIRS: &[&str] = &[".git", "node_modules", ".vs", ".vscode", ".idea"];
 /// Text files larger than this are listed but not loaded into the editor.
@@ -124,8 +129,9 @@ fn write_text(path: String, text: String, bom: bool, encoding: Option<String>) -
 }
 
 #[tauri::command]
-fn read_binary(path: String) -> Result<Vec<u8>, String> {
-    fs::read(path).map_err(err)
+fn read_binary(path: String) -> Result<tauri::ipc::Response, String> {
+    // raw bytes, not a JSON array of numbers: a few MB of audio as JSON froze the webview
+    fs::read(path).map(tauri::ipc::Response::new).map_err(err)
 }
 
 #[tauri::command]
@@ -251,11 +257,203 @@ async fn hotreload_send(command: String, payload: String, timeout_ms: Option<u64
     .map_err(err)?
 }
 
+// ------------------------------------------------------------------ backups
+
+fn data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path().app_data_dir().map_err(err)
+}
+
+/// Snapshot every text file of a project into VRift's own data folder (never inside the
+/// extension, so backups can't end up in a Workshop upload). None = nothing changed.
+#[tauri::command]
+async fn backup_snapshot(app: tauri::AppHandle, root: String, reason: String, keep: Option<usize>) -> Result<Option<backup::SnapshotInfo>, String> {
+    let data = data_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || backup::snapshot(&data, Path::new(&root), &reason, &sniff_text, keep.unwrap_or(100).clamp(1, 10_000)))
+        .await
+        .map_err(err)?
+}
+
+#[derive(Serialize)]
+struct BackupList {
+    snapshots: Vec<backup::SnapshotInfo>,
+    bytes: u64,
+    folder: String,
+}
+
+#[tauri::command]
+async fn backup_list(app: tauri::AppHandle, root: String) -> Result<BackupList, String> {
+    let data = data_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let r = Path::new(&root);
+        BackupList { snapshots: backup::list(&data, r), bytes: backup::size(&data, r), folder: backup::project_dir(&data, r).to_string_lossy().to_string() }
+    })
+    .await
+    .map_err(err)
+}
+
+#[tauri::command]
+fn backup_manifest(app: tauri::AppHandle, root: String, id: String) -> Result<backup::Manifest, String> {
+    backup::manifest(&data_dir(&app)?, Path::new(&root), &id).ok_or_else(|| "That backup no longer exists.".into())
+}
+
+/// One stored file version, decoded the same way read_text decodes files.
+#[tauri::command]
+fn backup_read(app: tauri::AppHandle, root: String, sha: String) -> Result<String, String> {
+    let bytes = backup::object(&data_dir(&app)?, Path::new(&root), &sha).ok_or("The stored copy is missing.")?;
+    Ok(textio::decode(&bytes).text)
+}
+
+#[tauri::command]
+async fn backup_restore(app: tauri::AppHandle, root: String, id: String, paths: Vec<String>) -> Result<Vec<String>, String> {
+    let data = data_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || backup::restore(&data, Path::new(&root), &id, &paths))
+        .await
+        .map_err(err)?
+}
+
+#[tauri::command]
+async fn backup_compare(app: tauri::AppHandle, root: String, id: String) -> Result<Vec<backup::FileChange>, String> {
+    let data = data_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || backup::compare(&data, Path::new(&root), &id, &sniff_text))
+        .await
+        .map_err(err)?
+}
+
+#[tauri::command]
+fn backup_clear(app: tauri::AppHandle, root: String) -> Result<(), String> {
+    backup::clear(&data_dir(&app)?, Path::new(&root))
+}
+
+// ------------------------------------------------------------------ external apps
+
+/// Open a file in its default app, or in `with` (an application path or name) when given.
+#[tauri::command]
+fn open_external(path: String, with: Option<String>) -> Result<(), String> {
+    let with = with.filter(|w| !w.trim().is_empty());
+    tauri_plugin_opener::open_path(&path, with.as_deref()).map_err(err)
+}
+
+/// Show a file in the system file manager.
+#[tauri::command]
+fn reveal_in_folder(path: String) -> Result<(), String> {
+    tauri_plugin_opener::reveal_item_in_dir(&path).map_err(err)
+}
+
+// ------------------------------------------------------------------ mod source (schema generator)
+
+/// Every .cs and .csproj file under a folder (for generating a schema from a mod's source).
+/// Skips bin/obj/.git; stops at 4000 files or 40 MB.
+#[tauri::command]
+async fn read_source_tree(dir: String) -> Result<std::collections::BTreeMap<String, String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        fn walk(root: &Path, dir: &Path, out: &mut std::collections::BTreeMap<String, String>, bytes: &mut u64) {
+            let Ok(rd) = fs::read_dir(dir) else { return };
+            for e in rd.filter_map(|e| e.ok()) {
+                if out.len() >= 4000 || *bytes > 40_000_000 {
+                    return;
+                }
+                let p = e.path();
+                let name = e.file_name().to_string_lossy().to_string();
+                if p.is_dir() {
+                    if !matches!(name.as_str(), "bin" | "obj" | ".git" | ".vs" | "node_modules" | "packages") {
+                        walk(root, &p, out, bytes);
+                    }
+                } else if name.ends_with(".cs") || name.ends_with(".csproj") {
+                    if let Ok(text) = fs::read_to_string(&p) {
+                        *bytes += text.len() as u64;
+                        let rel = p.strip_prefix(root).unwrap_or(&p).to_string_lossy().replace('\\', "/");
+                        out.insert(rel, text);
+                    }
+                }
+            }
+        }
+        let root = PathBuf::from(&dir);
+        if !root.is_dir() {
+            return Err(format!("Not a folder: {dir}"));
+        }
+        let mut out = std::collections::BTreeMap::new();
+        let mut bytes = 0;
+        walk(&root, &root, &mut out, &mut bytes);
+        Ok(out)
+    })
+    .await
+    .map_err(err)?
+}
+
+// ------------------------------------------------------------------ git
+
+/// Repository state of an extension folder (works when git is missing too: available = false).
+#[tauri::command]
+async fn git_status(root: String) -> git::Status {
+    tauri::async_runtime::spawn_blocking(move || git::status(Path::new(&root))).await.unwrap_or_default()
+}
+
+/// Run one git command (from a fixed list) in the extension folder.
+#[tauri::command]
+async fn git_run(root: String, args: Vec<String>) -> Result<git::Output, String> {
+    tauri::async_runtime::spawn_blocking(move || git::run(Path::new(&root), &args)).await.map_err(err)?
+}
+
+// ------------------------------------------------------------------ Debug Mode
+
+/// Start Hacknet (or Pathfinder's launcher) from the game folder with its console captured.
+/// Output arrives as "debug-line" events, the exit as "debug-exit".
+#[tauri::command]
+fn debug_launch(app: tauri::AppHandle, state: tauri::State<debug::DebugState>, game_dir: String, exe: Option<String>) -> Result<debug::Launched, String> {
+    debug::launch(app.clone(), &state, Path::new(&game_dir), exe)
+}
+
+#[tauri::command]
+fn debug_stop(state: tauri::State<debug::DebugState>) -> Result<(), String> {
+    debug::stop(&state)
+}
+
+#[tauri::command]
+fn debug_running(state: tauri::State<debug::DebugState>) -> bool {
+    debug::running(&state)
+}
+
+/// The program Debug Mode would start in a game folder.
+#[tauri::command]
+fn debug_executable(game_dir: String) -> Option<String> {
+    debug::game_executable(Path::new(&game_dir)).map(|p| p.to_string_lossy().to_string())
+}
+
+/// Crash reports, extension error reports and the BepInEx log written since `since` (ms).
+#[tauri::command]
+async fn debug_reports(game_dir: Option<String>, extension_dir: Option<String>, since: u64) -> Result<Vec<debug::Report>, String> {
+    tauri::async_runtime::spawn_blocking(move || debug::reports(game_dir.as_deref().map(Path::new), extension_dir.as_deref().map(Path::new), since))
+        .await
+        .map_err(err)
+}
+
+/// New lines of a log file since `offset` (BepInEx/LogOutput.log while the game runs).
+#[tauri::command]
+fn debug_tail(path: String, offset: u64) -> debug::Tail {
+    debug::tail_from(Path::new(&path), offset)
+}
+
+// ------------------------------------------------------------------ Discord Rich Presence
+
+/// Show (or with None, clear) VRift's Discord presence. Returns at once; Discord is contacted
+/// in the background and reconnected automatically.
+#[tauri::command]
+fn discord_presence(presence: Option<discord::Presence>) {
+    discord::set(presence);
+}
+
+/// The Steam Workshop preview image of an extension, used as its Discord icon.
+#[tauri::command]
+async fn workshop_preview(id: String) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || discord::workshop_preview(&id)).await.map_err(err)?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .manage(debug::DebugState(std::sync::Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             list_tree,
             read_text,
@@ -271,7 +469,27 @@ pub fn run() {
             scan_extension_folders,
             copy_extension,
             hotreload_status,
-            hotreload_send
+            hotreload_send,
+            backup_snapshot,
+            backup_list,
+            backup_manifest,
+            backup_read,
+            backup_restore,
+            backup_compare,
+            backup_clear,
+            open_external,
+            reveal_in_folder,
+            discord_presence,
+            workshop_preview,
+            debug_launch,
+            debug_stop,
+            debug_running,
+            debug_executable,
+            debug_reports,
+            debug_tail,
+            read_source_tree,
+            git_status,
+            git_run
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRift");

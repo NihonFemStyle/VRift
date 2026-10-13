@@ -81,6 +81,44 @@ Undo is per file and session-only. Rapid edits to one form field combine for abo
 
 These information messages may be legitimate for Pathfinder mods. VRift preserves the content. Add a custom schema for descriptions, controls, suggestions, and validation. Without a mod, verify spelling and placement.
 
+## A computer has no IP in the game
+
+Hacknet only gives a computer a random IP when the `ip` attribute is **missing**. `ip=""` sets an empty IP; this is the base game's behaviour, not Pathfinder's. Remove the attribute, write `ip="#RANDOM_IP#"`, or type an address. VRift reports `ip=""` as a warning. Computers created with VRift before 2.0 had `ip=""` from the template, so check older files.
+
+## Sounds show no waveform or do not play
+
+- On macOS the system webview cannot decode Ogg Vorbis, so `.ogg` files show no waveform and do not play in VRift. The game is not affected. Convert a copy to `.wav` to time against it, or use Windows/Linux.
+- A sound in the ♫ row of a timeline is only for previewing; nothing is written to the extension. If it starts at the wrong moment, check **at … s** (the timeline second where the song starts).
+- In the browser preview, very large files may not load at all; use the desktop app.
+
+## A shader works in the game but not in the preview
+
+The preview uses WebGL 2, which is stricter than desktop OpenGL: it refuses mixing `int` and `float` (`1` where `1.0` is meant, `float * int`), and some desktop-only functions. VRift says when that is the likely cause. The game compiles the shader with desktop OpenGL, so a preview-only error may be harmless, but writing `1.0` and using explicit casts keeps both happy.
+
+## The git panel says git is not installed, or push fails
+
+- VRift uses the git program on your computer. Install it from git-scm.com (Windows) or your package manager, then restart VRift.
+- VRift never asks for passwords itself. Push and pull use git's own login: on Windows, Git Credential Manager (bundled with Git for Windows) opens a sign-in window; elsewhere, set up an SSH key or a credential helper. If a push fails with an authentication error, run `git push` once in a terminal in the extension folder to sign in, then try again in VRift.
+- If the extension is inside a bigger repository, the panel works on that repository but only lists files inside the extension.
+- Only common git commands are available from VRift; anything else (rebases, merges with conflicts) belongs in a terminal or a git client.
+
+## Debug Mode cannot find or start the game
+
+- Set the game folder in **Settings → Game** (the folder with `Hacknet.exe`). VRift starts `HacknetPathfinder.exe` when it exists, so mods load, and `Hacknet.exe` otherwise.
+- Steam must be running for the Steam version to start.
+- On Linux with Proton, launching from VRift starts the native build if there is one; for the Windows build, start the game from Steam and use **find recent reports** in the **debug** panel to pick up crash reports afterwards.
+- No crash explanation appeared? Use **find recent reports**, or copy the text from the game's error box and use **analyse text…**.
+
+## Discord does not show VRift
+
+- Discord's desktop app must be running on the same computer (the web version cannot show it), and **Settings → Activity Privacy → Share my activity** must be on.
+- Check **Settings → Interface → Discord** in VRift.
+- VRift reconnects on its own if Discord starts later or restarts; give it a few seconds.
+
+## Dropdowns are hard to read
+
+Fixed in 2.0: dropdown lists follow the editor theme. If one still looks wrong with your own theme, tell us which theme and where.
+
 ## Linux launch fails or shows a blank window
 
 Install Tauri 2's WebKitGTK 4.1 prerequisites. VRift defaults these variables unless already set:

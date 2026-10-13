@@ -3,15 +3,21 @@ import { canHotReload } from "../core/hotreload";
 import { BUILTIN_MODULES } from "../core/modules";
 import { schema } from "../core/schema";
 import { treeIsReliable } from "../core/xml";
-import { basename, isImagePath } from "../fs/fs";
+import { basename, isAudioPath, isImagePath } from "../fs/fs";
 import { ActionBuilder } from "./ActionBuilder";
+import { EventGraph } from "./EventGraph";
+import { ActionTiming } from "./ActionTiming";
+import { Timeline } from "./Timeline";
+import { ThemeDesigner } from "./ThemeDesigner";
+import { ShaderView } from "./ShaderView";
 import { CodeEditor, codeModeFor, LineDiag } from "./CodeEditor";
 import { useApp } from "./context";
 import { FormEditor } from "./FormEditor";
 import { ImageView } from "./ImagePreview";
 import { WebPreview } from "./WebPreview";
+import { AudioView, OtherFileView, ThreadPreview } from "./MediaViews";
 
-export type ViewMode = "form" | "xml" | "builder" | "preview";
+export type ViewMode = "form" | "xml" | "builder" | "preview" | "graph" | "timeline" | "design" | "timing";
 
 const KIND_LABEL: Record<string, string> = {
   extensionInfo: "Extension info",
@@ -22,6 +28,8 @@ const KIND_LABEL: Record<string, string> = {
   theme: "Theme",
   people: "Person",
   hackerScript: "Hacker script",
+  messageBoardThread: "Message board thread",
+  shader: "GLSL shader (Stuxnet.OpenGL)",
   json: "JSON",
   text: "Text",
   other: "File",
@@ -29,6 +37,22 @@ const KIND_LABEL: Record<string, string> = {
 for (const m of BUILTIN_MODULES) for (const k of m.fileKinds ?? []) KIND_LABEL[k.kind] = `${k.label} (${m.name.split(" ")[0]})`;
 
 const ENCODING_LABEL: Record<string, string> = { "utf-16le": "UTF-16 LE", "utf-16be": "UTF-16 BE", "windows-1252": "ANSI (Windows-1252)" };
+
+/** Last view picked for action files (graph or builder), remembered across files. */
+function actionsView(): ViewMode {
+  try {
+    return localStorage.getItem("vrift.actionsView") === "graph" ? "graph" : "builder";
+  } catch {
+    return "builder";
+  }
+}
+function setActionsView(v: "graph" | "builder") {
+  try {
+    localStorage.setItem("vrift.actionsView", v);
+  } catch {
+    /* ignore */
+  }
+}
 
 export interface TabActions {
   closeTab: (p: string) => void;
@@ -54,20 +78,39 @@ export function Editor(props: {
   const isImage = !!props.active && !file && isImagePath(props.active);
   const isXml = !!file && /\.xml$/i.test(file.path);
   const isHtml = !!file && /\.html?$/i.test(file.path);
+  const isAudio = !!props.active && !file && isAudioPath(props.active);
+  const isThread = file?.kind === "messageBoardThread";
+  const isShader = file?.kind === "shader";
   const canForm = isXml && !!file?.doc?.root && treeIsReliable(file.parseIssues);
   const canBuilder = canForm && file!.kind === "actions";
+  const canDesign = canForm && file!.doc!.root!.name === "CustomTheme";
+  const canTimeline = canForm && /^(StuxnetAnimatedTheme|StuxnetCutscene)$/.test(file!.doc!.root!.name);
   const requested = file ? props.modes[file.path] : undefined;
   const mode: ViewMode = !file
     ? "xml"
-    : isHtml
+    : isThread || isShader
+      ? requested === "xml"
+        ? "xml"
+        : "preview"
+      : isHtml
       ? requested === "preview"
         ? "preview"
         : "xml"
       : !canForm
         ? "xml"
-        : requested === "builder" && canBuilder
-          ? "builder"
-          : requested ?? (canBuilder ? "builder" : "form");
+        : (requested === "builder" || requested === "graph" || requested === "timing") && canBuilder
+          ? requested
+          : requested === "builder" || requested === "graph" || requested === "timing"
+            ? "form"
+            : requested === "design"
+            ? canDesign
+              ? "design"
+              : "form"
+            : requested === "timeline"
+            ? canTimeline
+              ? "timeline"
+              : "form"
+            : requested ?? (canBuilder ? actionsView() : canTimeline ? "timeline" : canDesign ? "design" : "form");
 
   const lineDiags: LineDiag[] = useMemo(
     () => (file ? diagnostics.filter((d) => d.file === file.path && d.line > 0 && !d.suppressed).map((d) => ({ line: d.line, severity: d.severity, message: d.message })) : []),
@@ -92,7 +135,7 @@ export function Editor(props: {
   };
 
   const issues = file?.parseIssues ?? [];
-  const label = file ? KIND_LABEL[file.kind] ?? "File" : isImage ? "Image" : "";
+  const label = file ? KIND_LABEL[file.kind] ?? "File" : isImage ? "Image" : isAudio ? "Audio" : "File";
 
   return (
     <div className="module" style={{ minHeight: 0 }}>
@@ -164,7 +207,8 @@ export function Editor(props: {
       )}
       {!props.active && <EmptyDisplay />}
       {isImage && props.active && <ImageView project={project} path={props.active} />}
-      {props.active && !file && !isImage && <div className="empty">This file is not text, so VRift cannot show it.</div>}
+      {isAudio && props.active && <AudioView key={props.active} path={props.active} />}
+      {props.active && !file && !isImage && !isAudio && <OtherFileView path={props.active} />}
       {file && (
         <>
           <div className="toolbar">
@@ -177,8 +221,26 @@ export function Editor(props: {
             {isXml && (
               <div className="seg">
                 {canBuilder && (
-                  <button className={mode === "builder" ? "on" : ""} title="Visual action builder" onClick={() => props.setMode(file.path, "builder")}>
-                    BUILDER
+                  <>
+                    <button className={mode === "graph" ? "on" : ""} title="Node graph: triggers, actions, and the flags and files that link them" onClick={() => (setActionsView("graph"), props.setMode(file.path, "graph"))}>
+                      GRAPH
+                    </button>
+                    <button className={mode === "builder" ? "on" : ""} title="Visual action builder (list)" onClick={() => (setActionsView("builder"), props.setMode(file.path, "builder"))}>
+                      BUILDER
+                    </button>
+                    <button className={mode === "timing" ? "on" : ""} title="Action delays on a time ruler, with a song's waveform and playback" onClick={() => props.setMode(file.path, "timing")}>
+                      TIMING
+                    </button>
+                  </>
+                )}
+                {canDesign && (
+                  <button className={mode === "design" ? "on" : ""} title="Theme editor with a full preview of the game" onClick={() => props.setMode(file.path, "design")}>
+                    DESIGN
+                  </button>
+                )}
+                {canTimeline && (
+                  <button className={mode === "timeline" ? "on" : ""} title="Timeline with a live preview and keyframes" onClick={() => props.setMode(file.path, "timeline")}>
+                    TIMELINE
                   </button>
                 )}
                 <button className={mode === "form" ? "on" : ""} disabled={!canForm} title={canForm ? "Edit with forms" : "Fix the structural XML errors to use the form view"} onClick={() => props.setMode(file.path, "form")}>
@@ -195,6 +257,26 @@ export function Editor(props: {
                   HTML
                 </button>
                 <button className={mode === "preview" ? "on" : ""} onClick={() => props.setMode(file.path, "preview")}>
+                  SPLIT PREVIEW
+                </button>
+              </div>
+            )}
+            {isShader && (
+              <div className="seg">
+                <button className={mode === "xml" ? "on" : ""} onClick={() => props.setMode(file.path, "xml")}>
+                  CODE
+                </button>
+                <button className={mode === "preview" ? "on" : ""} title="Live WebGL preview" onClick={() => props.setMode(file.path, "preview")}>
+                  LIVE PREVIEW
+                </button>
+              </div>
+            )}
+            {isThread && (
+              <div className="seg">
+                <button className={mode === "xml" ? "on" : ""} onClick={() => props.setMode(file.path, "xml")}>
+                  TEXT
+                </button>
+                <button className={mode === "preview" ? "on" : ""} title="See the thread as it appears on a message board in game" onClick={() => props.setMode(file.path, "preview")}>
                   SPLIT PREVIEW
                 </button>
               </div>
@@ -235,12 +317,27 @@ export function Editor(props: {
               {issues.length > 3 && <div className="msg info">…and {issues.length - 3} more (see diagnostics)</div>}
             </div>
           )}
-          {mode === "builder" && canBuilder ? (
+          {mode === "design" && canDesign ? (
+            <ThemeDesigner key={file.path} file={file} />
+          ) : mode === "timeline" && canTimeline ? (
+            <Timeline key={file.path} file={file} />
+          ) : mode === "timing" && canBuilder ? (
+            <ActionTiming key={file.path} file={file} />
+          ) : mode === "graph" && canBuilder ? (
+            <EventGraph key={file.path} file={file} />
+          ) : mode === "builder" && canBuilder ? (
             <ActionBuilder key={file.path} file={file} />
           ) : mode === "form" && canForm ? (
             <FormEditor key={file.path} file={file} />
           ) : file.kind === "hackerScript" ? (
             <HackerScriptView path={file.path} gotoLine={props.gotoLine} diags={lineDiags} />
+          ) : mode === "preview" && isShader ? (
+            <ShaderView key={file.path} file={file} gotoLine={props.gotoLine?.path === file.path ? props.gotoLine : null} />
+          ) : mode === "preview" && isThread ? (
+            <div className="split-preview">
+              <CodeEditor key={file.path} value={file.text} mode="thread" diagnostics={lineDiags} gotoLine={props.gotoLine?.path === file.path ? props.gotoLine : null} onChange={(v) => project.setText(file.path, v, "raw")} />
+              <ThreadPreview path={file.path} text={file.text} />
+            </div>
           ) : mode === "preview" && isHtml ? (
             <div className="split-preview">
               <CodeEditor key={file.path} value={file.text} mode="html" diagnostics={lineDiags} gotoLine={null} onChange={(v) => project.setText(file.path, v, "raw")} />

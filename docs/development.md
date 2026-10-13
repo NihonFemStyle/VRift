@@ -44,16 +44,21 @@ For frontend-only work, run `npm run dev` and open `http://localhost:1420`. This
 
 ```text
 src/
-  core/          XML parser, schema access, project model/index, validator
-  core/__tests__ Core round-trip, indexing, rename, and validation tests
+  core/          XML parser, schema access, project model/index, validator, plus the
+                 data side of each feature (event graph, animation, themes, shaders,
+                 sorter, backups/diff, crash analysis, git, mod-source schemas)
+  core/__tests__ Core round-trip, indexing, rename, validation, sorter, crash, and
+                 mod-source tests
   fs/            ProjectFs plus Tauri and in-memory implementations
   schema/        Generated Hacknet node/field definitions
   schema/mods/   Generated schema modules (Stuxnet, ZeroDayToolKit)
   templates/     New extension/file templates and browser demo
-  ui/            React components and schema-driven controls
+  ui/            React components and schema-driven controls (editors, graph, timelines,
+                 waveform/audio tracks, theme and shader editors, debug and git panels)
   styles/        Application CSS and layout
 src-tauri/
-  src/           Native commands, text encodings, Steam discovery, hot reload client
+  src/           Native commands, text encodings, Steam/GOG discovery, hot reload client,
+                 backups, Debug Mode, git, Discord Rich Presence
   capabilities/  Tauri window/plugin permissions
   icons/         Application bundle icons
 docs/             User and contributor documentation
@@ -99,10 +104,15 @@ For UI or model changes, verify:
 6. run and click a diagnostic, then ignore it and un-ignore it;
 7. try quick open, the netMap/story/flags/people panels, and a terminal search;
 8. open an extension that uses Stuxnet or 0DTK and check **Project → Mods…**;
-9. try the tab shortcuts and **Ctrl+= / Ctrl+-**; and
-10. close with unsaved work and confirm the warning.
+9. try the tab shortcuts and **Ctrl+= / Ctrl+-**;
+10. open an action file in GRAPH and TIMING (pick a song and play it), a Stuxnet animation in TIMELINE, a theme in DESIGN, and an `.ogg` file;
+11. open **Project → Backups…** and compare a snapshot, and preview **Project → Sort project files…** without applying;
+12. check that dropdowns follow the chosen editor theme; and
+13. close with unsaved work and confirm the warning.
 
-With Hacknet + Pathfinder + HacknetHotReplace installed, also check that the **GAME** indicator turns on and that **Game → Reload current file** works.
+With Hacknet + Pathfinder + HacknetHotReplace installed, also check that the **GAME** indicator turns on and that **Game → Reload current file** works. With the game installed, launch it in Debug Mode and confirm output appears; in a git checkout, check the **git** panel lists changes; with Discord running, check the presence shows.
+
+`cargo test` includes git tests that run the real git program in a temporary folder; they are skipped when git is not installed.
 
 ## Adding editor support
 

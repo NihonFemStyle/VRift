@@ -4,6 +4,7 @@ import { childOptions, initialValue, lookupNode, NodeDef } from "../core/schema"
 import { cloneElement, createElement, elementChildren, findById, getAttr, insertChild, moveChild, removeChild, serializeNode, XElement } from "../core/xml";
 import { useApp } from "./context";
 import { Inspector, summarize } from "./FormEditor";
+import { acceptsDelay, delayLabel, inheritDelay } from "../core/actionDelays";
 
 /** Palette groups for the base game's actions (mod actions carry their own group). */
 const VANILLA_GROUPS: Record<string, string> = {
@@ -79,6 +80,7 @@ export function ActionBuilder({ file }: { file: ProjectFile }) {
     const child = createElement(name, attrs, def?.content ? initialValue(def.content) : def?.container ? "" : undefined);
     if (def?.container && !def.content) child.children = [];
     insertChild(doc, parent, child, index);
+    if (parent !== root) inheritDelay(parent, child, acceptsDelay(def));
     commit();
     selectElement(file.path, child.id);
   };
@@ -173,7 +175,7 @@ export function ActionBuilder({ file }: { file: ProjectFile }) {
               <div className="action-rows">
                 {actions.map((a) => {
                   const adef = lookupNode([root.name, t.name, a.name]);
-                  const delay = getAttr(a, "Delay");
+                  const delay = delayLabel(t, a);
                   const host = getAttr(a, "DelayHost") ?? (a.name === "AddIRCMessage" ? getAttr(a, "TargetComp") : undefined);
                   const asev = diagByEl.get(a.id);
                   return (
@@ -197,9 +199,9 @@ export function ActionBuilder({ file }: { file: ProjectFile }) {
                       <span className="tag">{a.name}</span>
                       {adef?.module && <span className="badge kind">{adef.module}</span>}
                       <span className="summary">{summarize(a)}</span>
-                      {delay && parseFloat(delay) > 0 && (
-                        <span className="delay" title={host ? `waits on ${host}` : "no DelayHost: the delay is ignored"}>
-                          ⏱ {delay}s{host ? "" : " ⚠"}
+                      {delay && (
+                        <span className="delay" title={`${delay.includes("·") ? "after the previous action · after the trigger" : "after the trigger"}${host ? ` · waits on ${host}` : " · no DelayHost: the delay is ignored"}`}>
+                          ⏱ {delay}{host ? "" : " ⚠"}
                         </span>
                       )}
                       {asev && <span className={"badge " + (asev === "error" ? "err" : asev === "warning" ? "warn" : "kind")}>{asev === "error" ? "!" : asev === "warning" ? "?" : "i"}</span>}

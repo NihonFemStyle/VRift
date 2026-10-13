@@ -1,10 +1,12 @@
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FileKind } from "../templates/templates";
 import { BUILTIN_MODULES } from "../core/modules";
-import { basename, dirname, isImagePath } from "../fs/fs";
+import { basename, dirname, isAudioPath, isImagePath } from "../fs/fs";
 import { useApp } from "./context";
 import { ImageThumb } from "./ImagePreview";
+import { extOf, openExternally, revealInFolder } from "./MediaViews";
+import { gitFileMarks, onGitMarks } from "./GitPanel";
 
 const KIND_ICON: Record<string, string> = {
   extensionInfo: "★",
@@ -19,7 +21,13 @@ const KIND_ICON: Record<string, string> = {
   text: "≡",
   other: "·",
   image: "▨",
+  audio: "♫",
+  messageBoardThread: "☰",
+  shader: "◈",
 };
+
+/** Files under Docs/ (Hacknet's convention for thread and article text), plus threads anywhere. */
+const isDoc = (p: string, k: FileKind) => /^docs\//i.test(p) || k === "messageBoardThread";
 for (const m of BUILTIN_MODULES) for (const k of m.fileKinds ?? []) KIND_ICON[k.kind] = k.icon ?? "◇";
 
 interface Group {
@@ -41,6 +49,7 @@ const MODULE_GROUPS: Group[] = BUILTIN_MODULES.flatMap((m) =>
 const GROUPS: Group[] = [
   { key: "core", title: "ExtensionInfo", match: (_p, k) => k === "extensionInfo" },
   { key: "nodes", title: "Nodes", match: (_p, k) => k === "computer", newKind: "computer" },
+  { key: "docs", title: "Docs", match: isDoc },
   { key: "missions", title: "Missions", match: (_p, k) => k === "mission", newKind: "mission" },
   { key: "actions", title: "Actions", match: (_p, k) => k === "actions", newKind: "actions" },
   { key: "factions", title: "Factions", match: (_p, k) => k === "faction", newKind: "faction" },
@@ -48,16 +57,21 @@ const GROUPS: Group[] = [
   { key: "people", title: "People", match: (_p, k) => k === "people", newKind: "people" },
   { key: "scripts", title: "HackerScripts", match: (_p, k) => k === "hackerScript", newKind: "hackerScript" },
   ...MODULE_GROUPS,
+  { key: "shaders", title: "Shaders (GLSL)", match: (_p, k) => k === "shader" },
   { key: "web", title: "Web pages", match: (p) => /\.html?$/i.test(p) },
   { key: "config", title: "Config & data (JSON)", match: (_p, k) => k === "json" },
+  { key: "audio", title: "Audio", match: (p) => isAudioPath(p) },
   { key: "images", title: "Images", match: (p) => isImagePath(p) },
   { key: "other", title: "Other files", match: () => true },
 ];
 
 export function Explorer(props: { active: string | null; onNewFile: (kind: FileKind, folder?: string) => void }) {
-  const { project, diagnostics, open, prompt, confirm, toast } = useApp();
+  const { project, diagnostics, open, prompt, confirm, toast, prefs, setPrefs } = useApp();
+  const desktop = project.fs.kind === "tauri";
+  const [, setGitTick] = useState(0);
+  useEffect(() => onGitMarks(() => setGitTick((n) => n + 1)), []);
   const [filter, setFilter] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ other: true, images: true });
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ other: true, images: true, audio: true });
   const [hoverImg, setHoverImg] = useState<{ path: string; y: number } | null>(null);
   const [collapsedDirs, setCollapsedDirs] = useState<Record<string, boolean>>({});
   const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null);
@@ -80,7 +94,7 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
     const out: Record<string, string[]> = {};
     for (const g of GROUPS) out[g.key] = [];
     for (const p of files) {
-      const kind = project.files.get(p)?.kind ?? (isImagePath(p) ? "image" : "other");
+      const kind = project.files.get(p)?.kind ?? (isImagePath(p) ? "image" : isAudioPath(p) ? "audio" : "other");
       if (q && !p.toLowerCase().includes(q)) {
         // also match computer ids/names
         const f = project.files.get(p);
@@ -110,7 +124,8 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
             onClick={() => setCollapsedDirs({ ...collapsedDirs, [dir]: !collapsedDirs[dir] })}
           >
             <span className="kind-icon">{collapsedDirs[dir] ? "▸" : "▾"}</span>
-            <span className="name folder">{dir || "/"}</span>
+            <span className="name folder">{(groupKey === "docs" ? dir.replace(/^docs\/?/i, "") : dir) || (groupKey === "docs" ? "Docs" : "/")}</span>
+            {groupKey === "docs" && <span className="dir-kind">{docFolderKind(files.filter((x) => dirname(x) === dir))}</span>}
           </div>,
         );
         lastDir = dir;
@@ -133,9 +148,10 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
           }}
           title={p + (comp ? `\nid: ${comp}` : "")}
         >
-          <span className="kind-icon">{KIND_ICON[f?.kind ?? (isImagePath(p) ? "image" : "other")]}</span>
+          <span className="kind-icon">{KIND_ICON[f?.kind ?? (isImagePath(p) ? "image" : isAudioPath(p) ? "audio" : "other")]}</span>
           <span className="name">{basename(p)}</span>
           {project.isDirty(p) && <span className="dirty">●</span>}
+          {gitFileMarks.get(p) && <span className={"git-mark m-" + gitFileMarks.get(p)!.replace("?", "q")} title="Git: changed since the last commit">{gitFileMarks.get(p)}</span>}
           <span className="badges">
             {c?.e ? <span className="badge err">{c.e}</span> : null}
             {c?.w ? <span className="badge warn">{c.w}</span> : null}
@@ -162,6 +178,29 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
     } catch (e) {
       toast(String(e), "error");
     }
+  };
+
+  /** What a Docs sub-folder holds, from its files. */
+  const docFolderKind = (files: string[]) => {
+    const kinds = new Set(files.map((p) => project.files.get(p)?.kind ?? "other"));
+    if (kinds.has("messageBoardThread")) return "message board";
+    if (kinds.has("mission")) return "articles";
+    if (kinds.size === 1 && kinds.has("text")) return "text";
+    return "";
+  };
+
+  const openWith = async (path: string) => {
+    const { open: pick } = await import("@tauri-apps/plugin-dialog");
+    const app = await pick({ multiple: false, directory: false, title: `Open ${basename(path)} with…` });
+    if (typeof app !== "string") return;
+    try {
+      await openExternally(project, path, { [extOf(path)]: app });
+    } catch (e) {
+      return toast(String(e), "error");
+    }
+    const ext = extOf(path);
+    if (ext && prefs.openWith[ext] !== app && (await confirm("Open with", `Always open .${ext} files with ${basename(app.replace(/\\/g, "/"))}?\n\nChange this any time in Settings → Files.`, "Always")))
+      setPrefs({ openWith: { ...prefs.openWith, [ext]: app } });
   };
 
   const doDelete = async (path: string) => {
@@ -222,6 +261,16 @@ export function Explorer(props: { active: string | null; onNewFile: (kind: FileK
           <div className="di" onClick={() => { doRename(menu.path); setMenu(null); }}>Rename / move…</div>
           {project.files.get(menu.path) && (
             <div className="di" onClick={() => { props.onNewFile(project.files.get(menu.path)!.kind, dirname(menu.path)); setMenu(null); }}>New file here…</div>
+          )}
+          {desktop && (
+            <>
+              <div className="dsep" />
+              <div className="di" onClick={() => { openExternally(project, menu.path, prefs.openWith).catch((e) => toast(String(e), "error")); setMenu(null); }}>
+                Open externally{prefs.openWith[extOf(menu.path)] ? ` (${basename(prefs.openWith[extOf(menu.path)].replace(/\\/g, "/"))})` : ""}
+              </div>
+              <div className="di" onClick={() => { openWith(menu.path); setMenu(null); }}>Open with…</div>
+              <div className="di" onClick={() => { revealInFolder(project, menu.path).catch((e) => toast(String(e), "error")); setMenu(null); }}>Show in folder</div>
+            </>
           )}
           <div className="di" onClick={() => { navigator.clipboard?.writeText(menu.path); setMenu(null); }}>Copy path</div>
           <div className="dsep" />

@@ -5,6 +5,8 @@
 import { basename, dirname, FsEntry, normalizeRel, ProjectFs, TEXT_EXT } from "../fs/fs";
 import { FileKind } from "../templates/templates";
 import { parseJson } from "./json";
+import { looksLikeThread } from "./messageBoard";
+import { SHADER_EXT } from "./shader";
 import {
   BUILTIN_MODULES,
   CONFIG_FILE,
@@ -186,6 +188,17 @@ export function classify(path: string, doc: XDocument | null): FileKind {
 
 type Listener = () => void;
 
+/** What Project.load is doing right now. */
+export interface LoadProgress {
+  stage: "list" | "read" | "modules" | "index";
+  done?: number;
+  total?: number;
+  bytes?: number;
+  totalBytes?: number;
+  /** The file that just finished reading. */
+  file?: string;
+}
+
 export class Project {
   entries: FsEntry[] = [];
   files = new Map<string, ProjectFile>();
@@ -193,6 +206,9 @@ export class Project {
   version = 0;
   private listeners = new Set<Listener>();
   private reindexTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Called before operations that change many files at once (rename, delete), e.g. to back up. */
+  beforeBulkChange?: (what: string) => Promise<unknown>;
 
   constructor(public fs: ProjectFs) {}
 
@@ -209,10 +225,21 @@ export class Project {
     return this.index.extensionName || basename(this.fs.root.replace(/\\/g, "/")) || "Extension";
   }
 
-  async load() {
+  /**
+   * Read the whole extension. `onProgress` hears about each stage as it really happens (files
+   * counted and bytes read as they arrive); awaiting its result before the slow synchronous
+   * stages gives a loading screen the chance to draw.
+   */
+  async load(onProgress?: (p: LoadProgress) => void | Promise<void>) {
+    await onProgress?.({ stage: "list" });
     this.entries = await this.fs.list();
     this.files.clear();
     const textFiles = this.entries.filter((e) => !e.isDir && (e.text ?? TEXT_EXT.test(e.path)) && e.size < 4_000_000);
+    const total = textFiles.length;
+    const totalBytes = textFiles.reduce((n, e) => n + e.size, 0);
+    let done = 0;
+    let bytes = 0;
+    await onProgress?.({ stage: "read", done, total, bytes, totalBytes });
     await Promise.all(
       textFiles.map(async (e) => {
         try {
@@ -221,9 +248,15 @@ export class Project {
         } catch (err) {
           console.warn("Could not read", e.path, err);
         }
+        done++;
+        bytes += e.size;
+        onProgress?.({ stage: "read", done, total, bytes, totalBytes, file: e.path });
       }),
     );
-    this.rebuildIndex();
+    await onProgress?.({ stage: "modules", done: total, total });
+    this.refreshModules();
+    await onProgress?.({ stage: "index", done: total, total });
+    this.index = buildIndex(this);
     this.emit();
   }
 
@@ -312,7 +345,10 @@ export class Project {
 
   private classifyFile(f: ProjectFile) {
     const k = classify(f.path, f.doc);
-    f.kind = k === "text" && /\.txt$/i.test(f.path) && /\$#%#\$/.test(f.text) ? "hackerScript" : k;
+    if (k === "text" && SHADER_EXT.test(f.path)) f.kind = "shader";
+    else if (k === "text" && /\.txt$/i.test(f.path) && /\$#%#\$/.test(f.text)) f.kind = "hackerScript";
+    else if (k === "text" && /\.txt$/i.test(f.path) && (/(^|\/)[^/]*(messageboard|threads?)[^/]*\//i.test(f.path) || looksLikeThread(f.text))) f.kind = "messageBoardThread";
+    else f.kind = k;
   }
 
   private addFile(path: string, text: string, bom: boolean, encoding?: string) {
@@ -469,6 +505,32 @@ export class Project {
     this.emit();
   }
 
+  /** Re-read files that changed on disk outside the editor (restored from a backup…). */
+  async reloadFromDisk(paths: string[]) {
+    this.entries = await this.fs.list();
+    for (const p of paths) {
+      try {
+        const r = await this.fs.readText(p);
+        const f = this.files.get(p);
+        if (!f) {
+          this.addFile(p, r.text, r.bom, r.encoding);
+          continue;
+        }
+        if (f.text !== r.text) f.undo.push(f.text);
+        f.text = r.text;
+        f.savedText = r.text;
+        f.bom = r.bom;
+        f.encoding = r.encoding;
+        f.redo = [];
+        this.reparse(f);
+      } catch (e) {
+        console.warn("Could not re-read", p, e);
+      }
+    }
+    this.rebuildIndex();
+    this.emit();
+  }
+
   async createFile(path: string, text: string) {
     path = normalizeRel(path);
     if (await this.fs.exists(path)) throw new Error(`${path} already exists`);
@@ -494,6 +556,7 @@ export class Project {
     from = normalizeRel(from);
     to = normalizeRel(to);
     if (from === to) return 0;
+    await this.beforeBulkChange?.(`before renaming ${from}`);
     // save pending edits of affected files first so we don't lose them
     for (const p of this.dirtyFiles()) if (p === from || p.startsWith(from + "/")) await this.save(p);
     await this.fs.rename(from, to);
@@ -580,6 +643,7 @@ export class Project {
   }
 
   async deletePath(path: string) {
+    await this.beforeBulkChange?.(`before deleting ${path}`);
     await this.fs.remove(path);
     for (const p of [...this.files.keys()]) if (p === path || p.startsWith(path + "/")) this.files.delete(p);
     this.entries = await this.fs.list();
@@ -610,6 +674,12 @@ export class Project {
 
   allFolders(): string[] {
     return this.entries.filter((e) => e.isDir).map((e) => e.path);
+  }
+
+  /** Re-resolve schema modules (after shared modules changed) and refresh everything. */
+  reloadModules() {
+    this.rebuildIndex();
+    this.emit();
   }
 
   rebuildIndex() {

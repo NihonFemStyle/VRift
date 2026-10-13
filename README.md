@@ -28,7 +28,11 @@ Writing a Hacknet extension by hand means juggling hundreds of XML files that al
   - flags that are checked but never set
 - **Rename everywhere.** Renaming a computer ID or moving a file updates every reference to it across the extension.
 - **Stuxnet and ZeroDayToolKit built in.** Schema modules for both mods switch on automatically when your extension uses them. They cover every action, condition, daemon and file type the mods read, generated from their source, and read `stuxnet_config.json` (custom computer icons, song IDs, achievements…) and 0DTK's networks and locales. Other mods: describe them in `VRift.schema.json` ([docs](docs/custom-schema.md)).
-- **Visual action builder.** Conditional action files open as trigger cards with draggable action rows and a searchable, grouped palette.
+- **Visual action builder and node graph.** Conditional action files open as trigger cards with draggable action rows, or as a node graph where triggers are stacks on a canvas wired together by the flags they set and wait for and the files they load.
+- **Timeline and keyframes for Stuxnet animations.** Animated themes and cutscenes get a live preview you drag elements around in, instruction tracks you drag and stretch, and a background slideshow builder (loop forever or N times).
+- **Theme and shader editors.** Every colour slot of a Hacknet theme with a full preview of the game's desktop in each layout, and a live WebGL preview for Stuxnet.OpenGL shader backgrounds.
+- **Debug Mode.** Start Hacknet from VRift with its console captured; when it crashes, VRift reads the crash report and points at the likely cause in your extension.
+- **Backups, sorting and git.** Automatic backups outside the extension with diffs and restore, a project sorter that moves files into the usual folders and rewrites references (after showing you every change), and a git panel that works with any host.
 - **Story, flags and people panels.** A mission flow graph shows how missions and action files lead to each other, and flags out files nothing reaches. A flag timeline shows where each flag is set and checked in story order. People and factions get their own cards.
 - **Hot reload into the running game** through [HacknetHotReplace](https://github.com/fengxu-30338/HacknetHotReplace): reload the file you're editing (or reload on every save), open the extension in the game, run an action, or connect to a computer. Works on Windows, native Linux, and Linux with Proton.
 - **Ignore warnings you disagree with**: this one, this kind in this file, or this kind everywhere. Or accept a custom value, or use a `<!-- vrift-ignore -->` comment. Rules are saved in `VRift.json` so collaborators share them.
@@ -36,7 +40,8 @@ Writing a Hacknet extension by hand means juggling hundreds of XML files that al
 - **netMap.** A live graph of every computer, grouped by folder, with `dlink`s drawn as edges. Click a node to open it.
 - **Raw XML whenever you want.** Every XML file has a FORM/XML toggle. VRift preserves your comments, formatting and attribute order: files you don't touch are written back byte-for-byte (tested against all 600 XML files in System Rift).
 - **Hacker script editor** with syntax highlighting and a clickable command reference.
-- **Theme editor** with colour pickers, Hacknet's premultiplied-alpha handling and a mini desktop preview.
+- **Schemas from mod source.** Generate a schema module for any Pathfinder mod from its C# source, for one extension or all of them.
+- **Built-in documentation** (F1), Discord Rich Presence, a theme picker with your own saved themes, message board thread previews and audio previews.
 - **Terminal.** Commands: `open <id>`, `refs <id>`, `find <text>`, `flags`, `nodes`, `mods`, `story`, `game`, `reload`, `connect <id>`, `theme <name>`, `validate`.
 - **Extension library** on the start screen. VRift finds Hacknet from Steam (including extra Steam library drives) and GOG, and asks where it is when you have the itch.io version or a copy somewhere else. It lists every extension in Hacknet's `Extensions` folder and in your Workshop downloads. You can also add your own folders, which are remembered. It has search and logos. **Make copy** turns a Workshop download into an editable copy in your Extensions folder, so Steam updates can't overwrite your work.
 - **Quick open** (Ctrl+P), tab shortcuts (Ctrl+Tab, Ctrl+W, Ctrl+1…9, Ctrl+Shift+T), interface scaling (Ctrl+= / Ctrl+-), per-file undo/redo, unsaved-change protection, and a recent-folders list.
@@ -87,9 +92,9 @@ Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which w
 
 ## Releasing
 
-The version lives in the [`VERSION`](VERSION) file (currently `1.1.2`). GitHub Actions does the rest:
+The version lives in the [`VERSION`](VERSION) file (currently `2.0.0`). GitHub Actions does the rest:
 
-1. Change `VERSION` (for example `1.1.2` → `1.2.0`, plain `X.Y.Z` only).
+1. Change `VERSION` (for example `2.0.0` → `2.1.0`, plain `X.Y.Z` only).
 2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Commit and push to `main`.
 
@@ -148,7 +153,7 @@ scripts/       schema generators (base game + mods), setup checker, app icon sou
 
 - Dev Together, Because this is *clearly possible and ambitious*
 
-Done in 1.1: mission flow graph, visual action builder, flag timeline, hot reload through HacknetHotReplace, image and web page previews, people/faction views, Stuxnet + 0DTK schemas with modular schema support, tab shortcuts, GUI scaling. See the [changelog](CHANGELOG.md).
+Done in 2.0: node graph, timeline and keyframes, theme and shader editors, Debug Mode, backups, project sorter, git, schemas from mod source, docs inside VRift, Discord Rich Presence. Done in 1.1: mission flow graph, visual action builder, flag timeline, hot reload through HacknetHotReplace, image and web page previews, people/faction views, Stuxnet + 0DTK schemas with modular schema support, tab shortcuts, GUI scaling. See the [changelog](CHANGELOG.md).
 
 ### Fixed bugs
 
@@ -168,5 +173,6 @@ VRift is licensed under the **GNU GPL v3.0**, see [LICENSE](LICENSE).
 - The Stuxnet and ZeroDayToolKit modules are generated from the source of [StuxnetHN](https://github.com/AutumnRivers/StuxnetHN) by Autumn Rivers (MIT) and [ZeroDayToolKit](https://github.com/prodzpod/ZeroDayToolKit) by prodzpod. Credit for the features belongs to them; VRift only describes their XML.
 - Hot reload talks to [HacknetHotReplace](https://github.com/fengxu-30338/HacknetHotReplace) by fengxu-30338 (MIT), which must be installed in the game.
 - Theme colours come from Hacknet's built-in OS themes.
+- The shader preview follows Stuxnet.OpenGL by Autumn Rivers, which uses [OpenGLTools](https://github.com/Arkhist/) by Arkhist.
 - Thanks to **kevinb1229** for unintentional bug testing: they keep finding bugs without ever meaning to.
 - Hacknet is © Team Fractal Alligator. VRift is a fan-made tool and is not affiliated with them.

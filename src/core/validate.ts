@@ -3,6 +3,7 @@
  * actually behaves (taken from the decompiled game, e.g. the strict element order in missions
  * and which daemons can host delayed actions).
  */
+import { validateThread } from "./messageBoard";
 import { basename, normalizeRel } from "../fs/fs";
 import {
   BUILTIN_COMPUTERS,
@@ -88,9 +89,13 @@ export function validateProject(project: Project): Diagnostic[] {
   const inactive = BUILTIN_MODULES.filter((m) => !project.activeModules.some((a) => a.id === m.id));
   for (const f of project.files.values()) {
     for (const i of f.parseIssues) add({ severity: i.severity ?? "error", file: f.path, line: i.line, message: i.message, code: /\.json$/i.test(f.path) ? "json" : "xml" });
+    if (f.kind === "messageBoardThread") for (const i of validateThread(f.text)) add({ severity: i.severity, file: f.path, line: i.line, message: i.message, code: "thread" });
     if (!f.doc?.root) continue;
     validateFileStructure(f, add, inactive);
     if (f.kind === "mission") validateMission(f, add);
+    if (f.kind === "computer" && f.doc.root.name === "Computer" && getAttr(f.doc.root, "ip") !== undefined && !getAttr(f.doc.root, "ip")!.trim())
+      add({ severity: "warning", file: f.path, line: f.doc.root.line, elId: f.doc.root.id, code: "empty-ip", message: 'ip="" gives this computer an empty IP; Hacknet only picks a random IP when the ip attribute is left out. Remove the attribute, or use #RANDOM_IP# or a real address.' });
+        if (f.doc.root.name === "StuxnetAnimatedTheme") validateBackgroundSource(project, f.path, f.doc.root, add);
     if (f.kind === "extensionInfo") validateExtensionInfo(f, add);
   }
   // duplicate IDs
@@ -201,6 +206,19 @@ function applySuppressions(project: Project, diags: Diagnostic[]) {
       if (s && (s.has("*") || s.has(d.code))) d.suppressed = "vrift-ignore comment";
     }
   }
+}
+
+/** Stuxnet.OpenGL shader backgrounds: both shader paths are required and the plugin must be there. */
+function validateBackgroundSource(project: Project, file: string, root: XElement, add: (d: Diagnostic) => void) {
+  const bg = elementChildren(root).find((c) => c.name === "BackgroundSource");
+  if (!bg || getAttr(bg, "Name") !== "opengl") return;
+  for (const a of ["FragmentPath", "VertexPath"])
+    if (!getAttr(bg, a)) add({ severity: "error", file, line: bg.line, elId: bg.id, code: "opengl", message: `Stuxnet.OpenGL needs both FragmentPath and VertexPath; ${a} is missing, so the theme fails to load.` });
+  const dlls = project.allFiles().filter((p) => /^plugins\/.+\.dll$/i.test(p));
+  if (!dlls.some((p) => /opengl.*(bg|source|stuxnet)|stuxnet.*opengl/i.test(p)))
+    add({ severity: "warning", file, line: bg.line, elId: bg.id, code: "opengl-plugin", message: 'Name="opengl" needs the Stuxnet.OpenGL plugin (StuxnetOpenGLBGSource.dll) in the Plugins folder. Without it the background is ignored.' });
+  else if (!dlls.some((p) => /opengltools/i.test(p)))
+    add({ severity: "warning", file, line: bg.line, elId: bg.id, code: "opengl-plugin", message: "Stuxnet.OpenGL depends on OpenGLTools (OpenGLTools.dll by Arkhist) in the Plugins folder." });
 }
 
 export function ruleMatches(r: SuppressRule, d: Diagnostic): boolean {

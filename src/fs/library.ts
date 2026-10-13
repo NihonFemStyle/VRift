@@ -139,11 +139,12 @@ export function loadLogo(path: string): Promise<string | null> {
   if (!logoCache.has(path)) {
     logoCache.set(
       path,
-      invoke<number[]>("read_binary", { path })
-        .then((bytes) => {
+      invoke<ArrayBuffer | number[]>("read_binary", { path })
+        .then((raw) => {
+          const bytes = raw instanceof ArrayBuffer ? new Uint8Array(raw) : new Uint8Array(raw);
           if (!bytes.length) return null;
           const type = /\.jpe?g$/i.test(path) ? "image/jpeg" : "image/png";
-          return URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type }));
+          return URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
         })
         .catch(() => null),
     );

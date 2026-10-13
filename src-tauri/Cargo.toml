@@ -1,6 +1,6 @@
 [package]
 name = "vrift"
-version = "1.1.2"
+version = "2.0.0"
 description = "VRift - a visual editor for Hacknet extensions"
 license = "GPL-3.0-or-later"
 edition = "2021"
@@ -19,6 +19,9 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 trash = "5"
+sha1_smol = "1"
+discord-rich-presence = "1"
+ureq = "3"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

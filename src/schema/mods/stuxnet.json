@@ -3117,6 +3117,45 @@
   },
   {
    "paths": [
+    "StuxnetAnimatedTheme.BackgroundSource"
+   ],
+   "multi": false,
+   "desc": "Background drawn behind the elements by a plugin. Stuxnet.OpenGL adds Name=\"opengl\" for GLSL shaders.",
+   "attributes": [
+    {
+     "name": "Name",
+     "required": true,
+     "default": "opengl",
+     "desc": "Registered background source (case-sensitive)",
+     "hint": "enum",
+     "enums": [
+      {
+       "value": "opengl",
+       "desc": "Stuxnet.OpenGL: GLSL shaders"
+      }
+     ],
+     "diag": "W"
+    },
+    {
+     "name": "FragmentPath",
+     "required": false,
+     "default": "",
+     "desc": "Fragment shader, relative to the extension folder (Stuxnet.OpenGL)",
+     "hint": "path",
+     "pattern": "**/*.{frag,glsl,fs}"
+    },
+    {
+     "name": "VertexPath",
+     "required": false,
+     "default": "",
+     "desc": "Vertex shader, relative to the extension folder (Stuxnet.OpenGL)",
+     "hint": "path",
+     "pattern": "**/*.{vert,glsl,vs}"
+    }
+   ]
+  },
+  {
+   "paths": [
     "StuxnetCutscene.Elements"
    ],
    "multi": false,

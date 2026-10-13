@@ -12,8 +12,8 @@ export interface NavTarget {
 }
 
 export type SuppressScope = "this" | "file" | "everywhere";
-export type SettingsTab = "mods" | "ignored" | "interface" | "game";
-export type PanelId = "netmap" | "story" | "flags" | "people";
+export type SettingsTab = "mods" | "ignored" | "interface" | "files" | "game";
+export type PanelId = "netmap" | "story" | "flags" | "people" | "debug" | "git";
 
 export interface GameApi {
   status: GameStatus;
@@ -38,6 +38,8 @@ export interface AppApi {
   confirm: (title: string, message: string, okLabel?: string) => Promise<boolean>;
   runValidation: () => void;
   setUiTheme: (name: string) => boolean;
+  /** Re-apply the chosen editor theme (after a live preview changed the colours). */
+  refreshUiTheme: () => void;
   /** Hide a diagnostic (VRift.json). */
   suppress: (d: Diagnostic, scope: SuppressScope) => Promise<void>;
   /** Remove the rule hiding a diagnostic. */
