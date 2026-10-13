@@ -108,11 +108,12 @@ pub fn wine_reg_value(reg: &str, section: &str, name: &str) -> Option<String> {
     None
 }
 
-/// The game under Proton writes to the Wine prefix registry of app 365450.
-fn from_proton(libraries: &[PathBuf]) -> Option<Status> {
+/// The game under Proton writes to the Wine prefix registry of app 365450; other Windows
+/// copies under Wine (GOG through Heroic or Lutris, itch.io…) write to their own prefix.
+fn from_wine(libraries: &[PathBuf], prefixes: &[PathBuf]) -> Option<Status> {
     let mut best: Option<Status> = None;
-    for lib in libraries {
-        let reg = lib.join("steamapps/compatdata/365450/pfx/user.reg");
+    let regs = libraries.iter().map(|lib| lib.join("steamapps/compatdata/365450/pfx/user.reg")).chain(prefixes.iter().map(|p| p.join("user.reg")));
+    for reg in regs {
         let Ok(text) = std::fs::read_to_string(&reg) else { continue };
         let port = wine_reg_value(&text, r"Software\Hacknet", "HotReplaceServerPort");
         let stamp = wine_reg_value(&text, r"Software\Hacknet", "HotReplaceServerOnlineTimespan");
@@ -126,8 +127,8 @@ fn from_proton(libraries: &[PathBuf]) -> Option<Status> {
 }
 
 /// Find the most recently active HotReplace server.
-pub fn discover(libraries: &[PathBuf]) -> Status {
-    let mut found: Vec<Status> = [from_registry(), from_home(), from_proton(libraries)].into_iter().flatten().collect();
+pub fn discover(libraries: &[PathBuf], prefixes: &[PathBuf]) -> Status {
+    let mut found: Vec<Status> = [from_registry(), from_home(), from_wine(libraries, prefixes)].into_iter().flatten().collect();
     found.sort_by_key(|s| s.age_ms.unwrap_or(u64::MAX));
     found.into_iter().next().unwrap_or_default()
 }

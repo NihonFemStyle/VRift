@@ -10,7 +10,9 @@ To build from source, follow the [README quick start](../README.md#building-on-w
 
 ## Start screen and extension library
 
-The desktop app can detect Hacknet's `Extensions` folder and Steam Workshop downloads across Steam library drives, scan folders you add manually, search extension metadata, remember recent folders, and make editable copies of Workshop extensions.
+The desktop app finds Hacknet installed through **Steam** (across all Steam library drives, including Workshop downloads) or **GOG** (GOG Galaxy and the GOG installers on Windows, the GOG installer and Heroic on Linux, `Hacknet.app` on macOS). It lists the extensions in each install's `Extensions` folder, scans folders you add manually, searches extension metadata, remembers recent folders, and makes editable copies of Workshop extensions.
+
+If you got Hacknet from **itch.io**, or it is installed somewhere VRift doesn't look, the library asks where it is: choose the game folder (the one with `Hacknet.exe`; its `Extensions` folder or a folder around it works too). You can change it any time with the **game:** button in the library toolbar or in **Settings → Game**, and turn automatic detection off there. When several installs exist, the chosen folder comes first, then Steam, then GOG; new extensions and editable copies go into the first one.
 
 Double-click an extension card or choose **open**. Workshop content can be overwritten by Steam, so use **make copy** before editing it. Removing a custom folder from the library removes only the library entry; it does not delete the folder.
 

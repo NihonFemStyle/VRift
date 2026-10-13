@@ -3,6 +3,7 @@
  * can be reloaded inside a running game. See src-tauri/src/hotreload.rs for the protocol.
  */
 import { isTauri } from "../fs/fs";
+import { hotReloadGames } from "../fs/library";
 
 export interface GameStatus {
   port: number | null;
@@ -25,7 +26,7 @@ export async function gameStatus(): Promise<GameStatus> {
   if (!isTauri()) return OFFLINE;
   const { invoke } = await import("@tauri-apps/api/core");
   try {
-    return await invoke<GameStatus>("hotreload_status");
+    return await invoke<GameStatus>("hotreload_status", { games: hotReloadGames() });
   } catch {
     return OFFLINE;
   }
@@ -44,7 +45,7 @@ export function gamePath(path: string, wine: boolean): string {
 export async function sendCommand(command: string, payloadXml: string, timeoutMs = 10_000): Promise<GameResponse> {
   if (!isTauri()) throw new Error("Hot reload needs the desktop app.");
   const { invoke } = await import("@tauri-apps/api/core");
-  return invoke<GameResponse>("hotreload_send", { command, payload: payloadXml, timeoutMs });
+  return invoke<GameResponse>("hotreload_send", { command, payload: payloadXml, timeoutMs, games: hotReloadGames() });
 }
 
 async function expectOk(p: Promise<GameResponse>): Promise<string> {

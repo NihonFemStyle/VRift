@@ -1,8 +1,12 @@
-//! Extension library: finds Hacknet extensions on disk.
+//! Extension library: finds Hacknet installs and the extensions in them.
 //!
-//! - Detects Steam (registry on Windows, the usual folders on Linux/macOS), reads
-//!   `steamapps/libraryfolders.vdf` to find every Steam library, and from those finds
-//!   Hacknet's own `Extensions` folder and the Workshop download folder (app 365450).
+//! - Steam: registry on Windows, the usual folders on Linux/macOS, then every library in
+//!   `steamapps/libraryfolders.vdf`; gives the game folder and the Workshop download folder
+//!   (app 365450).
+//! - GOG (product 1439474400): the GOG registry key on Windows, GOG installer and Heroic
+//!   folders on Linux, `Hacknet.app` on macOS.
+//! - Anything else (itch.io, a copied folder…) is chosen by the user; [`resolve_game_root`]
+//!   accepts the game folder, its `Extensions` folder, or a folder around it.
 //! - Scans any folder for extensions: a folder is an extension when it contains
 //!   `ExtensionInfo.xml` (case-insensitive).
 //!
@@ -14,12 +18,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const HACKNET_APP_ID: &str = "365450";
+pub const HACKNET_GOG_ID: &str = "1439474400";
 
+/// One installed copy of Hacknet.
 #[derive(Serialize, Debug, Clone, PartialEq)]
-pub struct Source {
-    /// "game" = Hacknet/Extensions, "workshop" = steamapps/workshop/content/365450
-    pub kind: String,
+pub struct Install {
+    /// "steam", "gog" or "manual" (chosen by the user: itch.io, a copy, …)
+    pub store: String,
+    /// The game folder (the one with Hacknet.exe and Content/).
     pub path: String,
+    /// `<game>/Extensions`; may not exist yet on a fresh install.
+    pub extensions: String,
+    pub extensions_exists: bool,
+    /// Steam only: steamapps/workshop/content/365450, when it exists.
+    pub workshop: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -148,24 +160,192 @@ pub fn steam_libraries(roots: &[PathBuf]) -> Vec<PathBuf> {
     dedupe_existing(libs)
 }
 
-/// Hacknet's Extensions folder(s) and Workshop folder(s) across the given Steam libraries.
-pub fn hacknet_sources(libraries: &[PathBuf]) -> Vec<Source> {
+// ------------------------------------------------------------------ game folders
+
+const GAME_BINARIES: [&str; 4] = ["Hacknet.exe", "Hacknet.bin.x86_64", "Hacknet.bin.x86", "Hacknet.bin.osx"];
+
+/// A folder is Hacknet's game folder when it has the game executable, or Content/ next to
+/// Extensions/.
+pub fn is_game_root(dir: &Path) -> bool {
+    if !dir.is_dir() {
+        return false;
+    }
+    GAME_BINARIES.iter().any(|b| find_case_insensitive(dir, b).is_some()) || (dir.join("Content").is_dir() && dir.join("Extensions").is_dir())
+}
+
+/// The game folder for something the user (or a launcher) points at: the game folder itself,
+/// its Extensions folder, a GOG folder with `game/` inside, `Hacknet.app`, or a folder that
+/// contains any of those.
+pub fn resolve_game_root(dir: &Path) -> Option<PathBuf> {
+    let mut bases = vec![dir.to_path_buf()];
+    if dir.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case("Extensions")).unwrap_or(false) {
+        if let Some(parent) = dir.parent() {
+            bases.insert(0, parent.to_path_buf());
+        }
+    }
+    for base in bases {
+        let candidates = [
+            base.clone(),
+            base.join("game"),
+            base.join("Contents").join("Resources"),
+            base.join("Hacknet.app").join("Contents").join("Resources"),
+            base.join("Hacknet"),
+            base.join("Hacknet").join("game"),
+            base.join("Hacknet").join("Hacknet.app").join("Contents").join("Resources"),
+        ];
+        if let Some(c) = candidates.into_iter().find(|c| is_game_root(c)) {
+            return Some(c);
+        }
+    }
+    None
+}
+
+fn install(store: &str, root: &Path, workshop: Option<PathBuf>) -> Install {
+    let ext = root.join("Extensions");
+    Install {
+        store: store.into(),
+        path: root.to_string_lossy().to_string(),
+        extensions_exists: ext.is_dir(),
+        extensions: ext.to_string_lossy().to_string(),
+        workshop: workshop.filter(|w| w.is_dir()).map(|w| w.to_string_lossy().to_string()),
+    }
+}
+
+/// Hacknet installs in the given Steam libraries.
+pub fn steam_installs(libraries: &[PathBuf]) -> Vec<Install> {
     let mut out = Vec::new();
     for lib in libraries {
-        let game = lib.join("steamapps").join("common").join("Hacknet").join("Extensions");
-        if game.is_dir() {
-            out.push(Source { kind: "game".into(), path: game.to_string_lossy().to_string() });
-        }
         let ws = lib.join("steamapps").join("workshop").join("content").join(HACKNET_APP_ID);
-        if ws.is_dir() {
-            out.push(Source { kind: "workshop".into(), path: ws.to_string_lossy().to_string() });
+        if let Some(root) = resolve_game_root(&lib.join("steamapps").join("common").join("Hacknet")) {
+            out.push(install("steam", &root, Some(ws)));
+        } else if ws.is_dir() {
+            // Workshop items without the game in this library (the game is in another one)
+            out.push(Install { store: "steam".into(), path: String::new(), extensions: String::new(), extensions_exists: false, workshop: Some(ws.to_string_lossy().to_string()) });
         }
     }
     out
 }
 
-pub fn detect_sources() -> Vec<Source> {
-    hacknet_sources(&steam_libraries(&steam_roots()))
+/// Folders where a GOG copy of Hacknet may live (they don't have to exist).
+pub fn gog_candidates() -> Vec<PathBuf> {
+    let mut c: Vec<PathBuf> = Vec::new();
+    #[cfg(windows)]
+    {
+        use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+        use winreg::RegKey;
+        for (hive, key) in [
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\GOG.com\\Games"),
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\GOG.com\\Games"),
+            (HKEY_CURRENT_USER, "SOFTWARE\\GOG.com\\Games"),
+        ] {
+            let Ok(games) = RegKey::predef(hive).open_subkey(key) else { continue };
+            for id in games.enum_keys().flatten() {
+                let Ok(g) = games.open_subkey(&id) else { continue };
+                let name: String = g.get_value("gameName").unwrap_or_default();
+                if id == HACKNET_GOG_ID || name.trim().eq_ignore_ascii_case("Hacknet") {
+                    for v in ["path", "PATH", "workingDir"] {
+                        if let Ok(p) = g.get_value::<String, _>(v) {
+                            c.push(PathBuf::from(p));
+                        }
+                    }
+                }
+            }
+        }
+        for drive in ["C:", "D:", "E:"] {
+            c.push(PathBuf::from(format!("{drive}\\GOG Games\\Hacknet")));
+        }
+        c.push(PathBuf::from("C:\\Program Files (x86)\\GOG Galaxy\\Games\\Hacknet"));
+        c.push(PathBuf::from("C:\\Program Files\\GOG Galaxy\\Games\\Hacknet"));
+    }
+    #[cfg(not(windows))]
+    {
+        if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+            c.push(home.join("GOG Games/Hacknet"));
+            c.push(home.join("Games/Hacknet"));
+            c.push(home.join("Games/Heroic/Hacknet"));
+            c.push(home.join("Applications/Hacknet.app"));
+            // Heroic Games Launcher keeps a list of its GOG installs
+            for cfg in [".config/heroic/gog_store/installed.json", ".var/app/com.heroicgameslauncher.hgl/config/heroic/gog_store/installed.json", "Library/Application Support/heroic/gog_store/installed.json"] {
+                if let Ok(text) = fs::read_to_string(home.join(cfg)) {
+                    c.extend(heroic_install_paths(&text));
+                }
+            }
+        }
+        c.push(PathBuf::from("/Applications/Hacknet.app"));
+    }
+    c
+}
+
+/// Install paths for Hacknet in Heroic's `gog_store/installed.json`.
+pub fn heroic_install_paths(json: &str) -> Vec<PathBuf> {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return vec![] };
+    let list = v.get("installed").and_then(|x| x.as_array()).cloned().or_else(|| v.as_array().cloned()).unwrap_or_default();
+    list.iter()
+        .filter(|g| g.get("appName").and_then(|a| a.as_str()) == Some(HACKNET_GOG_ID))
+        .filter_map(|g| g.get("install_path").and_then(|p| p.as_str()).map(PathBuf::from))
+        .collect()
+}
+
+pub fn gog_installs(candidates: &[PathBuf]) -> Vec<Install> {
+    candidates.iter().filter_map(|c| resolve_game_root(c)).map(|root| install("gog", &root, None)).collect()
+}
+
+fn same_dir(a: &Path, b: &Path) -> bool {
+    let ca = fs::canonicalize(a).unwrap_or_else(|_| a.to_path_buf());
+    let cb = fs::canonicalize(b).unwrap_or_else(|_| b.to_path_buf());
+    ca == cb
+}
+
+/// Every Hacknet install found automatically: Steam first, then GOG, without duplicates.
+pub fn detect_installs() -> Vec<Install> {
+    let mut out: Vec<Install> = Vec::new();
+    for i in steam_installs(&steam_libraries(&steam_roots())).into_iter().chain(gog_installs(&gog_candidates())) {
+        let dup = !i.path.is_empty() && out.iter().any(|o| !o.path.is_empty() && same_dir(Path::new(&o.path), Path::new(&i.path)));
+        if !dup {
+            out.push(i);
+        }
+    }
+    out
+}
+
+/// A folder the user chose: the install it points to, or why it isn't one.
+pub fn inspect_game_folder(dir: &Path) -> Result<Install, String> {
+    if !dir.is_dir() {
+        return Err(format!("{} does not exist.", dir.display()));
+    }
+    let root = resolve_game_root(dir).ok_or_else(|| {
+        format!("No Hacknet game files in {}. Choose the folder that contains Hacknet.exe (or its Extensions folder).", dir.display())
+    })?;
+    Ok(install("manual", &root, None))
+}
+
+/// Wine prefixes a non-Steam Windows copy of the game may run in (for hot reload on Linux):
+/// a `drive_c` above the game folder, or Heroic's per-game prefix.
+pub fn wine_prefixes(game_roots: &[PathBuf]) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    for root in game_roots {
+        for a in root.ancestors() {
+            if a.file_name().map(|n| n == "drive_c").unwrap_or(false) {
+                if let Some(p) = a.parent() {
+                    out.push(p.to_path_buf());
+                }
+                break;
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+        for cfg in [".config/heroic/GamesConfig", ".var/app/com.heroicgameslauncher.hgl/config/heroic/GamesConfig"] {
+            if let Ok(text) = fs::read_to_string(home.join(cfg).join(format!("{HACKNET_GOG_ID}.json"))) {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if let Some(p) = v.get(HACKNET_GOG_ID).and_then(|g| g.get("winePrefix")).and_then(|p| p.as_str()) {
+                        out.push(PathBuf::from(p));
+                    }
+                }
+            }
+        }
+    }
+    out
 }
 
 // ------------------------------------------------------------------ scanning
@@ -335,15 +515,55 @@ mod tests {
     }
 
     #[test]
-    fn finds_hacknet_folders_in_libraries() {
-        let lib = tmp("lib");
+    fn finds_steam_installs_and_workshop() {
+        let lib = tmp("libs");
         fs::create_dir_all(lib.join("steamapps/common/Hacknet/Extensions")).unwrap();
+        fs::write(lib.join("steamapps/common/Hacknet/Hacknet.exe"), "").unwrap();
         fs::create_dir_all(lib.join("steamapps/workshop/content/365450/111")).unwrap();
-        let s = hacknet_sources(std::slice::from_ref(&lib));
-        assert_eq!(s.len(), 2);
-        assert_eq!(s[0].kind, "game");
-        assert_eq!(s[1].kind, "workshop");
-        let _ = fs::remove_dir_all(lib);
+        let found = steam_installs(std::slice::from_ref(&lib));
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].store, "steam");
+        assert!(found[0].extensions_exists);
+        assert!(found[0].workshop.as_deref().unwrap().ends_with("365450"));
+        // nothing installed: nothing found
+        assert!(steam_installs(&[tmp("empty-lib")]).is_empty());
+    }
+
+    #[test]
+    fn resolves_game_folders_from_many_starting_points() {
+        // GOG Linux installer layout: <dir>/game/Hacknet.bin.x86_64
+        let gog = tmp("gog");
+        fs::create_dir_all(gog.join("game/Extensions")).unwrap();
+        fs::write(gog.join("game/Hacknet.bin.x86_64"), "").unwrap();
+        assert_eq!(resolve_game_root(&gog), Some(gog.join("game")));
+        // pointing at the Extensions folder works too
+        assert_eq!(resolve_game_root(&gog.join("game/Extensions")), Some(gog.join("game")));
+        // itch.io zip unpacked anywhere, with Content + Extensions but an unusual exe name
+        let itch = tmp("itch");
+        fs::create_dir_all(itch.join("Hacknet/Content")).unwrap();
+        fs::create_dir_all(itch.join("Hacknet/Extensions")).unwrap();
+        assert_eq!(resolve_game_root(&itch), Some(itch.join("Hacknet")));
+        // macOS app bundle
+        let mac = tmp("mac");
+        fs::create_dir_all(mac.join("Hacknet.app/Contents/Resources/Content")).unwrap();
+        fs::write(mac.join("Hacknet.app/Contents/Resources/Hacknet.exe"), "").unwrap();
+        assert_eq!(resolve_game_root(&mac), Some(mac.join("Hacknet.app/Contents/Resources")));
+        // not a game
+        let other = tmp("other");
+        assert!(resolve_game_root(&other).is_none());
+        assert!(inspect_game_folder(&other).is_err());
+        let i = inspect_game_folder(&gog).unwrap();
+        assert_eq!(i.store, "manual");
+        assert!(i.extensions_exists);
+    }
+
+    #[test]
+    fn reads_heroic_installs_and_wine_prefixes() {
+        let json = r#"{"installed":[{"appName":"1207658930","install_path":"/x/Other"},{"appName":"1439474400","install_path":"/home/me/Games/Heroic/Hacknet","platform":"linux"}]}"#;
+        assert_eq!(heroic_install_paths(json), vec![PathBuf::from("/home/me/Games/Heroic/Hacknet")]);
+        assert!(heroic_install_paths("not json").is_empty());
+        let p = wine_prefixes(&[PathBuf::from("/home/me/.wine/drive_c/GOG Games/Hacknet")]);
+        assert!(p.contains(&PathBuf::from("/home/me/.wine")));
     }
 
     #[test]

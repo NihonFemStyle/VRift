@@ -1970,3 +1970,26 @@ button {
 .num-field .num { width: 90px; flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 .num-field .num-label { color: var(--subtle); font-size: 0.85em; width: 14px; text-align: center; }
 .num-field .icon-btn { width: 22px; padding: 0; }
+
+/* ---- library: "where is Hacknet installed?" ---- */
+.lib-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 8px 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--hl);
+  border-left-width: 3px;
+  background: rgba(var(--hl-rgb), 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.lib-ask b { color: #fff; font-weight: normal; font-family: var(--font-ui); font-size: 14px; }
+.lib-ask .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.lib-ask.error { border-color: var(--warning); background: rgba(200, 50, 50, 0.08); }
+.game-installs { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 10px; }
+.game-install { display: grid; grid-template-columns: 70px 1fr; gap: 8px; align-items: baseline; font-size: 12px; }
+.game-install .store { color: var(--hl); }
+.game-install .path { word-break: break-all; }
+.settings-h { margin: 14px 0 4px; font-family: var(--font-ui); font-weight: normal; color: #fff; font-size: 14px; letter-spacing: 0.04em; }
+.settings-h:first-child { margin-top: 0; }

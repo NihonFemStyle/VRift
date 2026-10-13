@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.2
+
+- **Hacknet from GOG and itch.io.** VRift used to find the game only through Steam.
+  - GOG copies are found automatically: GOG Galaxy and the GOG installers on Windows (registry), the GOG installer and Heroic Games Launcher on Linux, `Hacknet.app` on macOS.
+  - When no install is found (itch.io, or a copy somewhere unusual), the library asks where Hacknet is. Choose the game folder, its `Extensions` folder, or a folder around it. Change it any time with the **game:** button in the library or in **Settings → Game**, which also lists every install found.
+  - New extensions and editable copies go into the chosen install first, then Steam, then GOG.
+  - Hot reload also finds the game running under Wine outside Steam (a prefix around the game folder, or Heroic's prefix).
+- A fresh install without an `Extensions` folder yet is shown as such instead of "missing".
+- Credits: thanks to kevinb1229 for unintentional bug testing.
+
 ## 1.1.1
 
 - **Typed value hints for custom schemas** (requested by the Stuxnet developer):

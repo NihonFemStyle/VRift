@@ -38,7 +38,7 @@ Writing a Hacknet extension by hand means juggling hundreds of XML files that al
 - **Hacker script editor** with syntax highlighting and a clickable command reference.
 - **Theme editor** with colour pickers, Hacknet's premultiplied-alpha handling and a mini desktop preview.
 - **Terminal.** Commands: `open <id>`, `refs <id>`, `find <text>`, `flags`, `nodes`, `mods`, `story`, `game`, `reload`, `connect <id>`, `theme <name>`, `validate`.
-- **Extension library** on the start screen. VRift finds Steam (including extra Steam library drives), then lists every extension in Hacknet's `Extensions` folder and in your Workshop downloads. You can also add your own folders, which are remembered. It has search and logos. **Make copy** turns a Workshop download into an editable copy in your Extensions folder, so Steam updates can't overwrite your work.
+- **Extension library** on the start screen. VRift finds Hacknet from Steam (including extra Steam library drives) and GOG, and asks where it is when you have the itch.io version or a copy somewhere else. It lists every extension in Hacknet's `Extensions` folder and in your Workshop downloads. You can also add your own folders, which are remembered. It has search and logos. **Make copy** turns a Workshop download into an editable copy in your Extensions folder, so Steam updates can't overwrite your work.
 - **Quick open** (Ctrl+P), tab shortcuts (Ctrl+Tab, Ctrl+W, Ctrl+1…9, Ctrl+Shift+T), interface scaling (Ctrl+= / Ctrl+-), per-file undo/redo, unsaved-change protection, and a recent-folders list.
 - **Pathfinder-friendly.** Unknown tags and attributes can still be edited. Add a `VRift.schema.json` to your extension to teach VRift about tags from your mods (see [docs/custom-schema.md](docs/custom-schema.md)).
 
@@ -87,9 +87,9 @@ Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which w
 
 ## Releasing
 
-The version lives in the [`VERSION`](VERSION) file (currently `1.1.1`). GitHub Actions does the rest:
+The version lives in the [`VERSION`](VERSION) file (currently `1.1.2`). GitHub Actions does the rest:
 
-1. Change `VERSION` (for example `1.1.1` → `1.2.0`, plain `X.Y.Z` only).
+1. Change `VERSION` (for example `1.1.2` → `1.2.0`, plain `X.Y.Z` only).
 2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Commit and push to `main`.
 
@@ -113,7 +113,7 @@ If the version already has a release, the workflow does nothing, so remember to 
 
 ```powershell
 npm test                                  # editor core (XML, JSON, index, validator, modules, story, hot reload payloads)
-cd src-tauri; cargo test --lib            # Steam detection, text encodings, HacknetHotReplace client
+cd src-tauri; cargo test --lib            # game detection, text encodings, HacknetHotReplace client
 ```
 
 To run the round-trip and validation tests against a real extension:
@@ -140,7 +140,7 @@ src/
   fs/          filesystem layer (Tauri backend / in-memory for the browser)
   ui/          React components (RAM explorer, Display editor + action builder, panels, Terminal, settings)
   templates/   new-extension and new-file templates, example extension
-src-tauri/     the small Rust backend (file access, encodings, Steam library, HacknetHotReplace client)
+src-tauri/     the small Rust backend (file access, encodings, game detection, HacknetHotReplace client)
 scripts/       schema generators (base game + mods), setup checker, app icon source
 ```
 
@@ -168,4 +168,5 @@ VRift is licensed under the **GNU GPL v3.0**, see [LICENSE](LICENSE).
 - The Stuxnet and ZeroDayToolKit modules are generated from the source of [StuxnetHN](https://github.com/AutumnRivers/StuxnetHN) by Autumn Rivers (MIT) and [ZeroDayToolKit](https://github.com/prodzpod/ZeroDayToolKit) by prodzpod. Credit for the features belongs to them; VRift only describes their XML.
 - Hot reload talks to [HacknetHotReplace](https://github.com/fengxu-30338/HacknetHotReplace) by fengxu-30338 (MIT), which must be installed in the game.
 - Theme colours come from Hacknet's built-in OS themes.
+- Thanks to **kevinb1229** for unintentional bug testing: they keep finding bugs without ever meaning to.
 - Hacknet is © Team Fractal Alligator. VRift is a fan-made tool and is not affiliated with them.

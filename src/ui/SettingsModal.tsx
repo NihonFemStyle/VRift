@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, ModuleMode } from "../core/modules";
 import { ruleMatches } from "../core/validate";
 import { openUrl } from "./openUrl";
 import { useApp, type SettingsTab } from "./context";
 import { UI_SCALES } from "./prefs";
+import { findInstalls, InstallsResult, LIBRARY_EVENT, libraryAvailable, LibrarySettings, loadLibrarySettings, saveLibrarySettings, STORE_LABEL } from "../fs/library";
+import { chooseGameFolder } from "./Library";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "mods", label: "Mods" },
@@ -249,11 +251,76 @@ function nearestIndex(scale: number) {
   return best;
 }
 
+function GameInstallSection() {
+  const { toast } = useApp();
+  const [settings, setSettings] = useState<LibrarySettings>(loadLibrarySettings);
+  const [result, setResult] = useState<InstallsResult | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => setSettings((e as CustomEvent<LibrarySettings>).detail);
+    window.addEventListener(LIBRARY_EVENT, on);
+    return () => window.removeEventListener(LIBRARY_EVENT, on);
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    findInstalls(settings).then((r) => alive && setResult(r));
+    return () => {
+      alive = false;
+    };
+  }, [settings]);
+  const save = (s: LibrarySettings) => {
+    setSettings(s);
+    saveLibrarySettings(s);
+  };
+  if (!libraryAvailable()) return null;
+  const list = (result?.installs ?? []).filter((i) => i.path);
+  return (
+    <>
+      <h4 className="settings-h">Hacknet installation</h4>
+      <p>
+        VRift finds Hacknet from Steam and GOG by itself. If you got it from itch.io, or it lives somewhere unusual, choose its folder (the one with <code>Hacknet.exe</code>). The first one listed is where new extensions go.
+      </p>
+      <div className="game-installs">
+        {!result && <span className="msg info">looking…</span>}
+        {result && !list.length && <span className="msg info">No Hacknet install found yet.</span>}
+        {list.map((i) => (
+          <div className="game-install" key={i.store + i.path}>
+            <span className="store">{STORE_LABEL[i.store]}</span>
+            <span className="path">{i.path}</span>
+          </div>
+        ))}
+        {result?.manualError && <span className="msg error">{result.manualError}</span>}
+      </div>
+      <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+        <button
+          className="hn-btn small primary"
+          onClick={async () => {
+            const next = await chooseGameFolder(settings, toast);
+            if (next) setSettings(next);
+          }}
+        >
+          {settings.gamePath ? "choose a different folder…" : "choose game folder…"}
+        </button>
+        {settings.gamePath && (
+          <button className="hn-btn small" onClick={() => save({ ...settings, gamePath: null })}>
+            forget chosen folder
+          </button>
+        )}
+        <label className="lib-check">
+          <input type="checkbox" checked={settings.autoDetect} onChange={(e) => save({ ...settings, autoDetect: e.target.checked })} />
+          auto-detect Steam / GOG
+        </label>
+      </div>
+      <h4 className="settings-h">Hot reload</h4>
+    </>
+  );
+}
+
 function GameTab() {
   const { prefs, setPrefs, game } = useApp();
   const s = game.status;
   return (
     <>
+      <GameInstallSection />
       <p>
         VRift can reload files inside a running game through <a href="https://github.com/fengxu-30338/HacknetHotReplace" onClick={(e) => (e.preventDefault(), openUrl("https://github.com/fengxu-30338/HacknetHotReplace"))}>HacknetHotReplace</a>, a Pathfinder plugin. Install it into{" "}
         <code>Hacknet/BepInEx/plugins</code> (it must be installed globally, not per extension), start the game, then use the Game menu.

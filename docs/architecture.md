@@ -1,6 +1,6 @@
 # Architecture
 
-VRift is a local-first Tauri 2 desktop application with a React 19 and TypeScript frontend. The frontend contains nearly all editor behavior; the Rust backend exposes native filesystem and Steam-library operations.
+VRift is a local-first Tauri 2 desktop application with a React 19 and TypeScript frontend. The frontend contains nearly all editor behavior; the Rust backend exposes native filesystem and game-install operations.
 
 ## System overview
 
@@ -127,13 +127,13 @@ The Tauri command surface accepts absolute paths constructed by the frontend. VR
 
 ## Extension library
 
-The Rust `library` module detects Steam roots per operating system, parses old and new `libraryfolders.vdf`, locates Hacknet game and Workshop directories, and scans up to two folder levels for `ExtensionInfo.xml`. It extracts summary metadata without loading a full project.
+The Rust `library` module finds Hacknet installs: Steam roots per operating system and every library in old and new `libraryfolders.vdf` (game and Workshop folders), and GOG (the `GOG.com\Games` registry keys on Windows, GOG installer and Heroic folders on Linux, `Hacknet.app` on macOS). `resolve_game_root` turns any folder the user picks (the game folder, its `Extensions` folder, a GOG `game/` subfolder, an app bundle) into the game folder, which is how itch.io and other copies are added. It scans up to two folder levels for `ExtensionInfo.xml`. It extracts summary metadata without loading a full project.
 
 Workshop copying is recursive and fails if the destination already exists. Library preferences and recents are stored in local storage by the frontend.
 
 ## UI composition
 
-- `Welcome` and `Library`: startup, recents, Steam discovery, and copies.
+- `Welcome` and `Library`: startup, recents, install discovery (Steam, GOG, chosen folder), and copies.
 - `Explorer`: grouped and filtered files (module kinds, images, web, config).
 - `Editor`: tabs (shortcuts, drag, context menu), modes, file actions, and specialized editors.
 - `FormEditor`: schema-driven elements and fields; exports `Inspector`.

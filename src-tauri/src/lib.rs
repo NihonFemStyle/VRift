@@ -167,10 +167,25 @@ fn path_exists(path: String) -> bool {
 
 // ------------------------------------------------------------------ extension library
 
-/// Hacknet's Extensions folder(s) and Steam Workshop folder(s), found automatically.
+/// Hacknet installs found automatically (Steam, GOG). Runs off the UI thread.
 #[tauri::command]
-fn detect_steam_sources() -> Vec<library::Source> {
-    library::detect_sources()
+async fn detect_game_installs() -> Vec<library::Install> {
+    tauri::async_runtime::spawn_blocking(library::detect_installs).await.unwrap_or_default()
+}
+
+/// Check a folder the user chose as their Hacknet install (itch.io, a copy, …).
+#[tauri::command]
+fn inspect_game_folder(path: String) -> Result<library::Install, String> {
+    library::inspect_game_folder(Path::new(&path))
+}
+
+/// Where hot reload looks for the game's heartbeat: Steam libraries (Proton) and Wine
+/// prefixes around detected or chosen game folders.
+fn game_locations(extra: &[String]) -> (Vec<PathBuf>, Vec<PathBuf>) {
+    let libs = library::steam_libraries(&library::steam_roots());
+    let mut roots: Vec<PathBuf> = library::gog_installs(&library::gog_candidates()).into_iter().map(|i| PathBuf::from(i.path)).collect();
+    roots.extend(extra.iter().filter(|p| !p.is_empty()).map(PathBuf::from));
+    (libs, library::wine_prefixes(&roots))
 }
 
 #[derive(Serialize)]
@@ -213,10 +228,10 @@ async fn copy_extension(src: String, dest_parent: String, name: String) -> Resul
 
 /// Whether a game with HacknetHotReplace is running, and on which port.
 #[tauri::command]
-async fn hotreload_status() -> hotreload::Status {
-    tauri::async_runtime::spawn_blocking(|| {
-        let libs = library::steam_libraries(&library::steam_roots());
-        hotreload::discover(&libs)
+async fn hotreload_status(games: Option<Vec<String>>) -> hotreload::Status {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (libs, prefixes) = game_locations(&games.unwrap_or_default());
+        hotreload::discover(&libs, &prefixes)
     })
     .await
     .unwrap_or_default()
@@ -224,10 +239,10 @@ async fn hotreload_status() -> hotreload::Status {
 
 /// Send one HotReplace command. `payload` is the inner XML of <Payload>.
 #[tauri::command]
-async fn hotreload_send(command: String, payload: String, timeout_ms: Option<u64>) -> Result<hotreload::Response, String> {
+async fn hotreload_send(command: String, payload: String, timeout_ms: Option<u64>, games: Option<Vec<String>>) -> Result<hotreload::Response, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let libs = library::steam_libraries(&library::steam_roots());
-        let status = hotreload::discover(&libs);
+        let (libs, prefixes) = game_locations(&games.unwrap_or_default());
+        let status = hotreload::discover(&libs, &prefixes);
         let port = status.port.ok_or("HacknetHotReplace was not found. Install it in Hacknet's BepInEx/plugins folder and start the game.")?;
         let timeout = std::time::Duration::from_millis(timeout_ms.unwrap_or(10_000).clamp(500, 120_000));
         hotreload::send(port, &command, &payload, timeout)
@@ -251,7 +266,8 @@ pub fn run() {
             rename_path,
             trash_path,
             path_exists,
-            detect_steam_sources,
+            detect_game_installs,
+            inspect_game_folder,
             scan_extension_folders,
             copy_extension,
             hotreload_status,

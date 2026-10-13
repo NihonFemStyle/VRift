@@ -2,33 +2,51 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { pickFolder } from "../fs/tauriFs";
 import {
   copyExtension,
-  detectSteamSources,
   ExtensionSummary,
+  findInstalls,
   FolderScan,
+  GameInstall,
+  inspectGameFolder,
+  LIBRARY_EVENT,
   libraryAvailable,
   LibrarySettings,
   loadLibrarySettings,
   loadLogo,
+  preferredInstall,
   samePath,
   saveLibrarySettings,
   scanFolders,
-  SteamSource,
+  STORE_LABEL,
 } from "../fs/library";
 
 type SourceKind = "game" | "workshop" | "custom";
 
 interface SourceView {
   kind: SourceKind;
+  label: string;
+  auto: boolean;
   path: string;
   exists: boolean;
+  /** Shown instead of "missing" when the folder doesn't exist. */
+  missingText?: string;
   extensions: ExtensionSummary[];
 }
 
-const KIND_LABEL: Record<SourceKind, string> = {
-  game: "Hacknet / Extensions",
-  workshop: "Steam Workshop",
-  custom: "Folder",
-};
+/** Let the user point VRift at their Hacknet folder. Returns the saved settings, or null. */
+export async function chooseGameFolder(settings: LibrarySettings, toast: (msg: string, kind?: "info" | "error") => void): Promise<LibrarySettings | null> {
+  const dir = await pickFolder("Choose your Hacknet folder (the one with Hacknet.exe)");
+  if (!dir) return null;
+  try {
+    const found = await inspectGameFolder(dir);
+    const next = { ...settings, gamePath: found.path, askedForGame: true };
+    saveLibrarySettings(next);
+    toast(`Using Hacknet in ${found.path}`);
+    return next;
+  } catch (e) {
+    toast(String(e), "error");
+    return null;
+  }
+}
 
 export function Library(props: {
   onOpen: (path: string) => void;
@@ -37,12 +55,21 @@ export function Library(props: {
   toast: (msg: string, kind?: "info" | "error") => void;
 }) {
   const [settings, setSettings] = useState<LibrarySettings>(loadLibrarySettings);
-  const [steam, setSteam] = useState<SteamSource[]>([]);
+  const [installs, setInstalls] = useState<GameInstall[]>([]);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [detected, setDetected] = useState(false);
   const [scans, setScans] = useState<FolderScan[]>([]);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const available = libraryAvailable();
+
+  // the Settings window can change these too
+  useEffect(() => {
+    const on = (e: Event) => setSettings((e as CustomEvent<LibrarySettings>).detail);
+    window.addEventListener(LIBRARY_EVENT, on);
+    return () => window.removeEventListener(LIBRARY_EVENT, on);
+  }, []);
 
   const update = (s: LibrarySettings) => {
     setSettings(s);
@@ -53,10 +80,12 @@ export function Library(props: {
     if (!available) return;
     setBusy(true);
     try {
-      const st = settings.autoDetectSteam ? await detectSteamSources() : [];
-      setSteam(st);
-      const all = [...st.map((s) => s.path), ...settings.folders.filter((f) => !st.some((s) => samePath(s.path, f)))];
-      setScans(await scanFolders(all));
+      const r = await findInstalls(settings);
+      setInstalls(r.installs);
+      setManualError(r.manualError);
+      setDetected(true);
+      const folders = [...r.installs.flatMap((i) => [i.path ? i.extensions : "", i.workshop ?? ""]).filter(Boolean), ...settings.folders];
+      setScans(await scanFolders(folders.filter((f, i) => folders.findIndex((g) => samePath(f, g)) === i)));
     } catch (e) {
       props.toast(`Library scan failed: ${e}`, "error");
     } finally {
@@ -70,25 +99,30 @@ export function Library(props: {
 
   const sources: SourceView[] = useMemo(() => {
     const list: SourceView[] = [];
-    for (const s of steam) {
-      const sc = scans.find((x) => samePath(x.folder, s.path));
-      list.push({ kind: s.kind, path: s.path, exists: sc?.exists ?? true, extensions: sc?.extensions ?? [] });
+    const scanOf = (path: string) => scans.find((x) => samePath(x.folder, path));
+    const seen: string[] = [];
+    const push = (v: Omit<SourceView, "exists" | "extensions">) => {
+      if (seen.some((p) => samePath(p, v.path))) return;
+      seen.push(v.path);
+      const sc = scanOf(v.path);
+      list.push({ ...v, exists: sc?.exists ?? true, extensions: sc?.extensions ?? [] });
+    };
+    for (const i of installs) {
+      if (i.path) push({ kind: "game", label: `Hacknet / Extensions · ${STORE_LABEL[i.store]}`, auto: i.store !== "manual", path: i.extensions, missingText: "No Extensions folder yet. Start Hacknet once, or create it." });
+      if (i.workshop) push({ kind: "workshop", label: "Steam Workshop", auto: true, path: i.workshop });
     }
-    for (const f of settings.folders) {
-      if (steam.some((s) => samePath(s.path, f))) continue;
-      const sc = scans.find((x) => samePath(x.folder, f));
-      list.push({ kind: "custom", path: f, exists: sc?.exists ?? true, extensions: sc?.extensions ?? [] });
-    }
+    for (const f of settings.folders) push({ kind: "custom", label: "Folder", auto: false, path: f });
     return list;
-  }, [steam, scans, settings.folders]);
+  }, [installs, scans, settings.folders]);
 
-  const gameExtensions = steam.find((s) => s.kind === "game")?.path;
+  const main = preferredInstall(installs);
   const total = sources.reduce((n, s) => n + s.extensions.length, 0);
+  const noGame = detected && !main;
 
   const addFolder = async () => {
     const dir = await pickFolder("Add a folder that contains Hacknet extensions");
     if (!dir) return;
-    if (settings.folders.some((f) => samePath(f, dir)) || steam.some((s) => samePath(s.path, dir))) {
+    if (sources.some((s) => samePath(s.path, dir))) {
       props.toast("That folder is already in the library.");
       return;
     }
@@ -97,8 +131,13 @@ export function Library(props: {
 
   const removeFolder = (path: string) => update({ ...settings, folders: settings.folders.filter((f) => !samePath(f, path)) });
 
+  const chooseGame = async () => {
+    const next = await chooseGameFolder(settings, props.toast);
+    if (next) setSettings(next);
+  };
+
   const makeCopy = async (ext: ExtensionSummary) => {
-    let parent = gameExtensions;
+    let parent = main?.extensions;
     if (!parent) {
       parent = (await pickFolder("Choose where to put the editable copy")) ?? undefined;
       if (!parent) return;
@@ -159,17 +198,51 @@ export function Library(props: {
         <button className="hn-btn small" onClick={rescan} disabled={busy}>
           {busy ? "scanning…" : "rescan"}
         </button>
-        <label className="lib-check" title="Find Hacknet's Extensions folder and your Workshop downloads automatically">
-          <input type="checkbox" checked={settings.autoDetectSteam} onChange={(e) => update({ ...settings, autoDetectSteam: e.target.checked })} />
-          Steam auto-detect
+        <button className="hn-btn small" onClick={chooseGame} title={main ? `Hacknet: ${main.path}\nClick to choose a different game folder` : "Choose the folder Hacknet is installed in"}>
+          game: {main ? STORE_LABEL[main.store] : "not set"}
+        </button>
+        <label className="lib-check" title="Find Hacknet installed through Steam or GOG automatically">
+          <input type="checkbox" checked={settings.autoDetect} onChange={(e) => update({ ...settings, autoDetect: e.target.checked })} />
+          auto-detect Steam / GOG
         </label>
       </div>
       <div className="lib-body">
+        {manualError && (
+          <div className="lib-ask error">
+            <b>Your chosen Hacknet folder can't be used.</b>
+            <span>{manualError}</span>
+            <div className="row">
+              <button className="hn-btn small primary" onClick={chooseGame}>
+                choose again
+              </button>
+              <button className="hn-btn small" onClick={() => update({ ...settings, gamePath: null })}>
+                forget it
+              </button>
+            </div>
+          </div>
+        )}
+        {noGame && !settings.askedForGame && !manualError && (
+          <div className="lib-ask">
+            <b>Where is Hacknet installed?</b>
+            <span>
+              {settings.autoDetect ? "VRift couldn't find it through Steam or GOG. " : ""}If you got Hacknet from itch.io, or installed it somewhere unusual, choose its folder (the one with
+              Hacknet.exe). You can change this any time in Settings → Game.
+            </span>
+            <div className="row">
+              <button className="hn-btn small primary" onClick={chooseGame}>
+                choose game folder…
+              </button>
+              <button className="hn-btn small" onClick={() => update({ ...settings, askedForGame: true })}>
+                not now
+              </button>
+            </div>
+          </div>
+        )}
         {sources.length === 0 && !busy && (
           <div className="empty">
             No library folders yet.
             <br />
-            {settings.autoDetectSteam ? "Hacknet was not found through Steam. " : ""}Use <b style={{ color: "var(--shell)" }}>+ add folder</b> to add a folder that contains extensions.
+            Use <b style={{ color: "var(--shell)" }}>+ add folder</b> to add a folder that contains extensions.
           </div>
         )}
         {sources.map((s) => {
@@ -180,12 +253,12 @@ export function Library(props: {
             <div className="exe" key={s.kind + s.path}>
               <div className="exe-head" onClick={() => setCollapsed({ ...collapsed, [s.path]: !collapsed[s.path] })}>
                 <span className="caret">{isCollapsed ? "▸" : "▾"}</span>
-                <span>{KIND_LABEL[s.kind]}</span>
-                {s.kind !== "custom" && <span className="badge kind">auto</span>}
+                <span>{s.label}</span>
+                {s.auto && <span className="badge kind">auto</span>}
                 <span className="lib-path" title={s.path}>
                   {s.path}
                 </span>
-                <span className="count">{s.exists ? exts.length : "missing"}</span>
+                <span className="count">{s.exists ? exts.length : s.missingText ? "not created" : "missing"}</span>
                 {s.kind === "custom" && (
                   <button
                     className="icon-btn"
@@ -201,7 +274,7 @@ export function Library(props: {
               </div>
               {!isCollapsed && (
                 <div className="lib-grid">
-                  {!s.exists && <div className="msg error" style={{ padding: 8 }}>This folder no longer exists.</div>}
+                  {!s.exists && <div className="msg error" style={{ padding: 8 }}>{s.missingText ?? "This folder no longer exists."}</div>}
                   {s.exists && exts.length === 0 && <div className="msg info" style={{ padding: 8 }}>No extensions found here.</div>}
                   {exts.map((e) => (
                     <ExtensionCard key={e.path} ext={e} kind={s.kind} onOpen={() => open(e, s.kind)} onCopy={() => makeCopy(e)} />

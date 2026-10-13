@@ -7,7 +7,7 @@ import { Diagnostic, summarize, validateProject } from "./core/validate";
 import { basename, isImagePath, isTauri, joinPath, looksLikeText, normalizeRel } from "./fs/fs";
 import { MemoryFs } from "./fs/memoryFs";
 import { pickFolder, TauriFs } from "./fs/tauriFs";
-import { detectSteamSources } from "./fs/library";
+import { findInstalls, preferredInstall } from "./fs/library";
 import { demoExtensionFiles } from "./templates/demo";
 import { FileKind, NEW_FILE_TEMPLATES, NewFileTemplate, newExtensionFiles } from "./templates/templates";
 import { AppApi, AppContext, GameApi, NavTarget, PanelId, PromptOptions, SettingsTab, SuppressScope, useProjectVersion } from "./ui/context";
@@ -468,9 +468,9 @@ export default function App() {
     if (isTauri()) {
       let gameDir: string | undefined;
       try {
-        gameDir = (await detectSteamSources()).find((x) => x.kind === "game")?.path;
+        gameDir = preferredInstall((await findInstalls()).installs)?.extensions;
       } catch {
-        /* Steam not found */
+        /* no install found */
       }
       const parent = await pickFolder("Choose where to create the extension (usually Hacknet/Extensions)", gameDir);
       if (!parent) return;

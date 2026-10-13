@@ -2,7 +2,9 @@
 
 ## VRift does not find Hacknet or my extensions
 
-- Leave **Steam auto-detect** enabled and choose **rescan**.
+- Leave **auto-detect Steam / GOG** enabled and choose **rescan**.
+- Bought it on itch.io, or installed it somewhere unusual? Click **game:** in the library toolbar (or **Settings → Game**) and choose the folder that contains `Hacknet.exe`. VRift also accepts the `Extensions` folder or a folder around the game (a GOG `game/` subfolder, `Hacknet.app`).
+- If the chosen folder was moved or deleted, the library says so and offers to choose again.
 - Use **+ add folder** to add Hacknet's `Extensions` directory or a folder containing extensions.
 - Ensure every extension contains `ExtensionInfo.xml`.
 - The library scans the selected folder, its children, and one additional grouping level.
@@ -41,7 +43,7 @@ Hover it in the diagnostics list and choose **ignore ▾** (this one, this kind 
 
 - HacknetHotReplace must be installed **globally** in `Hacknet/BepInEx/plugins`, with Pathfinder installed.
 - Start Hacknet and wait a few seconds; the top bar shows **● GAME** when VRift sees the plugin's heartbeat.
-- The plugin publishes its port in the Windows registry (`HKCU\Software\Hacknet`), in `~/.HacknetHotReplace/` for a native Linux/macOS game, or in the Proton prefix's registry (`steamapps/compatdata/365450/pfx/user.reg`). VRift checks all three.
+- The plugin publishes its port in the Windows registry (`HKCU\Software\Hacknet`), in `~/.HacknetHotReplace/` for a native Linux/macOS game, or in the Wine registry the game runs with: the Proton prefix (`steamapps/compatdata/365450/pfx/user.reg`), the prefix around a GOG/itch.io copy (the folder above `drive_c`), or Heroic's prefix for the GOG version. VRift checks all of them.
 - Hot reload commands only work after an extension is loaded in the game (**Game → Open extension in game**).
 - Reloading happens on the game's next frame. If a command times out, check that the game isn't paused on a loading screen or a modal dialog.
 - Firewalls rarely matter (everything stays on 127.0.0.1), but security software that blocks local UDP will stop it.
