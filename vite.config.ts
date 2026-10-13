@@ -15,6 +15,9 @@ export default defineConfig({
   build: {
     target: "es2022",
     chunkSizeWarningLimit: 2000,
+    // Fonts stay real files instead of data: URLs, which a strict Content-Security-Policy
+    // (font-src 'self', as on the website's live demo) refuses to load.
+    assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/i.test(file) ? false : undefined),
   },
   test: { environment: "node" },
 } as any);

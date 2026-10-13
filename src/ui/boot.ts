@@ -15,7 +15,12 @@ export const boot: BootScreen = {
   begin: (id) => screen()?.begin(id),
   done: (id) => screen()?.done(id),
   fail: (e) => screen()?.fail(e),
-  finish: () => screen()?.finish(),
+  finish: () => {
+    const s = screen();
+    if (s) return s.finish();
+    // boot.js did not run (blocked or missing): never leave its static screen over the editor
+    document.getElementById("boot")?.remove();
+  },
 };
 
 /** Remember the theme's main colours so the next start-up screen already matches it. */
