@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.1
+
+- **ChatView Fix** A bug was found that broke playback, this should be fixed now
+
 ## 2.1.0
 
 - **Walkthrough** (Project → Walkthrough…): the route through the extension in play order, worked out from the files: how each mission arrives, its goals as plain steps with real names and IPs, what it takes to break in (ports, proxy, firewall solution, admin password), where the player learns about each computer, and what runs or unlocks next. Add hints for puzzles that live in the story (saved in VRift.json).

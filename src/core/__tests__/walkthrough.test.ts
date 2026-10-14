@@ -69,7 +69,7 @@ describe("walkthrough export for testers", () => {
     const w = buildWalkthrough(p);
     w.name = 'Evil</script><img src=x onerror="alert(1)">';
     const step = w.sections.find((s) => s.kind === "mission")!.steps[0];
-    const html = walkthroughPage(w, { intro: "<b>hi</b>", hints: { [step.id]: "</script><script>alert(2)</script>" }, includeActions: false, includeDetails: true, version: "2.1.0" });
+    const html = walkthroughPage(w, { intro: "<b>hi</b>", hints: { [step.id]: "</script><script>alert(2)</script>" }, includeActions: false, includeDetails: true, version: "2.1.1" });
     expect(html).not.toContain("<img src=x");
     expect(html).not.toContain("<b>hi</b>");
     expect(html.match(/<\/script>/g)!.length).toBe(2); // only the page's own two scripts

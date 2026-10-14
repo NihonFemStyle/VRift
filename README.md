@@ -95,9 +95,9 @@ Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which w
 
 ## Releasing
 
-The version lives in the [`VERSION`](VERSION) file (currently `2.1.0`). GitHub Actions does the rest:
+The version lives in the [`VERSION`](VERSION) file (currently `2.1.1`). GitHub Actions does the rest:
 
-1. Change `VERSION` (for example `2.1.0` → `2.2.0`, plain `X.Y.Z` only).
+1. Change `VERSION` (for example `2.1.1` → `2.2.0`, plain `X.Y.Z` only).
 2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Commit and push to `main`.
 

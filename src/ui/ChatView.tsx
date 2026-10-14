@@ -82,8 +82,10 @@ export function ChatView({ file }: { file: ProjectFile }) {
     let raf = 0;
     let last = performance.now();
     const step = (now: number) => {
-      setT((x) => (x === null ? null : x + ((now - last) / 1000) * speed));
+      // work the step out now: the updater may run later, after `last` has moved on
+      const dt = ((now - last) / 1000) * speed;
       last = now;
+      setT((x) => (x === null ? null : x + dt));
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
