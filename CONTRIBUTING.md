@@ -4,7 +4,7 @@ Thank you for helping improve VRift. Contributions can include bug reports, feat
 
 ## Before you start
 
-- Search existing [issues](https://github.com/XeraFang-Solutoins/VRift/issues) and pull requests to avoid duplicate work.
+- Search existing [issues](https://github.com/XeraFang-Solutions/VRift/issues) and pull requests to avoid duplicate work.
 - Use the bug or feature issue template when opening a public report.
 - For a substantial feature or architectural change, open an issue first so its scope and compatibility can be discussed.
 - Report possible vulnerabilities privately according to [SECURITY.md](SECURITY.md), not in a public issue or pull request.

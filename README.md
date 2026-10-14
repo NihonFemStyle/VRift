@@ -40,6 +40,9 @@ Writing a Hacknet extension by hand means juggling hundreds of XML files that al
 - **netMap.** A live graph of every computer, grouped by folder, with `dlink`s drawn as edges. Click a node to open it.
 - **Raw XML whenever you want.** Every XML file has a FORM/XML toggle. VRift preserves your comments, formatting and attribute order: files you don't touch are written back byte-for-byte (tested against all 600 XML files in System Rift).
 - **Hacker script editor** with syntax highlighting and a clickable command reference.
+- **IRC conversations as a chat.** CHAT shows an action file's IRC messages as a chat log you type into, with real-time playback and tools to pace, stretch or shift a scene. Or write and paste whole conversations as plain text lines.
+- **Walkthrough for playtesters.** The extension's route in play order, worked out from the files, with what it takes to break into each computer and where the player learns about it. Add hints and export a checklist page testers use in any browser; their report shows where they got stuck.
+- **Wildcards understood.** Stuxnet and mod wildcards like `#BITCOMP_IP#` and `#IP_compId#` are explained, checked and kept in step with renames.
 - **Schemas from mod source.** Generate a schema module for any Pathfinder mod from its C# source, for one extension or all of them.
 - **Built-in documentation** (F1), Discord Rich Presence, a theme picker with your own saved themes, message board thread previews and audio previews.
 - **Terminal.** Commands: `open <id>`, `refs <id>`, `find <text>`, `flags`, `nodes`, `mods`, `story`, `game`, `reload`, `connect <id>`, `theme <name>`, `validate`.
@@ -92,9 +95,9 @@ Hacknet runs under Proton, but VRift's Windows build relies on WebView2, which w
 
 ## Releasing
 
-The version lives in the [`VERSION`](VERSION) file (currently `2.0.1`). GitHub Actions does the rest:
+The version lives in the [`VERSION`](VERSION) file (currently `2.1.0`). GitHub Actions does the rest:
 
-1. Change `VERSION` (for example `2.0.1` → `2.1.0`, plain `X.Y.Z` only).
+1. Change `VERSION` (for example `2.1.0` → `2.2.0`, plain `X.Y.Z` only).
 2. Run `npm run version:sync`. This copies it into `package.json`, `package-lock.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Commit and push to `main`.
 
@@ -153,7 +156,7 @@ scripts/       schema generators (base game + mods), setup checker, app icon sou
 
 - Dev Together, Because this is *clearly possible and ambitious*
 
-Done in 2.0: node graph, timeline and keyframes, theme and shader editors, Debug Mode, backups, project sorter, git, schemas from mod source, docs inside VRift, Discord Rich Presence. Done in 1.1: mission flow graph, visual action builder, flag timeline, hot reload through HacknetHotReplace, image and web page previews, people/faction views, Stuxnet + 0DTK schemas with modular schema support, tab shortcuts, GUI scaling. See the [changelog](CHANGELOG.md).
+Done in 2.1: CHAT view and conversations as text, walkthrough and playtest checklist, timing tools, wildcard checks, faster start-up. Done in 2.0: node graph, timeline and keyframes, theme and shader editors, Debug Mode, backups, project sorter, git, schemas from mod source, docs inside VRift, Discord Rich Presence. Done in 1.1: mission flow graph, visual action builder, flag timeline, hot reload through HacknetHotReplace, image and web page previews, people/faction views, Stuxnet + 0DTK schemas with modular schema support, tab shortcuts, GUI scaling. See the [changelog](CHANGELOG.md).
 
 ### Fixed bugs
 

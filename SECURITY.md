@@ -18,7 +18,7 @@ Users should reproduce a suspected issue on the latest release when practical. I
 
 Do not open a public issue, discussion, or pull request for a vulnerability that has not been coordinated with the maintainers.
 
-Submit a private report through [GitHub Security Advisories](https://github.com/XeraFang-Solutoins/VRift/security/advisories/new). Include as much of the following as possible:
+Submit a private report through [GitHub Security Advisories](https://github.com/XeraFang-Solutions/VRift/security/advisories/new). Include as much of the following as possible:
 
 - the affected VRift version or commit;
 - operating system and installation type;
@@ -58,7 +58,7 @@ Please allow time for a patched release to reach every supported platform before
 - unsupported older releases when the current release is not affected; and
 - automated dependency reports without evidence that the vulnerable behavior is reachable.
 
-A reliability bug may still belong in the public [bug tracker](https://github.com/XeraFang-Solutoins/VRift/issues) even when it is not a security vulnerability. When uncertain, report privately first.
+A reliability bug may still belong in the public [bug tracker](https://github.com/XeraFang-Solutions/VRift/issues) even when it is not a security vulnerability. When uncertain, report privately first.
 
 ## Safe research guidelines
 

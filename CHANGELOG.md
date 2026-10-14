@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.0
+
+- **Walkthrough** (Project → Walkthrough…): the route through the extension in play order, worked out from the files: how each mission arrives, its goals as plain steps with real names and IPs, what it takes to break in (ports, proxy, firewall solution, admin password), where the player learns about each computer, and what runs or unlocks next. Add hints for puzzles that live in the story (saved in VRift.json).
+- **Playtest checklist**: export the walkthrough as one web page testers open in any browser, without VRift. They tick steps off, open hints only when stuck, write notes, and copy back a report of what they finished, when, and which hints they needed.
+- **CHAT view** for action files: IRC messages as a chat log you type into, with the gap to the line before and the Delay the game reads, inline editing, other actions in between, and playback at the real pace.
+- **TEXT mode** for conversations: write or paste many messages as lines (`2 h4 fresh meat!`, raw XML for other actions, `#DELAYED#`, `@computer`, `// notes`) and apply them as ordinary AddIRCMessage actions. Lines that cannot be read are listed by number.
+- **Timing tools**: stretch, shift or auto-pace a whole conversation or a range of lines in CHAT, and stretch in TIMING; later actions move along. Chat messages are spell-checked.
+- **Wildcards**: Stuxnet wildcards are matched to the actions that define them (`#NAME_IP#`, `#NAME_PASS#`, `#NAME#`), `#IP_compId#` (used by some Pathfinder mods) is checked and updated on rename, text fields explain the wildcards they contain, and undefined wildcards and written IPs that no computer has are reported.
+- **Faster start-up**: editors and windows load the first time they are opened, so VRift loads less than half as much code to start.
+- **CI build cache**: GitHub Actions reuse the previous build per platform, and build again from scratch (replacing the cache) if the cached build fails.
+- Delays relative to the previous action count from the nearest action on the timeline, skipping actions that run at once.
+- VRift.json keeps keys VRift does not use when it rewrites the file.
+
 ## 2.0.1
 
 - **DOMAIN CHANGE** This project has been moved to XeraFang.Solutions
