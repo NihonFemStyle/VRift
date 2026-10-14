@@ -36,13 +36,13 @@ const VANILLA_GROUPS: Record<string, string> = {
   LaunchHackScript: "Effects",
 };
 
-function groupOf(name: string, def: NodeDef | null): string {
+export function groupOf(name: string, def: NodeDef | null): string {
   return def?.group ?? (def?.module ? def.module : VANILLA_GROUPS[name] ?? "Other");
 }
 
 const GROUP_ORDER = ["Story", "Chat", "Files", "Nodes", "Effects"];
 
-interface PaletteItem {
+export interface PaletteItem {
   name: string;
   def: NodeDef;
   group: string;
@@ -258,7 +258,7 @@ export function ActionBuilder({ file }: { file: ProjectFile }) {
   );
 }
 
-function Palette({ label, items, onPick, primary }: { label: string; items: PaletteItem[]; onPick: (it: PaletteItem) => void; primary?: boolean }) {
+export function Palette({ label, items, onPick, primary }: { label: string; items: PaletteItem[]; onPick: (it: PaletteItem) => void; primary?: boolean }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const ref = useRef<HTMLDivElement>(null);

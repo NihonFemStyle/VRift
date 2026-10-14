@@ -85,6 +85,16 @@ These information messages may be legitimate for Pathfinder mods. VRift preserve
 
 Hacknet only gives a computer a random IP when the `ip` attribute is **missing**. `ip=""` sets an empty IP; this is the base game's behaviour, not Pathfinder's. Remove the attribute, write `ip="#RANDOM_IP#"`, or type an address. VRift reports `ip=""` as a warning. Computers created with VRift before 2.0 had `ip=""` from the template, so check older files.
 
+## "#NAME# is not a wildcard VRift knows" or "No computer has the IP …"
+
+Both are information, not errors. The first means nothing VRift knows defines that wildcard: Hacknet shows it as typed unless a mod fills it in. If a mod you use does (one VRift has no module for), choose **ignore ▾ → this kind everywhere**. Stuxnet's wildcards only count once the Stuxnet module is on, and only in the exact form their action makes (`AddNodeIPWildcard Name="Bit"` makes `#BIT_IP#`, not `#BIT#`).
+
+The second means an IP written in the text belongs to no computer and is not set by a `ChangeIP` action. Often a computer's IP was changed and the text that mentions it was not; if the IP is made up on purpose, ignore it the same way. Private addresses such as 192.168.x.x are never reported.
+
+## The walkthrough misses a mission or shows it as never reached
+
+The walkthrough follows what VRift can see: next missions, branches, mission hubs and the actions that load missions or action files. A mission loaded only by a mod VRift has no module for, or through a path with a typo, is listed under **never reached**. Fix the path, or turn on the mod's module (**Project → Mods…**, or generate one from its source) so VRift knows the action that loads it.
+
 ## Sounds show no waveform or do not play
 
 - On macOS the system webview cannot decode Ogg Vorbis, so `.ogg` files show no waveform and do not play in VRift. The game is not affected. Convert a copy to `.wav` to time against it, or use Windows/Linux.

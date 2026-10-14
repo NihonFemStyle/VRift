@@ -37,6 +37,10 @@ src/core
   story.ts     story graph and flag timeline
   eventGraph.ts   node graph of an action file (stacks, flag and file wires)
   actionDelays.ts action delays as gaps to the previous action, ripple edits
+  ircChat.ts      IRC conversations as text: parse, export, apply; pacing
+  walkthrough.ts  the route in play order: steps, break-in facts, where to look
+  walkthroughExport.ts  the tester checklist page
+  wildcards.ts    #WILDCARD# definitions and checks, written IPs
   animation.ts    Stuxnet animated themes/cutscenes: timeline, frame state, keyframes
   hacknetTheme.ts CustomTheme colour slots, defaults and layouts
   shader.ts       Stuxnet.OpenGL shader inputs and WebGL translation
@@ -157,6 +161,16 @@ Songs on those timelines (`ui/audioTrack.ts`) are read as raw bytes, decoded onc
 
 `read_source_tree` returns a mod's `.cs` files; `modSource.ts` finds Pathfinder registrations (`[Action]`/`ActionManager.Register…`, conditions, `DaemonManager.RegisterDaemon`, goals, executables, `BepInPlugin`) and their `[XMLStorage]` fields, and writes a module in the `VRift.schema.json` format. Shared modules live in local storage (`vrift.sharedModules`) and switch on when the mod's DLL is in `Plugins/`.
 
+## Walkthrough
+
+`walkthrough.ts` walks the story graph from the start, depth first in play order: immediate effects (mission start/end functions, loaded action files) before side content, the next mission last, and the sequencer's actions after everything else. Goals become steps with computer names and IPs; facts come from each computer's own tags (`childAttrs`), and leads from computer references (`dlink`, StartingVisibleNodes, email links and accounts, actions that show or link a computer) plus IPs found in any file's text. Step ids are `<file>#goal<n>` (and `<file>#` for a whole mission), which key the author's hints in `VRift.json`.
+
+`walkthroughExport.ts` writes one self-contained HTML page: the data goes in a JSON script tag (with `<` escaped), the page builds the DOM with `textContent`, and ticks, opened hints and notes live in the tester's `localStorage`. It loads nothing from the network.
+
+## Loading on demand
+
+Views and windows that are not needed to start (CodeMirror and the XML editor, GRAPH, TIMING, CHAT, TIMELINE, DESIGN, the shader preview, the docs, Walkthrough, Backups, the sorter, Debug Mode, the schema generator) are `React.lazy` components (`ui/lazyNamed.ts`) inside `Suspense`, so they are separate chunks loaded the first time they are opened. Anything other code needs at start-up (editor modes and diagnostic types in `ui/codeModes.ts`) lives outside those chunks.
+
 ## Filesystem boundary
 
 `ProjectFs` normalizes list, text/binary I/O, directory creation, rename, remove, and existence checks. Project-relative paths use forward slashes.
@@ -182,7 +196,7 @@ Workshop copying is recursive and fails if the destination already exists. Libra
 - `Editor`: tabs (shortcuts, drag, context menu), modes, file actions, and specialized editors.
 - `FormEditor`: schema-driven elements and fields; exports `Inspector`.
 - `ActionBuilder`: card/row view of conditional actions with a grouped palette.
-- `EventGraph`: node graph of an action file. `ActionTiming`: action Delays on a time ruler with a song lane.
+- `EventGraph`: node graph of an action file. `ActionTiming`: action Delays on a time ruler with a song lane. `ChatView`: IRC messages as a chat log with a text mode.
 - `Timeline`: Stuxnet animation preview, tracks and keyframes. `SongLane` + `audioTrack.ts`: waveform rows and synced playback.
 - `ThemeDesigner`, `ThemePreview`: CustomTheme editor and desktop preview. `ShaderView` + `shaderRenderer.ts`: live GLSL preview.
 - `MediaViews`: waveform audio player and message board thread preview.

@@ -9,6 +9,7 @@ import type { EnumOption, FieldDef } from "../core/schema";
 import { schema } from "../core/schema";
 import { BUILTIN_SONGS } from "../core/validate";
 import { getAttrCI, XElement } from "../core/xml";
+import { describeWildcard, wildcardDefs } from "../core/wildcards";
 
 export interface Option {
   value: string;
@@ -56,10 +57,15 @@ export function nameKey(field: FieldDef, file: string | undefined): string {
 export function wildcardOptions(project: Project): EnumOption[] {
   const out: EnumOption[] = [...schema.wildcards];
   for (const m of project.activeModules) for (const e of m.executables ?? []) out.push({ value: e.value, desc: e.desc });
-  for (const name of project.index.names.get("stuxnet.wildcard")?.keys() ?? []) {
-    const n = name.toUpperCase();
-    out.push({ value: `#${n}#`, desc: "Custom wildcard (AddCustomWildcard)" }, { value: `#${n}_IP#`, desc: "Node IP wildcard" }, { value: `#${n}_PASS#`, desc: "Node admin password wildcard" });
+  // Stuxnet's, exactly as their actions define them (#NAME#, #NAME_IP#, #NAME_PASS#)
+  const defs = wildcardDefs(project);
+  for (const d of defs.values()) if (d.kind === "custom" || d.kind === "ip" || d.kind === "pass") out.push({ value: `#${d.name}#`, desc: describeWildcard(project, defs, d.name).text });
+  // #IP_id# from a Pathfinder mod: offered once the extension uses that form
+  if ([...project.files.values()].some((f) => f.text.includes("#IP_"))) {
+    for (const [id, list] of project.index.computers) out.push({ value: `#IP_${id}#`, desc: `IP of ${list[0].name || id} (mod wildcard)` });
   }
+  // or the address itself, for computers with a fixed IP (VRift warns if it changes later)
+  for (const [id, list] of project.index.computers) if (/^\d+\.\d+\.\d+\.\d+$/.test(list[0].ip)) out.push({ value: list[0].ip, desc: `IP of ${list[0].name || id}, written as the address` });
   return out;
 }
 

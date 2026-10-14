@@ -215,3 +215,15 @@ describe("delay hosts", () => {
     expect(dh.map((d) => d.file)).toEqual(["Actions/D.xml"]);
   });
 });
+
+describe("VRift.json round trip", () => {
+  it("keeps walkthrough hints and keys VRift does not know", async () => {
+    const { parseConfig, serializeConfig } = await import("../modules");
+    const src = JSON.stringify({ modules: { stuxnet: "on" }, walkthrough: { hints: { "Missions/a.xml#goal0": "it's in the 3rd thread" } }, myTool: { keep: [1, 2] } });
+    const { config } = parseConfig(src);
+    expect(config.walkthrough?.hints?.["Missions/a.xml#goal0"]).toBe("it's in the 3rd thread");
+    const again = JSON.parse(serializeConfig(config));
+    expect(again.myTool).toEqual({ keep: [1, 2] });
+    expect(again.walkthrough.hints["Missions/a.xml#goal0"]).toBe("it's in the 3rd thread");
+  });
+});

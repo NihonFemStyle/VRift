@@ -4,6 +4,10 @@
 #
 # To release: edit VERSION (e.g. 1.0.1 -> 1.1.0), run `npm run version:sync`, commit, push.
 # You can also start it by hand from the Actions tab ("Run workflow").
+#
+# Build cache: each platform restores its last build (cargo registry, src-tauri/target and
+# node_modules), builds with it, and saves a new cache when something changed. If the build
+# fails with the cache, the cache is thrown away and that platform builds again from scratch.
 name: release
 
 on:
@@ -14,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # to replace a build cache that turned out broken
 
 concurrency:
   group: release
@@ -82,10 +87,14 @@ jobs:
         include:
           - platform: windows-latest
             name: windows-x64
+            build_args: --no-bundle
           - platform: ubuntu-22.04
             name: linux-x64
+            build_args: --no-bundle
+          # On macOS the ready-to-run form of an app is the VRift.app folder (not an installer).
           - platform: macos-latest
             name: macos-universal
+            build_args: --target universal-apple-darwin --bundles app
     runs-on: ${{ matrix.platform }}
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -96,15 +105,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
 
       - name: Linux dependencies
         if: runner.os == 'Linux'
@@ -112,18 +116,79 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - run: npm ci
+      # --- build cache -----------------------------------------------------------
+
+      - name: Cache keys
+        id: key
+        shell: bash
+        run: |
+          echo "rust=release-${{ matrix.name }}-$(rustc -V | cut -d' ' -f2)-${{ hashFiles('src-tauri/Cargo.lock') }}" >> "$GITHUB_OUTPUT"
+          echo "nm=nm-release-${{ matrix.name }}-node20-${{ hashFiles('package-lock.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore build cache
+        id: rc
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            src-tauri/target
+          key: ${{ steps.key.outputs.rust }}
+          restore-keys: release-${{ matrix.name }}-
+
+      - name: Restore node_modules
+        id: nm
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.nm }}
+
+      - name: Install
+        if: steps.nm.outputs.cache-hit != 'true'
+        run: npm ci
 
       # --- build (no installers) -------------------------------------------------
 
-      - name: Build (Windows / Linux)
-        if: runner.os != 'macOS'
-        run: npm run tauri build -- --no-bundle
+      - name: Build (with the cache)
+        id: cached
+        continue-on-error: true
+        shell: bash
+        run: npm run tauri build -- ${{ matrix.build_args }}
 
-      # On macOS the ready-to-run form of an app is the VRift.app folder (not an installer).
-      - name: Build (macOS)
-        if: runner.os == 'macOS'
-        run: npm run tauri build -- --target universal-apple-darwin --bundles app
+      - name: Build from scratch (the cached build failed)
+        if: steps.cached.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::warning::The ${{ matrix.name }} build with the cache failed; building again from scratch."
+          rm -rf src-tauri/target node_modules
+          npm ci
+          npm run tauri build -- ${{ matrix.build_args }}
+
+      - name: Drop the broken cache
+        if: steps.cached.outcome == 'failure'
+        shell: bash
+        run: |
+          [ "${{ steps.rc.outputs.cache-hit }}" = "true" ] && gh cache delete "${{ steps.key.outputs.rust }}" --repo "$GITHUB_REPOSITORY" || true
+          [ "${{ steps.nm.outputs.cache-hit }}" = "true" ] && gh cache delete "${{ steps.key.outputs.nm }}" --repo "$GITHUB_REPOSITORY" || true
+
+      - name: Save build cache
+        if: steps.rc.outputs.cache-hit != 'true' || steps.cached.outcome == 'failure'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            src-tauri/target
+          key: ${{ steps.key.outputs.rust }}
+
+      - name: Save node_modules
+        if: steps.nm.outputs.cache-hit != 'true' || steps.cached.outcome == 'failure'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.nm }}
 
       # --- zip ------------------------------------------------------------------
 

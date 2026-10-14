@@ -19,11 +19,20 @@ export function fmtDelay(n: number): string {
   return String(Math.round(Math.max(0, n) * 1000) / 1000);
 }
 
-/** The action before `a` in its trigger, or null when it is the first. */
+/**
+ * Is this action on the trigger's timeline? Actions with a Delay are, and so are IRC messages
+ * (an AddIRCMessage without a Delay is simply at 0 s). Other actions without a Delay run at once
+ * wherever they are in the list, so they are not something to count from.
+ */
+export function isTimed(a: XElement): boolean {
+  return getAttr(a, "Delay") !== undefined || a.name === "AddIRCMessage";
+}
+
+/** The timed action before `a` in its trigger, or null when there is none. */
 export function previousAction(trigger: XElement, a: XElement): XElement | null {
   const list = elementChildren(trigger);
-  const i = list.indexOf(a);
-  return i > 0 ? list[i - 1] : null;
+  for (let i = list.indexOf(a) - 1; i >= 0; i--) if (isTimed(list[i])) return list[i];
+  return null;
 }
 
 /** Seconds between the previous action and this one (negative: it runs before the previous one). */
@@ -89,4 +98,33 @@ export function delayLabel(trigger: XElement, a: XElement): string | null {
 /** Does this action's schema have a Delay attribute? */
 export function acceptsDelay(def: { attributes: { name?: string }[] } | null | undefined): boolean {
   return !!def?.attributes.some((x) => x.name?.toLowerCase() === "delay");
+}
+
+/** The gap of every timed action, so the order can change while each keeps its own gap. */
+export function gapsOf(trigger: XElement): Map<XElement, number> {
+  return new Map(elementChildren(trigger).filter(isTimed).map((a) => [a, gapBefore(trigger, a)]));
+}
+
+/** Set Delays again from gaps, in the trigger's current order (times never go below 0). */
+export function reflow(trigger: XElement, gaps: Map<XElement, number>) {
+  let t = 0;
+  for (const a of elementChildren(trigger)) {
+    if (!isTimed(a)) continue;
+    t = Math.max(0, t + (gaps.get(a) ?? 0));
+    if (t > 0 || getAttr(a, "Delay") !== undefined) setAttr(a, "Delay", fmtDelay(t));
+  }
+}
+
+/**
+ * Retime a run of actions: multiply their gaps by `scale` (1.2 = 20% slower) and add `shift`
+ * seconds before the first one. Everything after the run keeps its gaps, so it moves along.
+ * Returns how many actions changed time.
+ */
+export function retime(trigger: XElement, run: XElement[], scale: number, shift: number): number {
+  const gaps = gapsOf(trigger);
+  const timed = run.filter(isTimed);
+  timed.forEach((a, i) => gaps.set(a, (gaps.get(a) ?? 0) * scale + (i === 0 ? shift : 0)));
+  const before = new Map(elementChildren(trigger).map((a) => [a, delayOf(a)]));
+  reflow(trigger, gaps);
+  return elementChildren(trigger).filter((a) => Math.abs(delayOf(a) - (before.get(a) ?? 0)) > 1e-9).length;
 }

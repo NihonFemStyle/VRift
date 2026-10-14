@@ -94,11 +94,45 @@ Hacknet counts every action's `Delay` from the moment its trigger fires, so a se
 
 With **move the actions after it too** ticked (the default), changing an action's time moves every later action in the same trigger that has a Delay by the same amount, so the gaps after it stay the same. Inserting a 2-second pause in the middle of a conversation is one edit. Actions without a Delay run at once whatever their position, so they are never moved. In TIMING, dragging follows the same setting and **Alt** while dragging does the opposite.
 
+"The previous action" is the nearest one above that is on the timeline: an action with a Delay, or an IRC message. An action without a Delay runs as soon as the trigger fires, so the times are not counted from it.
+
 A new action added after a delayed one starts where that one fires (`+0`), taking its `Delay` and `DelayHost` (or the IRC computer of an AddIRCMessage), instead of jumping back to 0 s. If an action ends up earlier than the one above it, the WHEN box says so: Hacknet runs actions by their Delay, not by their order in the file.
+
+### IRC conversations (CHAT)
+
+**CHAT** shows an action file's IRC messages as a chat log. The triggers are listed on the left; pick one to see its conversation. Each line shows the seconds **after the line before** (editable), the time after the trigger that Hacknet reads, the author and the message. Other actions sit between the messages, so you can see where a hack script or a flag lands in the conversation.
+
+- Type an author and a message at the bottom and press **Enter**. The **+ s** box sets the gap to the line before. With a line selected, the new message goes after it and the lines below move along.
+- Double-click an author or a message to edit it, or change a gap directly. ↑ ↓ move a line and ✕ deletes it; the lines after it keep their gaps (the "move the actions after it too" setting).
+- **+ action** inserts any other action. Ones that can wait get the IRC computer as their DelayHost.
+- **▶ play** plays the conversation at its real pace (1× to 8×), revealing lines as they would arrive in the game.
+- **IRC** at the top picks the computer new messages go to (computers with an IRC daemon are listed).
+- **timing** retimes the conversation, or just a range of lines (select a line, then shift-click another). **stretch gaps ×** multiplies the gaps (1.25 is 25% slower, 0.8 faster), **add … s before** inserts a pause before the range, and **pace** gives each message a gap that fits the message before it: the time to read it at the chosen speed plus a pause (between 0.8 s and 8 s). The lines after the range keep their gaps and move along, and undo puts everything back.
+- Messages are spell-checked as you type, using your system's dictionary.
+
+**TEXT** shows the whole conversation as plain lines, for writing or pasting many messages at once:
+
+```text
+0 * #PLAYERNAME# has joined
+<LaunchHackScript Filepath="HackerScripts/act1.txt" #DELAYED# TargetComp="playerComp" />
+7 h4 fresh meat!
+3 thndrblt hi #PLAYERNAME#
+1 "Big Bad" two-word authors are quoted
+<RunFunction FunctionName="addFlags:intro" />
+2.5 <SetLock Module="ram" IsLocked="true" />
+@otherIRC
+// a note, kept as an XML comment
+```
+
+- `seconds author message`: an IRC message that many seconds after the line before.
+- Any other action is written as its XML on one line. With a number in front, it waits that long after the line before; with `#DELAYED#` inside, it happens at the time of the line before. VRift writes its `Delay` and, if it has none, a `DelayHost` (the IRC computer). Without either it has no Delay and runs at once.
+- `@computer` sends the messages below it to another IRC computer, and `//` lines become XML comments.
+
+Lines VRift cannot read are listed with their line numbers. **apply** replaces the trigger's actions with the lines, writing ordinary `AddIRCMessage` actions with the `Delay` Hacknet reads, so nothing changes for the game. Undo puts everything back. TEXT always opens with the trigger's current actions, so you can edit an existing conversation as text and apply it again.
 
 ### Timing actions to music
 
-**TIMING** shows the file's actions on a time ruler, each at its `Delay`. Pick a song in the ♫ row (any `.ogg` in the extension; shift its start with **at … s**) and press ▶ or Space: the song plays in time with the playhead while its waveform scrolls by, so you can hear where each action lands. Drag an action to change its Delay (Shift for free movement; later actions move along unless you hold Alt, see [Delays relative to the previous action](#delays-relative-to-the-previous-action)), or select one and press **K** to put it at the playhead. Each marker shows its time and the gap to the action above it. Actions with a Delay but no `DelayHost` are marked ⚠, because Hacknet ignores their delay. In the file named by `ActionsToRunOnSequencerStart`, a line marks the beat drop: the sequencer goes active `SequencerSpinUpTime` seconds after activation. The song choice is remembered per file and is not written to the extension.
+**TIMING** shows the file's actions on a time ruler, each at its `Delay`. Pick a song in the ♫ row (any `.ogg` in the extension; shift its start with **at … s**) and press ▶ or Space: the song plays in time with the playhead while its waveform scrolls by, so you can hear where each action lands. Drag an action to change its Delay (Shift for free movement; later actions move along unless you hold Alt, see [Delays relative to the previous action](#delays-relative-to-the-previous-action)), or select one and press **K** to put it at the playhead. Each marker shows its time and the gap to the action above it. **stretch…** multiplies the gaps of the selected action and everything after it in its trigger (or the whole file when nothing is selected). Actions with a Delay but no `DelayHost` are marked ⚠, because Hacknet ignores their delay. In the file named by `ActionsToRunOnSequencerStart`, a line marks the beat drop: the sequencer goes active `SequencerSpinUpTime` seconds after activation. The song choice is remembered per file and is not written to the extension.
 
 ### Node graph
 
@@ -186,6 +220,17 @@ Errors normally represent broken game behavior, warnings are likely mistakes or 
 
 About computer IPs: Hacknet gives a computer a random IP only when the `ip` attribute is **left out** (or set to `#RANDOM_IP#`). `ip=""` gives it an empty IP, so VRift warns about it. New computers made from the **New** menu get a random address written in.
 
+### Wildcards
+
+Text fields that take `#WILDCARDS#` list what each one in the text stands for, right under the field: `#BITCOMP_IP#` is "IP of Bit Comp (44.12.9.1), once the defining action has run". The **#** button inserts them. VRift knows:
+
+- Hacknet's own (`#PLAYERNAME#`, `#RANDOM_IP#`, `#SSH_CRACK#`…) and executables added by active mods.
+- Stuxnet's, from the actions that define them: `AddNodeIPWildcard Name="BitComp"` makes `#BITCOMP_IP#`, `AddNodeAdminWildcard` makes `#BITCOMP_PASS#`, and `AddCustomWildcard` makes `#BITCOMP#`.
+- `#IP_<computer id>#`, which some Pathfinder mods fill in with that computer's IP. VRift checks the ID exists and updates it when the computer is renamed. Once an extension uses this form, the **#** menu offers it for every computer.
+- In vanilla extensions, the **#** menu can also insert a computer's IP as plain text.
+
+Diagnostics report a `#NAME#` that nothing defines (as information: Hacknet shows it as typed, unless a mod fills it in), an `#IP_…#` or Stuxnet wildcard whose computer does not exist, and a written IP that no computer has (outside private ranges such as 192.168.x.x). The last one catches text that still mentions a computer's old IP after it was changed.
+
 When a warning points at a tag from a mod that is switched off, the message says so and offers **use Stuxnet** (or the relevant mod) to turn its module on.
 
 ### Ignoring warnings
@@ -227,6 +272,16 @@ The **flags** panel lists every flag with where it is set (●, upper lane) and 
 ## People & factions
 
 The **people** panel shows every Person file as a card (name, handle, birthplace, degrees, medical entries, references) and every custom faction with its rank actions and the places that use it. Click a card to open the file.
+
+## Walkthrough (playtesting)
+
+**Project → Walkthrough…** shows the route through the extension in play order, worked out from the files: what happens when the game starts, then each mission with how it reaches the player (an email, a mission hub, a branch), its goals as plain steps with the real names and IPs ("Get admin access on Sun Vault (212.9.88.153)"), and what each one leads to. Action files on the route list what should happen and when ("When you get admin on X: …"); tick **action files** to show them.
+
+Under each goal VRift adds what a stuck player needs: the ports to open, proxy, firewall level and solution, trace, admin password and accounts of the computer, and **where to look**: whether it is visible from the start, linked from another computer, given in an email, revealed by an action, or has its IP written in a file. Click any of these, or ↗, to open the file at that line. Missions nothing ever loads are listed at the end.
+
+Puzzles that only exist in the story (a password in a message board thread) are not in any goal, so add a **hint** to those steps, or to a whole mission. Hints are saved in `VRift.json`, which Hacknet ignores.
+
+**export for testers…** saves one web page your playtesters open in any browser, without VRift. They tick steps off as they go (remembered in their browser), open your hints and VRift's details only when stuck, write notes under each part, and press **copy report** to send back what they finished, when, and which hints they needed. That last part shows where players get lost. Add a message to testers at the top (what to test, how far to play); it is saved with the hints.
 
 ## Hot reload in a running game
 
@@ -297,5 +352,6 @@ F5 and Ctrl+R are blocked so the window can't be reloaded by accident and lose u
 4. Use autocomplete and definition links instead of copying IDs manually.
 5. Run `refs` before a rename and `find` plus diagnostics afterward.
 6. Save all files, test inside Hacknet with Debug Mode, and keep the project in version control (the git panel).
+7. Before handing it to playtesters, add hints in the walkthrough and send them the exported page.
 
 VRift validates known static rules but cannot guarantee narrative or gameplay correctness. Testing in the game remains the final check.

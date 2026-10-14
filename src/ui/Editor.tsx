@@ -1,23 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { canHotReload } from "../core/hotreload";
 import { BUILTIN_MODULES } from "../core/modules";
 import { schema } from "../core/schema";
 import { treeIsReliable } from "../core/xml";
 import { basename, isAudioPath, isImagePath } from "../fs/fs";
 import { ActionBuilder } from "./ActionBuilder";
-import { EventGraph } from "./EventGraph";
-import { ActionTiming } from "./ActionTiming";
-import { Timeline } from "./Timeline";
-import { ThemeDesigner } from "./ThemeDesigner";
-import { ShaderView } from "./ShaderView";
-import { CodeEditor, codeModeFor, LineDiag } from "./CodeEditor";
+import { codeModeFor, type LineDiag } from "./codeModes";
+import { lazyNamed } from "./lazyNamed";
+
+// Views load the first time they are opened, so VRift starts faster.
+const CodeEditor = lazyNamed<typeof import("./CodeEditor").CodeEditor>(() => import("./CodeEditor"), "CodeEditor");
+const EventGraph = lazyNamed<typeof import("./EventGraph").EventGraph>(() => import("./EventGraph"), "EventGraph");
+const ActionTiming = lazyNamed<typeof import("./ActionTiming").ActionTiming>(() => import("./ActionTiming"), "ActionTiming");
+const ChatView = lazyNamed<typeof import("./ChatView").ChatView>(() => import("./ChatView"), "ChatView");
+const Timeline = lazyNamed<typeof import("./Timeline").Timeline>(() => import("./Timeline"), "Timeline");
+const ThemeDesigner = lazyNamed<typeof import("./ThemeDesigner").ThemeDesigner>(() => import("./ThemeDesigner"), "ThemeDesigner");
+const ShaderView = lazyNamed<typeof import("./ShaderView").ShaderView>(() => import("./ShaderView"), "ShaderView");
 import { useApp } from "./context";
 import { FormEditor } from "./FormEditor";
 import { ImageView } from "./ImagePreview";
 import { WebPreview } from "./WebPreview";
 import { AudioView, OtherFileView, ThreadPreview } from "./MediaViews";
 
-export type ViewMode = "form" | "xml" | "builder" | "preview" | "graph" | "timeline" | "design" | "timing";
+export type ViewMode = "form" | "xml" | "builder" | "preview" | "graph" | "timeline" | "design" | "timing" | "chat";
 
 const KIND_LABEL: Record<string, string> = {
   extensionInfo: "Extension info",
@@ -98,9 +103,9 @@ export function Editor(props: {
         : "xml"
       : !canForm
         ? "xml"
-        : (requested === "builder" || requested === "graph" || requested === "timing") && canBuilder
+        : (requested === "builder" || requested === "graph" || requested === "timing" || requested === "chat") && canBuilder
           ? requested
-          : requested === "builder" || requested === "graph" || requested === "timing"
+          : requested === "builder" || requested === "graph" || requested === "timing" || requested === "chat"
             ? "form"
             : requested === "design"
             ? canDesign
@@ -231,6 +236,9 @@ export function Editor(props: {
                     <button className={mode === "timing" ? "on" : ""} title="Action delays on a time ruler, with a song's waveform and playback" onClick={() => props.setMode(file.path, "timing")}>
                       TIMING
                     </button>
+                    <button className={mode === "chat" ? "on" : ""} title="IRC messages as a chat log: type, time and play a conversation" onClick={() => props.setMode(file.path, "chat")}>
+                      CHAT
+                    </button>
                   </>
                 )}
                 {canDesign && (
@@ -317,12 +325,15 @@ export function Editor(props: {
               {issues.length > 3 && <div className="msg info">…and {issues.length - 3} more (see diagnostics)</div>}
             </div>
           )}
+          <Suspense fallback={<div className="lazy-wait">loading…</div>}>
           {mode === "design" && canDesign ? (
             <ThemeDesigner key={file.path} file={file} />
           ) : mode === "timeline" && canTimeline ? (
             <Timeline key={file.path} file={file} />
           ) : mode === "timing" && canBuilder ? (
             <ActionTiming key={file.path} file={file} />
+          ) : mode === "chat" && canBuilder ? (
+            <ChatView key={file.path} file={file} />
           ) : mode === "graph" && canBuilder ? (
             <EventGraph key={file.path} file={file} />
           ) : mode === "builder" && canBuilder ? (
@@ -353,6 +364,7 @@ export function Editor(props: {
               onChange={(v) => project.setText(file.path, v, "raw")}
             />
           )}
+          </Suspense>
         </>
       )}
     </div>

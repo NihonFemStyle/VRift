@@ -9,6 +9,7 @@ import { ImageThumb } from "./ImagePreview";
 import { checkValue, Option, optionsFor, wildcardOptions } from "./suggest";
 import { parseColor } from "./themes";
 import { formatNumber, parseFloatValue, snap } from "../core/values";
+import { describeWildcard, findWildcards, wildcardDefs } from "../core/wildcards";
 
 // ------------------------------------------------------------------ Combo box
 
@@ -250,6 +251,7 @@ export function FieldEditor(p: FieldProps) {
         {p.field.required && <span className="req"> *</span>}
       </label>
       {control}
+      {p.field.wildcards && draft.includes("#") && <WildcardInfo text={draft} />}
       {!check.ok && <div className="msg error">{check.message}</div>}
       {check.ok && check.message && COMPUTER_HINTS.has(hint) && <div className="msg info">→ {check.message}</div>}
       {p.field.desc && <div className="help">{p.field.desc}</div>}
@@ -288,6 +290,27 @@ function WildcardMenu({ onInsert }: { onInsert: (w: string) => void }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** What each #WILDCARD# in the text stands for, and which ones nothing defines. */
+function WildcardInfo({ text }: { text: string }) {
+  const { project } = useApp();
+  const defs = useMemo(() => wildcardDefs(project), [project, project.version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const uses = [...new Set(findWildcards(text).map((u) => u.name))];
+  if (!uses.length) return null;
+  return (
+    <div className="wild-info">
+      {uses.map((n) => {
+        const d = describeWildcard(project, defs, n);
+        return (
+          <div key={n} className={d.warn ? "warn" : ""}>
+            <code>#{n}#</code> {d.text}
+            {d.warn ? ` · ${d.warn}` : ""}
+          </div>
+        );
+      })}
     </div>
   );
 }

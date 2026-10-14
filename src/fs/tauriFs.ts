@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { FsEntry, joinPath, ProjectFs, TextRead } from "./fs";
+import { FsEntry, isTauri, joinPath, ProjectFs, TextRead } from "./fs";
 
 interface RawEntry {
   path: string;
@@ -56,4 +56,27 @@ export async function pickFolder(title: string, defaultPath?: string): Promise<s
   const { open } = await import("@tauri-apps/plugin-dialog");
   const res = await open({ directory: true, multiple: false, title, defaultPath });
   return typeof res === "string" ? res : null;
+}
+
+/**
+ * Save text to a file the user picks: a save dialog in the desktop app, a download in the
+ * browser. Returns where it went (null when cancelled).
+ */
+export async function saveTextAs(fileName: string, text: string, filter: { name: string; extensions: string[] }): Promise<string | null> {
+  if (isTauri()) {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const path = await save({ defaultPath: fileName, filters: [filter] });
+    if (!path) return null;
+    await invoke<number>("write_text", { path, text, bom: false, encoding: null });
+    return path;
+  }
+  const url = URL.createObjectURL(new Blob([text], { type: "text/html;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return fileName;
 }

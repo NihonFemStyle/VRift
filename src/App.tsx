@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { canHotReload, connectComputer, enterExtension, executeActions, gameStatus, GameStatus, OFFLINE, reloadFile } from "./core/hotreload";
 import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, ModuleMode, SHARED_MODULES_EVENT } from "./core/modules";
@@ -22,14 +22,10 @@ import { NetMap } from "./ui/NetMap";
 import { openUrl } from "./ui/openUrl";
 import { PanelTabs } from "./ui/PanelTabs";
 import { PeopleView } from "./ui/PeopleView";
-import { DebugPanel } from "./ui/DebugPanel";
 import { GitPanel } from "./ui/GitPanel";
 import { debugSession } from "./core/debugSession";
 import { applyCodeFont, applyScale, loadPrefs, Prefs, savePrefs, stepScale, UI_SCALES } from "./ui/prefs";
 import { SettingsModal } from "./ui/SettingsModal";
-import { BackupsModal } from "./ui/BackupsModal";
-import { SorterModal } from "./ui/SorterModal";
-import { DocsModal } from "./ui/DocsModal";
 import { ThemeEntry, ThemePicker } from "./ui/ThemePicker";
 import { isSystemRift, Moggers } from "./ui/Moggers";
 import { openExternally } from "./ui/MediaViews";
@@ -41,6 +37,14 @@ import { pushRecent, Welcome } from "./ui/Welcome";
 import { randomIp } from "./ui/fields";
 import { enterStep, LoadingState, LoadStepId, newLoadingState, ProjectLoading } from "./ui/ProjectLoading";
 import { boot } from "./ui/boot";
+import { lazyNamed } from "./ui/lazyNamed";
+
+// Windows and panels that load the first time they are opened, so VRift starts faster.
+const DocsModal = lazyNamed<typeof import("./ui/DocsModal").DocsModal>(() => import("./ui/DocsModal"), "DocsModal");
+const WalkthroughModal = lazyNamed<typeof import("./ui/WalkthroughModal").WalkthroughModal>(() => import("./ui/WalkthroughModal"), "WalkthroughModal");
+const BackupsModal = lazyNamed<typeof import("./ui/BackupsModal").BackupsModal>(() => import("./ui/BackupsModal"), "BackupsModal");
+const SorterModal = lazyNamed<typeof import("./ui/SorterModal").SorterModal>(() => import("./ui/SorterModal"), "SorterModal");
+const DebugPanel = lazyNamed<typeof import("./ui/DebugPanel").DebugPanel>(() => import("./ui/DebugPanel"), "DebugPanel");
 
 const THEME_KEY = "vrift.theme";
 const DOCS = "https://github.com/XeraFang-Solutions/VRift/tree/main/docs";
@@ -85,6 +89,7 @@ export default function App() {
   const gotoCounter = useRef(0);
   const [backupsOpen, setBackupsOpen] = useState(false);
   const [sorterOpen, setSorterOpen] = useState(false);
+  const [walkOpen, setWalkOpen] = useState(false);
   const [docs, setDocs] = useState<string | null>(null);
   const [themePicker, setThemePicker] = useState(false);
   const [moggers, setMoggers] = useState(false);
@@ -872,6 +877,7 @@ export default function App() {
     project: [
       { label: "Backups…", run: () => setBackupsOpen(true), disabled: !project },
       { label: "Sort project files…", run: () => setSorterOpen(true), disabled: !project },
+      { label: "Walkthrough…", run: () => setWalkOpen(true), disabled: !project },
       { label: "", sep: true },
       { label: "Mods (schema modules)…", run: () => setSettings("mods"), disabled: !project },
       { label: "Ignored warnings…", run: () => setSettings("ignored"), disabled: !project },
@@ -932,7 +938,9 @@ export default function App() {
     ) : panel === "git" ? (
       <GitPanel head={panelHead} />
     ) : panel === "debug" ? (
-      <DebugPanel head={panelHead} />
+      <Suspense fallback={null}>
+        <DebugPanel head={panelHead} />
+      </Suspense>
     ) : (
       <NetMap activePath={active} head={panelHead} />
     );
@@ -1052,6 +1060,8 @@ export default function App() {
             </div>
             {quick && <QuickOpen items={quickItems} onClose={() => setQuick(false)} />}
             {settings && <SettingsModal tab={settings} onClose={() => setSettings(null)} />}
+            <Suspense fallback={null}>
+            {walkOpen && <WalkthroughModal onClose={() => setWalkOpen(false)} />}
             {sorterOpen && (
               <SorterModal
                 onClose={() => setSorterOpen(false)}
@@ -1065,6 +1075,7 @@ export default function App() {
               />
             )}
             {backupsOpen && backups && <BackupsModal scheduler={backups} onRestored={(paths) => project.reloadFromDisk(paths)} onClose={() => setBackupsOpen(false)} />}
+            </Suspense>
           </AppContext.Provider>
         )}
       </div>
@@ -1091,7 +1102,7 @@ export default function App() {
       {themePicker && <ThemePicker entries={themeEntries} current={themeName} onPick={(n) => setTheme(n)} onClose={() => setThemePicker(false)} />}
       {moggers && <Moggers onClose={() => setMoggers(false)} />}
       {loading && <ProjectLoading state={loading} />}
-      {docs && <DocsModal initial={docs} onClose={() => setDocs(null)} />}
+      <Suspense fallback={null}>{docs && <DocsModal initial={docs} onClose={() => setDocs(null)} />}</Suspense>
       {toastMsg && <div className={"toast " + toastMsg.kind}>{toastMsg.text}</div>}
     </>
   );

@@ -6,7 +6,7 @@ import { normalizeRel } from "../fs/fs";
 import { loadTrackChoice, saveTrackChoice, useAudio, useTrackPlayer } from "./audioTrack";
 import { useApp } from "./context";
 import { Inspector, summarize } from "./FormEditor";
-import { previousAction, setDelay } from "../core/actionDelays";
+import { previousAction, retime, setDelay } from "../core/actionDelays";
 import { loadRipple } from "./ActionWhen";
 import { SongLane, TrackChoice } from "./SongLane";
 
@@ -24,7 +24,7 @@ const delayOf = (a: XElement) => {
  * (SequencerSpinUpTime) is marked.
  */
 export function ActionTiming({ file }: { file: ProjectFile }) {
-  const { project, selected, selectElement, toast } = useApp();
+  const { project, selected, selectElement, toast, prompt } = useApp();
   const doc = file.doc!;
   const root = doc.root!;
   const commit = () => project.commitDoc(file.path);
@@ -119,6 +119,26 @@ export function ActionTiming({ file }: { file: ProjectFile }) {
     toast(`${selAction.name}: Delay ${fmt(Math.round(t * 100) / 100)}s${moved ? ` (${moved} later action${moved > 1 ? "s" : ""} moved along)` : ""}${getAttr(selAction, "DelayHost") ? "" : " (needs a DelayHost to wait)"}`);
   };
 
+  const stretch = async () => {
+    const v = await prompt({
+      title: "Stretch timing",
+      message: selAction ? `Multiply the gaps of ${selAction.name} and every action after it in <${found!.parent!.name}>. 1.25 is 25% slower, 0.8 is faster.` : "Multiply every gap in this file. 1.25 is 25% slower, 0.8 is faster. Select an action first to stretch only from there on.",
+      label: "Factor",
+      value: "1.25",
+      validate: (x) => (parseFloat(x.replace(",", ".")) > 0 ? null : "Enter a number above 0"),
+    });
+    if (!v) return;
+    const k = parseFloat(v.replace(",", "."));
+    let n = 0;
+    if (selAction) {
+      const tr = found!.parent!;
+      const all = elementChildren(tr);
+      n = retime(tr, all.slice(all.indexOf(selAction)), k, 0);
+    } else for (const tr of triggers) n += retime(tr, elementChildren(tr), k, 0);
+    commit();
+    toast(n ? `Retimed ${n} action${n > 1 ? "s" : ""}. Undo puts them back.` : "Nothing changed.");
+  };
+
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest?.("input, textarea, select, .cm-editor")) return;
@@ -206,6 +226,9 @@ export function ActionTiming({ file }: { file: ProjectFile }) {
         </select>
         <button className="hn-btn small" disabled={!selAction} onClick={keyAtPlayhead} title="Set the selected action's Delay to the playhead (K)">
           ◆ key at playhead
+        </button>
+        <button className="hn-btn small" onClick={stretch} title="Stretch or squeeze the gaps of the selected action and everything after it in its trigger (or the whole file); later actions move along">
+          stretch…
         </button>
         <span className="grow" />
         <span className="msg info">Drag an action to change its Delay (Shift: no snapping, Alt: {loadRipple() ? "leave" : "move"} the later actions) · K keys the selected action · Ctrl+wheel zooms</span>

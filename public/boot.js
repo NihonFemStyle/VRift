@@ -66,15 +66,28 @@
     clock.textContent = secs.toFixed(1) + " s";
     if (secs > 15 && !note.textContent) note.textContent = "This is taking longer than usual. VRift is still working.";
   }, 100);
+  // Only VRift's own files count. Hosts inject scripts of their own (Cloudflare's analytics
+  // beacon, browser extensions); if one of those is blocked or breaks, VRift is still fine.
+  function ours(url) {
+    if (!url) return false;
+    try {
+      return new URL(url, location.href).origin === location.origin;
+    } catch (err) {
+      return false;
+    }
+  }
   window.addEventListener("error", function (e) {
-    fail(e.error && e.error.stack ? String(e.error.stack) : e.message || "A script failed to load.");
+    if (e.target && e.target !== window) return; // a file that failed to load: handled below
+    if (!ours(e.filename)) return; // another site's script ("Script error." has no file name)
+    fail(e.error && e.error.stack ? String(e.error.stack) : e.message || "A script failed.");
   });
   // a script or stylesheet that cannot be fetched only reports on its own tag
   window.addEventListener(
     "error",
     function (e) {
       var t = e.target;
-      if (t && (t.tagName === "SCRIPT" || (t.tagName === "LINK" && t.rel === "stylesheet"))) fail("Could not load " + (t.src || t.href) + ".");
+      var url = t && (t.tagName === "SCRIPT" ? t.src : t.tagName === "LINK" && t.rel === "stylesheet" ? t.href : "");
+      if (ours(url)) fail("Could not load " + url + ".");
     },
     true,
   );

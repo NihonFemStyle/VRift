@@ -21,7 +21,8 @@ function load() {
 describe("action delays relative to the previous action", () => {
   it("reads gaps", () => {
     const { trigger, acts } = load();
-    expect(acts.map((a) => gapBefore(trigger, a))).toEqual([1, 2, 1.5, -4.5, 6]);
+    // RunFunction has no Delay: it runs at once, so the last message counts from SetLock
+    expect(acts.map((a) => gapBefore(trigger, a))).toEqual([1, 2, 1.5, -4.5, 1.5]);
   });
 
   it("changes one delay without moving the rest", () => {

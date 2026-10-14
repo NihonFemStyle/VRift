@@ -153,6 +153,12 @@ Commit synchronized files and push to `main`. A `VERSION` change creates a draft
 
 Artifacts are unsigned portable archives. Platform README files live in `scripts/release`.
 
+### Build cache in CI
+
+Both workflows keep a build cache per platform: `node_modules`, and for Rust the cargo registry and the whole `src-tauri/target` folder. Each job restores the last cache for its platform (an exact match on the Rust version and lock files, or else the newest older one), builds with it, and saves a new cache when the lock files changed. If the build fails with the cache, the job deletes `target` and `node_modules`, builds again from scratch, logs a warning, and replaces the cache with the fresh one, so a broken cache costs one slow build and never fails a run on its own. A real build error fails both attempts as before.
+
+To force a clean build by hand, delete the caches under **Actions → Caches** on GitHub. Caches nobody uses for 7 days are removed by GitHub, and the repository's 10 GB cache limit is shared by all of them.
+
 ## Documentation contributions
 
 - Keep the root README concise and move details into `docs/`.

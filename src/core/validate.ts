@@ -3,6 +3,7 @@
  * actually behaves (taken from the decompiled game, e.g. the strict element order in missions
  * and which daemons can host delayed actions).
  */
+import { describeWildcard, findWildcards, knownIps, strayIps, wildcardDefs } from "./wildcards";
 import { validateThread } from "./messageBoard";
 import { basename, normalizeRel } from "../fs/fs";
 import {
@@ -98,6 +99,22 @@ export function validateProject(project: Project): Diagnostic[] {
         if (f.doc.root.name === "StuxnetAnimatedTheme") validateBackgroundSource(project, f.path, f.doc.root, add);
     if (f.kind === "extensionInfo") validateExtensionInfo(f, add);
   }
+  // #WILDCARDS# nothing defines, #IP_id# with a missing computer, and IPs no computer has
+  const defs = wildcardDefs(project);
+  const ips = knownIps(project);
+  for (const f of project.files.values()) {
+    if (!/\.(xml|txt)$/i.test(f.path) || !f.text.includes("#") && !/\d\.\d/.test(f.text)) continue;
+    const seen = new Set<string>();
+    for (const u of findWildcards(f.text)) {
+      const d = describeWildcard(project, defs, u.name);
+      if (!d.warn || seen.has(u.name)) continue;
+      seen.add(u.name);
+      const ipRef = u.name.startsWith("IP_");
+      add({ severity: ipRef || d.known ? "warning" : "info", file: f.path, line: u.line, code: ipRef || d.known ? "wildcard-target" : "wildcard-unknown", key: u.name, message: `#${u.name}#: ${d.warn}.` });
+    }
+    for (const s of strayIps(f.text, ips)) add({ severity: "info", file: f.path, line: s.line, code: "stray-ip", key: s.ip, message: `No computer has the IP ${s.ip}. If it should point at one, the computer's IP may have changed.` });
+  }
+
   // duplicate IDs
   for (const [id, list] of idx.computers) {
     if (list.length > 1) {

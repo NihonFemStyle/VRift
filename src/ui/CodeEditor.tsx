@@ -7,12 +7,10 @@ import { EditorView, Decoration, ViewPlugin, ViewUpdate, DecorationSet, MatchDec
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 import { linter, Diagnostic as CmDiagnostic, lintGutter } from "@codemirror/lint";
+import type { CodeMode, LineDiag } from "./codeModes";
+export type { CodeMode, LineDiag } from "./codeModes";
+export { codeModeFor } from "./codeModes";
 
-export interface LineDiag {
-  line: number;
-  severity: "error" | "warning" | "info";
-  message: string;
-}
 
 const hacknetTheme = EditorView.theme(
   {
@@ -58,19 +56,6 @@ const highlight = HighlightStyle.define([
   { tag: [t.bool, t.null], color: "var(--shell)" },
   { tag: t.keyword, color: "var(--hl)" },
 ]);
-
-export type CodeMode = "xml" | "hackerscript" | "text" | "json" | "html" | "thread" | "glsl";
-
-/** Pick the editor mode for a file. */
-export function codeModeFor(path: string, kind: string): CodeMode {
-  if (kind === "hackerScript") return "hackerscript";
-  if (kind === "messageBoardThread") return "thread";
-  if (kind === "shader") return "glsl";
-  if (/\.xml$/i.test(path)) return "xml";
-  if (/\.json$/i.test(path)) return "json";
-  if (/\.html?$/i.test(path)) return "html";
-  return "text";
-}
 
 /** Highlight #WILDCARDS# like #PLAYERNAME# anywhere in the text. */
 const wildcardMatcher = new MatchDecorator({

@@ -103,6 +103,10 @@ export interface ProjectConfig {
   suppress?: SuppressRule[];
   /** Extra values accepted for an attribute: "Computer@icon" → ["sun"]. */
   allowValues?: Record<string, string[]>;
+  /** Author hints for the walkthrough, by step id ("Missions/a.xml#goal0"). */
+  walkthrough?: { hints?: Record<string, string>; intro?: string };
+  /** Keys VRift does not use, kept as they are when the file is rewritten. */
+  extra?: Record<string, unknown>;
 }
 
 export const CONFIG_FILE = "VRift.json";
@@ -274,6 +278,17 @@ export function parseConfig(text: string | undefined): { config: ProjectConfig; 
     config.allowValues = {};
     for (const [k, list] of Object.entries(allow)) if (Array.isArray(list)) config.allowValues[k] = list.map(String);
   }
+  const walk = getCI(v, "walkthrough");
+  if (isObject(walk)) {
+    const hints = getCI(walk, "hints");
+    config.walkthrough = {};
+    if (isObject(hints)) config.walkthrough.hints = Object.fromEntries(Object.entries(hints).map(([k, h]) => [k, String(h)]));
+    const intro = getCI(walk, "intro");
+    if (typeof intro === "string") config.walkthrough.intro = intro;
+  }
+  const known = new Set(["$comment", "modules", "suppress", "allowvalues", "walkthrough"]);
+  const extra = Object.fromEntries(Object.entries(v).filter(([k]) => !known.has(k.toLowerCase())));
+  if (Object.keys(extra).length) config.extra = extra;
   return { config, error: null };
 }
 
@@ -284,6 +299,11 @@ export function serializeConfig(c: ProjectConfig): string {
   if (c.modules && Object.keys(c.modules).length) out.modules = c.modules;
   if (c.allowValues && Object.keys(c.allowValues).length) out.allowValues = c.allowValues;
   if (c.suppress?.length) out.suppress = c.suppress;
+  const wt: Record<string, unknown> = {};
+  if (c.walkthrough?.intro) wt.intro = c.walkthrough.intro;
+  if (c.walkthrough?.hints && Object.keys(c.walkthrough.hints).length) wt.hints = c.walkthrough.hints;
+  if (Object.keys(wt).length) out.walkthrough = wt;
+  Object.assign(out, c.extra ?? {});
   return JSON.stringify(out, null, 2) + "\n";
 }
 

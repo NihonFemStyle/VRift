@@ -1,4 +1,9 @@
 # Checks every push and pull request: version files in sync, tests, web build, Rust tests.
+#
+# Build cache: each job restores the last build (node_modules, and for Rust the cargo registry
+# and src-tauri/target), builds with it, and saves a new one when something changed. If the build
+# fails with the cache, it is thrown away and the job builds again from scratch, so a broken cache
+# never fails CI twice (see docs/development.md).
 name: ci
 
 on:
@@ -7,36 +12,135 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write # to replace a build cache that turned out broken
+
 jobs:
   web:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
+
+      - name: Cache key
+        id: key
+        run: echo "nm=nm-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore node_modules
+        id: nm
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.nm }}
+
+      - name: Install
+        if: steps.nm.outputs.cache-hit != 'true'
+        run: npm ci
+
       - run: npm run version:check
-      - run: npm test
-      - run: npm run build
+
+      - name: Test and build (with the cache)
+        id: cached
+        continue-on-error: true
+        run: npm test && npm run build
+
+      - name: Test and build from scratch (the cached build failed)
+        if: steps.cached.outcome == 'failure'
+        run: |
+          echo "::warning::The build with the cache failed; building again from scratch."
+          rm -rf node_modules
+          npm ci
+          npm test
+          npm run build
+
+      - name: Drop the broken cache
+        if: steps.cached.outcome == 'failure' && steps.nm.outputs.cache-hit == 'true'
+        run: gh cache delete "${{ steps.key.outputs.nm }}" --repo "$GITHUB_REPOSITORY" || true
+
+      - name: Save node_modules
+        if: steps.nm.outputs.cache-hit != 'true' || steps.cached.outcome == 'failure'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.nm }}
 
   rust:
     runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
+
       - name: Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+
+      - name: Cache key
+        id: key
+        run: |
+          echo "rust=ci-linux-$(rustc -V | cut -d' ' -f2)-${{ hashFiles('src-tauri/Cargo.lock') }}" >> "$GITHUB_OUTPUT"
+          echo "nm=nm-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore build cache
+        id: rc
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            src-tauri/target
+          key: ${{ steps.key.outputs.rust }}
+          restore-keys: ci-linux-
+
+      - name: Restore node_modules
+        id: nm
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.nm }}
+
+      - name: Install
+        if: steps.nm.outputs.cache-hit != 'true'
+        run: npm ci
+
       # tauri's build script needs the frontend output folder to exist
-      - run: npm ci && npm run build
-      - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Build and test (with the cache)
+        id: cached
+        continue-on-error: true
+        run: npm run build && cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build and test from scratch (the cached build failed)
+        if: steps.cached.outcome == 'failure'
+        run: |
+          echo "::warning::The build with the cache failed; building again from scratch."
+          rm -rf src-tauri/target node_modules
+          npm ci
+          npm run build
+          cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Drop the broken cache
+        if: steps.cached.outcome == 'failure' && steps.rc.outputs.cache-hit == 'true'
+        run: gh cache delete "${{ steps.key.outputs.rust }}" --repo "$GITHUB_REPOSITORY" || true
+
+      - name: Save build cache
+        if: steps.rc.outputs.cache-hit != 'true' || steps.cached.outcome == 'failure'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            src-tauri/target
+          key: ${{ steps.key.outputs.rust }}

@@ -613,6 +613,15 @@ export class Project {
         .join("");
       if (this.replaceRefValue(ref.file, ref, ref.value, nv)) count++;
     }
+    // #IP_<id># wildcards (filled in by some Pathfinder mods) name the computer inside text
+    const wild = `#IP_${oldId}#`;
+    for (const f of this.files.values()) {
+      if (!f.text.includes(wild)) continue;
+      this.pushUndo(f);
+      f.text = f.text.split(wild).join(`#IP_${newId}#`);
+      this.reparse(f);
+      count++;
+    }
     this.rebuildIndex();
     this.emit();
     return count;

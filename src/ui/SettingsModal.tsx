@@ -1,13 +1,15 @@
 import { isTauri } from "../fs/fs";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { CONFIG_FILE, CUSTOM_SCHEMA_FILE, deleteSharedModule, ModuleMode } from "../core/modules";
-import { SchemaGenerator } from "./SchemaGenerator";
+import { lazyNamed } from "./lazyNamed";
 import { ruleMatches } from "../core/validate";
 import { openUrl } from "./openUrl";
 import { useApp, type SettingsTab } from "./context";
 import { UI_SCALES } from "./prefs";
 import { findInstalls, InstallsResult, LIBRARY_EVENT, libraryAvailable, LibrarySettings, loadLibrarySettings, saveLibrarySettings, STORE_LABEL } from "../fs/library";
 import { chooseGameFolder } from "./Library";
+
+const SchemaGenerator = lazyNamed<typeof import("./SchemaGenerator").SchemaGenerator>(() => import("./SchemaGenerator"), "SchemaGenerator");
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "mods", label: "Mods" },
@@ -67,7 +69,7 @@ function ModsTab() {
         </button>
         <span className="msg info">Make a module for any Pathfinder mod from its C# source, for this extension or for all of them.</span>
       </div>
-      {gen && <SchemaGenerator onClose={() => setGen(false)} />}
+      <Suspense fallback={null}>{gen && <SchemaGenerator onClose={() => setGen(false)} />}</Suspense>
       {mods
         .filter((m) => m.module.builtin || m.module.shared)
         .map((m) => {
